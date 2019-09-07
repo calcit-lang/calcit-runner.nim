@@ -1,10 +1,12 @@
 
 import os
 import cirruParser
+import cirruParser/types
+import cirruParser/helpers
 import sequtils
 from strutils import join
 import strformat
-import cirruInterpreter/types
+import cirruInterpreter/interpreterTypes
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
@@ -29,12 +31,17 @@ proc main(): void =
   of 0:
     echo "No file to eval!"
   of 1:
-    let program = parseCirru readFile(paramStr(1))
-    case program.kind
-    of cirruString:
-      echo "impossible"
-    of cirruSeq:
-      discard program.list.mapIt(interpret(it))
+    let sourcePath = paramStr(1)
+    let source = readFile sourcePath
+    try:
+      let program = parseCirru source
+      case program.kind
+      of cirruString:
+        echo "impossible"
+      of cirruSeq:
+        discard program.list.mapIt(interpret(it))
+    except CirruParseError as e:
+      echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
   else:
     echo "Not sure"
 
