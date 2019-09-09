@@ -1,16 +1,21 @@
 
 import os
+import re
 import cirruParser
 import cirruParser/types
 import cirruParser/helpers
 import sequtils
-from strutils import join
+from strutils import join, parseInt
+import math
 import strformat
 import cirruInterpreter/interpreterTypes
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
-    return CirruValue(kind: crValueString, stringVal: expr.text)
+    if match(expr.text, re"\d+"):
+      return CirruValue(kind: crValueInt, intVal: parseInt(expr.text))
+    else:
+      return CirruValue(kind: crValueString, stringVal: expr.text)
   else:
     if expr.list.len == 0:
       return
@@ -21,6 +26,14 @@ proc interpret(expr: CirruNode): CirruValue =
         case head.text
         of "println":
           echo expr.list[1..^1].map(interpret).map(toString).join(" ")
+        of "+":
+          var ret = 0
+          for i, v in expr.list[1..^1].map(interpret):
+            if v.kind == crValueInt:
+              ret += v.intVal
+            else:
+              raise newException(InterpretError, fmt"Not a number {v.kind}")
+          return CirruValue(kind: crValueInt, intVal: ret)
         else:
           raise newException(InterpretError, fmt"Unknown {head.text}")
       else:
