@@ -44,10 +44,42 @@ proc evalMinus(exprList: seq[CirruNode]): CirruValue =
         raise newException(InterpretError, fmt"Not a number {v.kind}")
     return CirruValue(kind: crValueInt, intVal: ret)
 
+proc evalIf(exprList: seq[CirruNode]): CirruValue =
+  if (exprList.len == 1):
+    raise newException(InterpretError, "No arguments for if")
+  elif (exprList.len == 2):
+    raise newException(InterpretError, "No arguments for if")
+  elif (exprList.len == 3):
+    let cond = interpret(exprList[1])
+    if cond.kind == crValueBool:
+      if cond.boolVal:
+        return interpret(exprList[2])
+      else:
+        return CirruValue(kind: crValueNil)
+    else:
+      raise newException(InterpretError, "Not a bool in if")
+  elif (exprList.len == 4):
+    let cond = interpret(exprList[1])
+    if cond.kind == crValueBool:
+      if cond.boolVal:
+        return interpret(exprList[2])
+      else:
+        return interpret(exprList[3])
+    else:
+      raise newException(InterpretError, "Not a bool in if")
+  else:
+    raise newException(InterpretError, "Too many arguments for if")
+
 interpret = proc (expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
     if match(expr.text, re"\d+"):
       return CirruValue(kind: crValueInt, intVal: parseInt(expr.text))
+    elif expr.text == "true":
+      return CirruValue(kind: crValueBool, boolVal: true)
+    elif expr.text == "false":
+      return CirruValue(kind: crValueBool, boolVal: false)
+    elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
+      return CirruValue(kind: crValueString, stringVal: expr.text[1..^1])
     else:
       return CirruValue(kind: crValueString, stringVal: expr.text)
   else:
@@ -64,6 +96,8 @@ interpret = proc (expr: CirruNode): CirruValue =
           return evalAdd(expr.list)
         of "-":
           return evalMinus(expr.list)
+        of "if":
+          return evalIf(expr.list)
         else:
           raise newException(InterpretError, fmt"Unknown {head.text}")
       else:
