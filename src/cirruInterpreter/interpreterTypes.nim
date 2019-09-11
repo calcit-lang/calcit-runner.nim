@@ -1,8 +1,12 @@
 
+import strutils
+
 type InterpretError* = Exception
 
 type
   CirruValueKind* = enum
+    crValueNil,
+    crValueBool,
     crValueInt,
     crValueFloat,
     crValueString,
@@ -13,6 +17,8 @@ type
 
   CirruValue* = object
     case kind*: CirruValueKind
+    of crValueNil: nilVal: bool
+    of crValueBool: boolVal*: bool
     of crValueInt: intVal*: int
     of crValueFloat: floatVal*: float
     of crValueString: stringVal*: string
@@ -22,6 +28,11 @@ type
 proc toString*(val: CirruValue): string =
   case val.kind:
     of crValueInt: $(val.intVal)
+    of crValueBool:
+      if val.boolVal:
+        "true"
+      else:
+        "false"
     of crValueFloat: $(val.floatVal)
-    of crValueString: val.stringVal
+    of crValueString: escape(val.stringVal)
     else: "CirruValue"
