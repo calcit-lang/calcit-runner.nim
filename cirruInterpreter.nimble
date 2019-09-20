@@ -5,7 +5,7 @@ author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["main"]
+bin           = @["cr"]
 binDir        = "out/"
 
 
