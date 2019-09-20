@@ -70,6 +70,19 @@ proc evalIf(exprList: seq[CirruNode]): CirruValue =
   else:
     raise newException(InterpretError, "Too many arguments for if")
 
+proc evalReadFile(exprList: seq[CirruNode]): CirruValue =
+  if exprList.len == 1:
+    raise newException(InterpretError, "No file name")
+  elif exprList.len == 2:
+    let fileName = interpret(exprList[1])
+    if fileName.kind == crValueString:
+      let content = readFile(fileName.stringVal)
+      return CirruValue(kind: crValueString, stringVal: content)
+    else:
+      raise newException(InterpretError, "Expected path name in string")
+  else:
+    raise newException(InterpretError, "Too many arguments!")
+
 interpret = proc (expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
     if match(expr.text, re"\d+"):
@@ -98,6 +111,8 @@ interpret = proc (expr: CirruNode): CirruValue =
           return evalMinus(expr.list)
         of "if":
           return evalIf(expr.list)
+        of "read-file":
+          return evalReadFile(expr.list)
         else:
           raise newException(InterpretError, fmt"Unknown {head.text}")
       else:
