@@ -8,11 +8,9 @@ import sequtils
 from strutils import join, parseInt
 import math
 import strformat
-import cirruInterpreter/interpreterTypes
+import ./interpreterTypes
 
-var interpret: proc(expr: CirruNode): CirruValue
-
-proc evalAdd(exprList: seq[CirruNode]): CirruValue =
+proc evalAdd*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   var ret = 0
   for v in exprList[1..^1].map(interpret):
     if v.kind == crValueInt:
@@ -21,7 +19,7 @@ proc evalAdd(exprList: seq[CirruNode]): CirruValue =
       raise newException(InterpretError, fmt"Not a number {v.kind}")
   return CirruValue(kind: crValueInt, intVal: ret)
 
-proc evalMinus(exprList: seq[CirruNode]): CirruValue =
+proc evalMinus*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   if (exprList.len == 1):
     return CirruValue(kind: crValueInt, intVal: 0)
   elif (exprList.len == 2):
@@ -44,7 +42,7 @@ proc evalMinus(exprList: seq[CirruNode]): CirruValue =
         raise newException(InterpretError, fmt"Not a number {v.kind}")
     return CirruValue(kind: crValueInt, intVal: ret)
 
-proc evalIf(exprList: seq[CirruNode]): CirruValue =
+proc evalIf*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   if (exprList.len == 1):
     raise newException(InterpretError, "No arguments for if")
   elif (exprList.len == 2):
@@ -70,7 +68,7 @@ proc evalIf(exprList: seq[CirruNode]): CirruValue =
   else:
     raise newException(InterpretError, "Too many arguments for if")
 
-proc evalReadFile(exprList: seq[CirruNode]): CirruValue =
+proc evalReadFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   if exprList.len == 1:
     raise newException(InterpretError, "No file name")
   elif exprList.len == 2:
@@ -82,59 +80,3 @@ proc evalReadFile(exprList: seq[CirruNode]): CirruValue =
       raise newException(InterpretError, "Expected path name in string")
   else:
     raise newException(InterpretError, "Too many arguments!")
-
-interpret = proc (expr: CirruNode): CirruValue =
-  if expr.kind == cirruString:
-    if match(expr.text, re"\d+"):
-      return CirruValue(kind: crValueInt, intVal: parseInt(expr.text))
-    elif expr.text == "true":
-      return CirruValue(kind: crValueBool, boolVal: true)
-    elif expr.text == "false":
-      return CirruValue(kind: crValueBool, boolVal: false)
-    elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
-      return CirruValue(kind: crValueString, stringVal: expr.text[1..^1])
-    else:
-      return CirruValue(kind: crValueString, stringVal: expr.text)
-  else:
-    if expr.list.len == 0:
-      return
-    else:
-      let head = expr.list[0]
-      case head.kind
-      of cirruString:
-        case head.text
-        of "println":
-          echo expr.list[1..^1].map(interpret).map(toString).join(" ")
-        of "+":
-          return evalAdd(expr.list)
-        of "-":
-          return evalMinus(expr.list)
-        of "if":
-          return evalIf(expr.list)
-        of "read-file":
-          return evalReadFile(expr.list)
-        else:
-          raise newException(InterpretError, fmt"Unknown {head.text}")
-      else:
-        echo "TODO"
-
-proc main(): void =
-  case paramCount()
-  of 0:
-    echo "No file to eval!"
-  of 1:
-    let sourcePath = paramStr(1)
-    let source = readFile sourcePath
-    try:
-      let program = parseCirru source
-      case program.kind
-      of cirruString:
-        echo "impossible"
-      of cirruSeq:
-        discard program.list.mapIt(interpret(it))
-    except CirruParseError as e:
-      echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-  else:
-    echo "Not sure"
-
-main()
