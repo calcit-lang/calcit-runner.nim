@@ -63,7 +63,6 @@ proc evalFile(sourcePath: string): void =
     echo "Failed to interpret"
     raise e
 
-
 proc watchFile(sourcePath: string): void =
   let child = startProcess("/usr/local/bin/fswatch", "", [sourcePath])
   let sub = outputStream(child)
@@ -73,6 +72,12 @@ proc watchFile(sourcePath: string): void =
     # TODO, tell which file to reload
     evalFile(sourcePath)
 
+# https://rosettacode.org/wiki/Handle_a_signal#Nim
+proc handleControl() {.noconv.} =
+  echo()
+  echo "Killed with Control c."
+  quit 0
+
 proc main(): void =
   case paramCount()
   of 0:
@@ -80,9 +85,13 @@ proc main(): void =
   of 1:
     let sourcePath = paramStr(1)
     evalFile(sourcePath)
+
+    setControlCHook(handleControl)
+
     watchFile(sourcePath)
 
   else:
     echo "Not sure"
+
 
 main()
