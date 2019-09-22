@@ -46,6 +46,13 @@ proc interpret(expr: CirruNode): CirruValue =
       else:
         echo "TODO"
 
+proc evalCode(program: CirruNode): void =
+  case program.kind
+  of cirruString:
+    raise newException(InterpretError, "Call eval with code")
+  of cirruSeq:
+    discard program.list.mapIt(interpret(it))
+
 proc main(): void =
   case paramCount()
   of 0:
@@ -55,13 +62,12 @@ proc main(): void =
     let source = readFile sourcePath
     try:
       let program = parseCirru source
-      case program.kind
-      of cirruString:
-        echo "impossible"
-      of cirruSeq:
-        discard program.list.mapIt(interpret(it))
+      evalCode(program)
     except CirruParseError as e:
       echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
+    except InterpretError as e:
+      echo "Failed to interpret"
+
   else:
     echo "Not sure"
 
