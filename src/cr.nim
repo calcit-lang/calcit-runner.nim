@@ -2,14 +2,12 @@
 import os
 import re
 import cirruParser
-import cirruParser/types
-import cirruParser/helpers
 import sequtils
 from strutils import join, parseInt
 import math
 import strformat
-import cirruInterpreter/interpreterTypes
-import cirruInterpreter/interpreterOps
+import cirruInterpreter/types
+import cirruInterpreter/operations
 import osproc
 import streams
 
