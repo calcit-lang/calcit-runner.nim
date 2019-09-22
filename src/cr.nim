@@ -10,6 +10,8 @@ import math
 import strformat
 import cirruInterpreter/interpreterTypes
 import cirruInterpreter/interpreterOps
+import osproc
+import streams
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
@@ -46,12 +48,32 @@ proc interpret(expr: CirruNode): CirruValue =
       else:
         echo "TODO"
 
-proc evalCode(program: CirruNode): void =
-  case program.kind
-  of cirruString:
-    raise newException(InterpretError, "Call eval with code")
-  of cirruSeq:
-    discard program.list.mapIt(interpret(it))
+proc evalFile(sourcePath: string): void =
+  var source: string
+  try:
+    source = readFile sourcePath
+    let program = parseCirru source
+    case program.kind
+    of cirruString:
+      raise newException(InterpretError, "Call eval with code")
+    of cirruSeq:
+      discard program.list.mapIt(interpret(it))
+
+  except CirruParseError as e:
+    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
+  except InterpretError as e:
+    echo "Failed to interpret"
+    raise e
+
+
+proc watchFile(sourcePath: string): void =
+  let child = startProcess("/usr/local/bin/fswatch", "", [sourcePath])
+  let sub = outputStream(child)
+  while true:
+    let line = readLine(sub)
+
+    # TODO, tell which file to reload
+    evalFile(sourcePath)
 
 proc main(): void =
   case paramCount()
@@ -59,14 +81,8 @@ proc main(): void =
     echo "No file to eval!"
   of 1:
     let sourcePath = paramStr(1)
-    let source = readFile sourcePath
-    try:
-      let program = parseCirru source
-      evalCode(program)
-    except CirruParseError as e:
-      echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-    except InterpretError as e:
-      echo "Failed to interpret"
+    evalFile(sourcePath)
+    watchFile(sourcePath)
 
   else:
     echo "Not sure"
