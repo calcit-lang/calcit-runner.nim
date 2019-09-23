@@ -2,14 +2,14 @@
 import os
 import re
 import cirruParser
-import cirruParser/types
-import cirruParser/helpers
 import sequtils
 from strutils import join, parseInt
 import math
 import strformat
-import cirruInterpreter/interpreterTypes
-import cirruInterpreter/interpreterOps
+import cirruInterpreter/types
+import cirruInterpreter/operations
+import osproc
+import streams
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
@@ -46,23 +46,52 @@ proc interpret(expr: CirruNode): CirruValue =
       else:
         echo "TODO"
 
+proc evalFile(sourcePath: string): void =
+  var source: string
+  try:
+    source = readFile sourcePath
+    let program = parseCirru source
+    case program.kind
+    of cirruString:
+      raise newException(InterpretError, "Call eval with code")
+    of cirruSeq:
+      discard program.list.mapIt(interpret(it))
+
+  except CirruParseError as e:
+    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
+  except InterpretError as e:
+    echo "Failed to interpret"
+    raise e
+
+proc watchFile(sourcePath: string): void =
+  let child = startProcess("/usr/local/bin/fswatch", "", [sourcePath])
+  let sub = outputStream(child)
+  while true:
+    let line = readLine(sub)
+
+    # TODO, tell which file to reload
+    evalFile(sourcePath)
+
+# https://rosettacode.org/wiki/Handle_a_signal#Nim
+proc handleControl() {.noconv.} =
+  echo()
+  echo "Killed with Control c."
+  quit 0
+
 proc main(): void =
   case paramCount()
   of 0:
     echo "No file to eval!"
   of 1:
     let sourcePath = paramStr(1)
-    let source = readFile sourcePath
-    try:
-      let program = parseCirru source
-      case program.kind
-      of cirruString:
-        echo "impossible"
-      of cirruSeq:
-        discard program.list.mapIt(interpret(it))
-    except CirruParseError as e:
-      echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
+    evalFile(sourcePath)
+
+    setControlCHook(handleControl)
+
+    watchFile(sourcePath)
+
   else:
     echo "Not sure"
+
 
 main()

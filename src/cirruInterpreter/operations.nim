@@ -2,13 +2,11 @@
 import os
 import re
 import cirruParser
-import cirruParser/types
-import cirruParser/helpers
 import sequtils
 from strutils import join, parseInt
 import math
 import strformat
-import ./interpreterTypes
+import ./types
 
 proc evalAdd*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   var ret = 0
