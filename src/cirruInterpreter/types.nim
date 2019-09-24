@@ -1,7 +1,11 @@
 
 import strutils
 
-type InterpretError* = Exception
+type CirruInterpretError* = ref object of Exception
+  line*: int
+  column*: int
+
+type CirruCommandError* = Exception
 
 type
   CirruValueKind* = enum
