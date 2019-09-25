@@ -6,8 +6,10 @@ import sequtils
 from strutils import join, parseInt
 import math
 import strformat
+import system
 import ./types
 import ./helpers
+import terminal
 
 proc evalAdd*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   var ret = 0
@@ -92,3 +94,27 @@ proc evalReadFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): C
     let node = exprList[2]
     raiseInterpretException("Too many arguments!", node.line, node.column)
 
+proc evalWriteFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+  if exprList.len < 3:
+    let node = exprList[0]
+    raiseInterpretException("Lack of file name or target", node.line, node.column)
+  elif exprList.len == 3:
+    let node = exprList[1]
+    let fileName = interpret(node)
+    if fileName.kind != crValueString:
+      raiseInterpretException("Expected path name in string", node.line, node.column)
+    let contentNode = exprList[2]
+    let content = interpret(contentNode)
+    if content.kind != crValueString:
+      raiseInterpretException("Expected content in string", contentNode.line, contentNode.column)
+    writeFile(fileName.stringVal, content.stringVal)
+    setForegroundColor(fgCyan)
+    echo fmt"Wrote to file {fileName.stringVal}"
+    resetAttributes()
+    return CirruValue(kind: crValueNil)
+  else:
+    let node = exprList[3]
+    raiseInterpretException("Too many arguments!", node.line, node.column)
+
+proc evalComment*(): CirruValue =
+  return CirruValue(kind: crValueNil)

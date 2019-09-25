@@ -43,6 +43,10 @@ proc interpret(expr: CirruNode): CirruValue =
           return evalIf(expr.list, interpret)
         of "read-file":
           return evalReadFile(expr.list, interpret)
+        of "write-file":
+          return evalWriteFile(expr.list, interpret)
+        of ";":
+          return evalComment()
         else:
           raiseInterpretException(fmt"Unknown {head.text}", head.line, head.column)
       else:
@@ -62,15 +66,15 @@ proc evalFile(sourcePath: string): void =
   except CirruParseError as e:
     setForegroundColor(fgRed)
     echo "\nError: failed to parse"
-    setForegroundColor(fgWhite)
+    resetAttributes()
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-    quit 1
+
   except CirruInterpretError as e:
     setForegroundColor(fgRed)
     echo "\nError: failed to interpret"
-    setForegroundColor(fgWhite)
+    resetAttributes()
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-    quit 1
+
   except CirruCommandError as e:
     setForegroundColor(fgRed)
     echo "Failed to run command"
@@ -81,6 +85,10 @@ proc watchFile(sourcePath: string): void =
   let sub = outputStream(child)
   while true:
     let line = readLine(sub)
+
+    setForegroundColor(fgCyan)
+    echo "\n-------- file change --------\n"
+    resetAttributes()
 
     # TODO, tell which file to reload
     evalFile(sourcePath)
