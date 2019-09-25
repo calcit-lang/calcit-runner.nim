@@ -13,4 +13,4 @@ binDir        = "out/"
 # Dependencies
 
 requires "nim >= 0.20.0"
-requires "cirru-parser >= 0.0.3"
+requires "cirru-parser >= 0.0.4"

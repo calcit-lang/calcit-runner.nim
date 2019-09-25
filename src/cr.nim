@@ -59,13 +59,12 @@ proc evalFile(sourcePath: string): void =
       discard program.list.mapIt(interpret(it))
 
   except CirruParseError as e:
-    echo()
-    echo "Error: failed to parse"
+    echo "\nError: failed to parse"
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
     quit 1
   except CirruInterpretError as e:
     echo()
-    echo "Error: failed to interpret"
+    echo "\nError: failed to interpret"
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
     quit 1
   except CirruCommandError as e:
@@ -83,8 +82,7 @@ proc watchFile(sourcePath: string): void =
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
-  echo()
-  echo "Killed with Control c."
+  echo "\nKilled with Control c."
   quit 0
 
 proc main(): void =
