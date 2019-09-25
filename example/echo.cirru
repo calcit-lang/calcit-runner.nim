@@ -18,3 +18,4 @@ println (if false 100 0)
 println |STR "\"string with space"
 
 println (read-file |build.sh)
+

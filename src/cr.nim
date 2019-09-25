@@ -8,6 +8,7 @@ import math
 import strformat
 import cirruInterpreter/types
 import cirruInterpreter/operations
+import cirruInterpreter/helpers
 import osproc
 import streams
 
@@ -42,7 +43,7 @@ proc interpret(expr: CirruNode): CirruValue =
         of "read-file":
           return evalReadFile(expr.list, interpret)
         else:
-          raise newException(InterpretError, fmt"Unknown {head.text}")
+          raiseInterpretException(fmt"Unknown {head.text}", head.line, head.column)
       else:
         echo "TODO"
 
@@ -53,14 +54,21 @@ proc evalFile(sourcePath: string): void =
     let program = parseCirru source
     case program.kind
     of cirruString:
-      raise newException(InterpretError, "Call eval with code")
+      raise newException(CirruCommandError, "Call eval with code")
     of cirruSeq:
       discard program.list.mapIt(interpret(it))
 
   except CirruParseError as e:
+    echo "\nError: failed to parse"
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-  except InterpretError as e:
-    echo "Failed to interpret"
+    quit 1
+  except CirruInterpretError as e:
+    echo()
+    echo "\nError: failed to interpret"
+    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
+    quit 1
+  except CirruCommandError as e:
+    echo "Failed to run command"
     raise e
 
 proc watchFile(sourcePath: string): void =
@@ -74,8 +82,7 @@ proc watchFile(sourcePath: string): void =
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
-  echo()
-  echo "Killed with Control c."
+  echo "\nKilled with Control c."
   quit 0
 
 proc main(): void =
