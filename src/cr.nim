@@ -11,6 +11,7 @@ import cirruInterpreter/operations
 import cirruInterpreter/helpers
 import osproc
 import streams
+import terminal
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
@@ -59,15 +60,19 @@ proc evalFile(sourcePath: string): void =
       discard program.list.mapIt(interpret(it))
 
   except CirruParseError as e:
+    setForegroundColor(fgRed)
     echo "\nError: failed to parse"
+    setForegroundColor(fgWhite)
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
     quit 1
   except CirruInterpretError as e:
-    echo()
+    setForegroundColor(fgRed)
     echo "\nError: failed to interpret"
+    setForegroundColor(fgWhite)
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
     quit 1
   except CirruCommandError as e:
+    setForegroundColor(fgRed)
     echo "Failed to run command"
     raise e
 
