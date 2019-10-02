@@ -47,6 +47,12 @@ proc evalMinus*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): Cirr
         raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
     return CirruValue(kind: crValueInt, intVal: ret)
 
+proc evalArray*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+  var arrayData: seq[CirruValue]
+  for child in exprList[1..^1]:
+    arrayData.add(interpret(child))
+  return CirruValue(kind: crValueArray, arrayVal: arrayData)
+
 proc evalIf*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   if (exprList.len == 1):
     let node = exprList[0]
