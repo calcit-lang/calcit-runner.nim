@@ -125,6 +125,35 @@ proc evalWriteFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): 
 proc evalComment*(): CirruValue =
   return CirruValue(kind: crValueNil)
 
+proc evalArraySlice*(value: seq[CirruValue], exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+  if exprList.len == 2:
+    let node = exprList[1]
+    raiseInterpretExceptionAtNode("Expression not supported for methods", node)
+  if exprList.len > 4:
+    let node = exprList[4]
+    raiseInterpretExceptionAtNode("Too many arguments for Array slice", node)
+  let fromIdx = interpret(exprList[2])
+  if fromIdx.kind != crValueInt:
+    raiseInterpretExceptionAtNode("Not a number of from index", exprList[2])
+
+  if fromIdx.intVal < 0:
+    raiseInterpretExceptionAtNode(fmt"From index out of index {fromIdx.intVal}", exprList[2])
+  if fromIdx.intVal > (value.len - 1):
+    raiseInterpretExceptionAtNode(fmt"From index out of index {fromIdx.intVal} > {value.len-1}", exprList[2])
+
+  if exprList.len == 3:
+    return CirruValue(kind: crValueArray, arrayVal: value[fromIdx.intVal..^1])
+
+  let toIdx = interpret(exprList[3])
+  if toIdx.kind != crValueInt:
+    raiseInterpretExceptionAtNode("Not a number of to index", exprList[3])
+  if toIdx.intVal < fromIdx.intVal:
+    raiseInterpretExceptionAtNode(fmt"To index out of index {toIdx.intVal} < {fromIdx.intVal}", exprList[3])
+  if toIdx.intVal > (value.len - 1):
+    raiseInterpretExceptionAtNode(fmt"To index out of index {toIdx.intVal} > {value.len-1}", exprList[3])
+
+  return CirruValue(kind: crValueArray, arrayVal: value[fromIdx.intVal..toIdx.intVal])
+
 proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
   if exprList.len < 2:
     let node = exprList[1]
@@ -138,6 +167,8 @@ proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], inte
       let item = interpret(child)
       value.add item
     return CirruValue(kind: crValueArray, arrayVal: value)
+  of "slice":
+    return evalArraySlice(value, exprList, interpret)
   else:
     let node = exprList[1]
     raiseInterpretException("Unknown method", node.line, node.column)
