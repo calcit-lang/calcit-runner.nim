@@ -124,3 +124,20 @@ proc evalWriteFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): 
 
 proc evalComment*(): CirruValue =
   return CirruValue(kind: crValueNil)
+
+proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+  if exprList.len < 2:
+    let node = exprList[1]
+    raiseInterpretException("No enough arguments for calling methods", node.line, node.column)
+  if exprList[1].kind == cirruSeq:
+    let node = exprList[1]
+    raiseInterpretException("Expression not supported for methods", node.line, node.column)
+  case exprList[1].text
+  of "add":
+    for child in exprList[2..^1]:
+      let item = interpret(child)
+      value.add item
+    return CirruValue(kind: crValueArray, arrayVal: value)
+  else:
+    let node = exprList[1]
+    raiseInterpretException("Unknown method", node.line, node.column)

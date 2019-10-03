@@ -22,3 +22,5 @@ println (read-file |build.sh)
 ; write-file |test.text "|test data 4n"
 
 println ([] 1 2 3)
+
+println (([] 1) add 2)
