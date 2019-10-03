@@ -1,5 +1,6 @@
 
 import strutils
+import sequtils, sugar
 
 type CirruInterpretError* = ref object of Exception
   line*: int
@@ -14,7 +15,7 @@ type
     crValueInt,
     crValueFloat,
     crValueString,
-    crValueVector,
+    crValueArray,
     crValueSeq,
     crValueMap,
     crValueFn
@@ -27,7 +28,13 @@ type
     of crValueFloat: floatVal*: float
     of crValueString: stringVal*: string
     of crValueFn: fnVal*: proc()
+    of crValueArray: arrayVal*: seq[CirruValue]
     else: xVal*: string
+
+proc toString*(val: CirruValue): string
+
+proc fromArrayToString(children: seq[CirruValue]): string =
+  return "[" & children.mapIt(toString(it)).join(" ") & "]"
 
 proc toString*(val: CirruValue): string =
   case val.kind:
@@ -39,4 +46,5 @@ proc toString*(val: CirruValue): string =
         "false"
     of crValueFloat: $(val.floatVal)
     of crValueString: escape(val.stringVal)
+    of crValueArray: fromArrayToString(val.arrayVal)
     else: "CirruValue"
