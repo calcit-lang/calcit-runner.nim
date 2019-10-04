@@ -52,7 +52,17 @@ proc interpret(expr: CirruNode): CirruValue =
         else:
           raiseInterpretException(fmt"Unknown {head.text}", head.line, head.column)
       else:
-        echo "TODO"
+        let headValue = interpret(expr.list[0])
+        case headValue.kind:
+        of crValueFn:
+          echo "NOT implemented fn"
+          quit 1
+        of crValueArray:
+          var value = headValue.arrayVal
+          return callArrayMethod(value, expr.list, interpret)
+        else:
+          echo "TODO"
+          quit 1
 
 proc evalFile(sourcePath: string): void =
   var source: string
