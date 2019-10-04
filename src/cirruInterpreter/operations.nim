@@ -11,7 +11,9 @@ import ./types
 import ./helpers
 import terminal
 
-proc evalAdd*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+type fnInterpret = proc(expr: CirruNode): CirruValue
+
+proc evalAdd*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   var ret = 0
   for node in exprList[1..^1]:
     let v = interpret(node)
@@ -21,7 +23,7 @@ proc evalAdd*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruV
       raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
   return CirruValue(kind: crValueInt, intVal: ret)
 
-proc evalMinus*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalMinus*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if (exprList.len == 1):
     return CirruValue(kind: crValueInt, intVal: 0)
   elif (exprList.len == 2):
@@ -47,13 +49,13 @@ proc evalMinus*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): Cirr
         raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
     return CirruValue(kind: crValueInt, intVal: ret)
 
-proc evalArray*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalArray*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   var arrayData: seq[CirruValue]
   for child in exprList[1..^1]:
     arrayData.add(interpret(child))
   return CirruValue(kind: crValueArray, arrayVal: arrayData)
 
-proc evalIf*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalIf*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if (exprList.len == 1):
     let node = exprList[0]
     raiseInterpretException("No arguments for if", node.line, node.column)
@@ -84,7 +86,7 @@ proc evalIf*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruVa
     let node = exprList[0]
     raiseInterpretException("Too many arguments for if", node.line, node.column)
 
-proc evalReadFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalReadFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if exprList.len == 1:
     let node = exprList[0]
     raiseInterpretException("Lack of file name", node.line, node.column)
@@ -100,7 +102,7 @@ proc evalReadFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): C
     let node = exprList[2]
     raiseInterpretException("Too many arguments!", node.line, node.column)
 
-proc evalWriteFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalWriteFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if exprList.len < 3:
     let node = exprList[0]
     raiseInterpretException("Lack of file name or target", node.line, node.column)
@@ -125,7 +127,7 @@ proc evalWriteFile*(exprList: seq[CirruNode], interpret: proc(expr: CirruNode): 
 proc evalComment*(): CirruValue =
   return CirruValue(kind: crValueNil)
 
-proc evalArraySlice*(value: seq[CirruValue], exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalArraySlice(value: seq[CirruValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if exprList.len == 2:
     let node = exprList[1]
     raiseInterpretExceptionAtNode("Expression not supported for methods", node)
@@ -154,13 +156,24 @@ proc evalArraySlice*(value: seq[CirruValue], exprList: seq[CirruNode], interpret
 
   return CirruValue(kind: crValueArray, arrayVal: value[fromIdx.intVal..toIdx.intVal])
 
-proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], interpret: proc(expr: CirruNode): CirruValue): CirruValue =
+proc evalArrayConcat(value: seq[CirruValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
   if exprList.len < 2:
-    let node = exprList[1]
-    raiseInterpretException("No enough arguments for calling methods", node.line, node.column)
+    raiseInterpretExceptionAtNode("Too few arguments", exprList[1])
+  var arr: seq[CirruValue]
+  for idx, child in exprList[2..^1]:
+    let item = interpret(child)
+    if item.kind != crValueArray:
+      raiseInterpretExceptionAtNode("Not an array in concat", exprList[idx + 2])
+    for valueItem in item.arrayVal:
+      arr.add valueItem
+
+  return CirruValue(kind: crValueArray, arrayVal: arr)
+
+proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  if exprList.len < 2:
+    raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
   if exprList[1].kind == cirruSeq:
-    let node = exprList[1]
-    raiseInterpretException("Expression not supported for methods", node.line, node.column)
+    raiseInterpretExceptionAtNode("Expression not supported for methods", exprList[1])
   case exprList[1].text
   of "add":
     for child in exprList[2..^1]:
@@ -169,6 +182,7 @@ proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], inte
     return CirruValue(kind: crValueArray, arrayVal: value)
   of "slice":
     return evalArraySlice(value, exprList, interpret)
+  of "concat":
+    return evalArrayConcat(value, exprList, interpret)
   else:
-    let node = exprList[1]
-    raiseInterpretException("Unknown method", node.line, node.column)
+    raiseInterpretExceptionAtNode("Unknown method", exprList[1])
