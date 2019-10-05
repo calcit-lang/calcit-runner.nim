@@ -10,6 +10,8 @@ import system
 import ./types
 import ./helpers
 import terminal
+import tables
+import hashes
 
 type fnInterpret = proc(expr: CirruNode): CirruValue
 
@@ -186,3 +188,15 @@ proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], inte
     return evalArrayConcat(value, exprList, interpret)
   else:
     raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+
+proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  var value = initTable[Hash, CirruValue]()
+  for pair in exprList[1..^1]:
+    if pair.kind == cirruString:
+      raiseInterpretExceptionAtNode("Table requires nested children pairs", pair)
+    if pair.list.len() != 2:
+      raiseInterpretExceptionAtNode("Each pair of table contains 2 elements", pair)
+    let k = interpret(pair.list[0])
+    let v = interpret(pair.list[1])
+    value.add(hashCirruValue(k), v)
+  return CirruValue(kind: crValueTable, tableVal: value)

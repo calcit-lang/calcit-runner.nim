@@ -43,6 +43,8 @@ proc interpret(expr: CirruNode): CirruValue =
           return evalIf(expr.list, interpret)
         of "[]":
           return evalArray(expr.list, interpret)
+        of "{}":
+          return evalTable(expr.list, interpret)
         of "read-file":
           return evalReadFile(expr.list, interpret)
         of "write-file":
