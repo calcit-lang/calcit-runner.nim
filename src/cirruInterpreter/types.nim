@@ -23,6 +23,8 @@ type
     crValueTable,
     crValueFn
 
+  TablePair* = tuple[key: CirruValue, value: CirruValue]
+
   CirruValue* = object
     case kind*: CirruValueKind
     of crValueNil: nilVal: bool
@@ -32,7 +34,7 @@ type
     of crValueString: stringVal*: string
     of crValueFn: fnVal*: proc()
     of crValueArray: arrayVal*: seq[CirruValue]
-    of crValueTable: tableVal*: Table[Hash, CirruValue]
+    of crValueTable: tableVal*: Table[Hash, TablePair]
     else: xVal*: string
 
 proc toString*(val: CirruValue): string
@@ -40,14 +42,14 @@ proc toString*(val: CirruValue): string
 proc fromArrayToString(children: seq[CirruValue]): string =
   return "[" & children.mapIt(toString(it)).join(" ") & "]"
 
-proc fromTableToString(children: Table[Hash, CirruValue]): string =
+proc fromTableToString(children: Table[Hash, TablePair]): string =
   let size = children.len()
   if size > 20:
     return "{...(20)...}"
   var tableStr = "{"
   for k, child in pairs(children):
     # TODO, need a way to get original key
-    tableStr = tableStr & $k & " " & toString(child) & ", "
+    tableStr = tableStr & toString(child.key) & " " & toString(child.value) & ", "
   tableStr = tableStr & "}"
   return tableStr
 

@@ -190,7 +190,7 @@ proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], inte
     raiseInterpretExceptionAtNode("Unknown method", exprList[1])
 
 proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
-  var value = initTable[Hash, CirruValue]()
+  var value = initTable[Hash, TablePair]()
   for pair in exprList[1..^1]:
     if pair.kind == cirruString:
       raiseInterpretExceptionAtNode("Table requires nested children pairs", pair)
@@ -198,5 +198,6 @@ proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
       raiseInterpretExceptionAtNode("Each pair of table contains 2 elements", pair)
     let k = interpret(pair.list[0])
     let v = interpret(pair.list[1])
-    value.add(hashCirruValue(k), v)
+    let valuePair: TablePair = (k, v)
+    value.add(hashCirruValue(k), valuePair)
   return CirruValue(kind: crValueTable, tableVal: value)
