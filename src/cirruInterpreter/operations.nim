@@ -201,3 +201,35 @@ proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
     let valuePair: TablePair = (k, v)
     value.add(hashCirruValue(k), valuePair)
   return CirruValue(kind: crValueTable, tableVal: value)
+
+proc callTableMethod*(value: var Table[Hash, TablePair], exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  if exprList.len < 2:
+    raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
+  if exprList[1].kind == cirruSeq:
+    raiseInterpretExceptionAtNode("Expression not supported for methods", exprList[1])
+  case exprList[1].text
+  of "get":
+    if exprList.len != 3:
+      raiseInterpretExceptionAtNode("Get method expects 1 argument", exprList[1])
+    let k = interpret(exprList[2])
+    return value[hashCirruValue(k)].value
+
+  of "add":
+    if exprList.len != 4:
+      raiseInterpretExceptionAtNode("Add method expects 2 arguments", exprList[1])
+    let k = interpret(exprList[2])
+    let v = interpret(exprList[3])
+
+    let valuePair: TablePair = (k, v)
+    value.add(hashCirruValue(k), valuePair)
+    return CirruValue(kind: crValueTable, tableVal: value)
+
+  of "del":
+    if exprList.len != 3:
+      raiseInterpretExceptionAtNode("Del method expects 1 argument", exprList[1])
+    let k = interpret(exprList[2])
+    value.del(hashCirruValue(k))
+    return CirruValue(kind: crValueTable, tableVal: value)
+
+  else:
+    raiseInterpretExceptionAtNode("Unknown method", exprList[1])

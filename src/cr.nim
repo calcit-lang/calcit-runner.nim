@@ -52,7 +52,7 @@ proc interpret(expr: CirruNode): CirruValue =
         of ";":
           return evalComment()
         else:
-          raiseInterpretException(fmt"Unknown {head.text}", head.line, head.column)
+          raiseInterpretException(fmt"Unknown head {head.text}", head.line, head.column)
       else:
         let headValue = interpret(expr.list[0])
         case headValue.kind:
@@ -62,6 +62,9 @@ proc interpret(expr: CirruNode): CirruValue =
         of crValueArray:
           var value = headValue.arrayVal
           return callArrayMethod(value, expr.list, interpret)
+        of crValueTable:
+          var value = headValue.tableVal
+          return callTableMethod(value, expr.list, interpret)
         else:
           echo "TODO"
           quit 1
