@@ -186,6 +186,8 @@ proc callArrayMethod*(value: var seq[CirruValue], exprList: seq[CirruNode], inte
     return evalArraySlice(value, exprList, interpret)
   of "concat":
     return evalArrayConcat(value, exprList, interpret)
+  of "len":
+    return CirruValue(kind: crValueInt, intVal: value.len())
   else:
     raiseInterpretExceptionAtNode("Unknown method", exprList[1])
 
@@ -231,5 +233,22 @@ proc callTableMethod*(value: var Table[Hash, TablePair], exprList: seq[CirruNode
     value.del(hashCirruValue(k))
     return CirruValue(kind: crValueTable, tableVal: value)
 
+  of "len":
+    if exprList.len != 2:
+      raiseInterpretExceptionAtNode("Count method expects 0 argument", exprList[1])
+    return CirruValue(kind: crValueInt, intVal: value.len())
+
+  else:
+    raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+
+proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  if exprList.len < 2:
+    raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
+  if exprList[1].kind == cirruSeq:
+    raiseInterpretExceptionAtNode("Expression not supported for methods", exprList[1])
+
+  case exprList[1].text
+  of "len":
+    return CirruValue(kind: crValueInt, intVal: value.len())
   else:
     raiseInterpretExceptionAtNode("Unknown method", exprList[1])

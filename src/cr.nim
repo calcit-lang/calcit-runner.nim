@@ -52,7 +52,13 @@ proc interpret(expr: CirruNode): CirruValue =
         of ";":
           return evalComment()
         else:
-          raiseInterpretException(fmt"Unknown head {head.text}", head.line, head.column)
+          let value = interpret(head)
+          case value.kind
+          of crValueString:
+            var value = value.stringVal
+            return callStringMethod(value, expr.list, interpret)
+          else:
+            raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
       else:
         let headValue = interpret(expr.list[0])
         case headValue.kind:
