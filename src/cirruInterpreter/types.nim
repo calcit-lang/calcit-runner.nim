@@ -65,7 +65,7 @@ proc toString*(val: CirruValue): string =
     of crValueString: escape(val.stringVal)
     of crValueArray: fromArrayToString(val.arrayVal)
     of crValueTable: fromTableToString(val.tableVal)
-    else: "CirruValue"
+    else: "::CirruValue::"
 
 proc hashCirruValue*(value: CirruValue): Hash =
   case value.kind

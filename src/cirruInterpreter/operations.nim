@@ -12,6 +12,7 @@ import ./helpers
 import terminal
 import tables
 import hashes
+import json
 
 type fnInterpret = proc(expr: CirruNode): CirruValue
 
@@ -252,3 +253,33 @@ proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInt
     return CirruValue(kind: crValueInt, intVal: value.len())
   else:
     raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+
+proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  if exprList.len != 2:
+    raiseInterpretExceptionAtNode("load-json requires relative path to json file", exprList[0])
+  let filePath = interpret(exprList[1])
+  if filePath.kind != crValueString:
+    raiseInterpretExceptionAtNode("load-json requires path in string", exprList[1])
+  let content = readFile(filePath.stringVal)
+  try:
+    let jsonData = parseJson(content)
+    echo jsonData
+    return valueFromJson(jsonData)
+  except JsonParsingError as e:
+    echo "Failed to parse"
+    raiseInterpretExceptionAtNode("Failed to parse file", exprList[1])
+
+proc evalType*(exprList: seq[CirruNode], interpret: fnInterpret): CirruValue =
+  if exprList.len != 2:
+    raiseInterpretExceptionAtNode("type gets 1 argument", exprList[0])
+  let v = interpret(exprList[1])
+  case v.kind
+    of crValueNil: CirruValue(kind: crValueString, stringVal: "nil")
+    of crValueInt: CirruValue(kind: crValueString, stringVal: "int")
+    of crValueFloat: CirruValue(kind: crValueString, stringVal: "float")
+    of crValueString: CirruValue(kind: crValueString, stringVal: "string")
+    of crValueBool: CirruValue(kind: crValueString, stringVal: "bool")
+    of crValueArray: CirruValue(kind: crValueString, stringVal: "array")
+    of crValueTable: CirruValue(kind: crValueString, stringVal: "table")
+    of crValueFn: CirruValue(kind: crValueString, stringVal: "fn")
+    else: CirruValue(kind: crValueString, stringVal: "unknown")

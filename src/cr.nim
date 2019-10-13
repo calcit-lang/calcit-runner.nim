@@ -33,7 +33,7 @@ proc interpret(expr: CirruNode): CirruValue =
       case head.kind
       of cirruString:
         case head.text
-        of "println":
+        of "println", "echo":
           echo expr.list[1..^1].map(interpret).map(toString).join(" ")
         of "+":
           return evalAdd(expr.list, interpret)
@@ -51,6 +51,10 @@ proc interpret(expr: CirruNode): CirruValue =
           return evalWriteFile(expr.list, interpret)
         of ";":
           return evalComment()
+        of "load-json":
+          return evalLoadJson(expr.list, interpret)
+        of "type-of":
+          return evalType(expr.list, interpret)
         else:
           let value = interpret(head)
           case value.kind
