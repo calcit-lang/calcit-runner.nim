@@ -1,24 +1,24 @@
 
-println 1 2
+echo 1 2
 
-println (+ 1 2)
+echo (+ 1 2)
 
-println (-)
+echo (-)
 
-println (- 10)
+echo (- 10)
 
-println (- 10 2)
+echo (- 10 2)
 
-println true false
+echo true false
 
-println (if true 100 0)
+echo (if true 100 0)
 
-println (if false 100 0)
+echo (if false 100 0)
 
-println |STR "\"string with space"
+echo |STR "\"string with space"
 
-println (read-file |build.sh)
+echo (read-file |build.sh)
 
 ; write-file |test.text "|test data 4n"
 
-println (|demo len)
+echo (|demo len)

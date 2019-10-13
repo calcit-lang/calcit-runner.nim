@@ -1,0 +1,20 @@
+
+{
+  "arr": [
+    1,
+    2,
+    3
+  ],
+  "obj": {
+    "a": 1
+  },
+  "bool": false,
+  "num": 2,
+  "str": "random JSON",
+  "mixed": [
+    {
+      "a": 1,
+      "b": false
+    }
+  ]
+}
