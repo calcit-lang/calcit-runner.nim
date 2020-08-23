@@ -1,18 +1,15 @@
 
-import os
-import re
-import cirruParser
-import sequtils
-from strutils import join, parseInt
-import math
 import strformat
 import system
-import ./types
-import ./helpers
-import terminal
 import tables
 import hashes
 import json
+import terminal
+
+import cirruParser
+
+import ./types
+import ./helpers
 
 type fnInterpret = proc(expr: CirruNode): CirruValue
 

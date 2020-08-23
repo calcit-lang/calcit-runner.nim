@@ -1,15 +1,15 @@
 
 import strutils
-import sequtils, sugar
+import sequtils
 import tables
 import hashes
 import strformat
 
-type CirruInterpretError* = ref object of Exception
+type CirruInterpretError* = ref object of ValueError
   line*: int
   column*: int
 
-type CirruCommandError* = Exception
+type CirruCommandError* = ValueError
 
 type
   CirruValueKind* = enum
