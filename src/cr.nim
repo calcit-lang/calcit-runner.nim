@@ -4,14 +4,17 @@ import re
 import cirruParser
 import sequtils
 from strutils import join, parseInt
-import math
 import strformat
-import cirruInterpreter/types
-import cirruInterpreter/operations
-import cirruInterpreter/helpers
 import osproc
 import streams
 import terminal
+
+import cirruEdn
+
+import cirruInterpreter/types
+import cirruInterpreter/operations
+import cirruInterpreter/helpers
+
 
 proc interpret(expr: CirruNode): CirruValue =
   if expr.kind == cirruString:
@@ -88,7 +91,8 @@ proc evalFile(sourcePath: string): void =
     of cirruString:
       raise newException(CirruCommandError, "Call eval with code")
     of cirruSeq:
-      discard program.list.mapIt(interpret(it))
+      # discard program.list.mapIt(interpret(it))
+      echo "doing nothing"
 
   except CirruParseError as e:
     setForegroundColor(fgRed)
@@ -107,8 +111,29 @@ proc evalFile(sourcePath: string): void =
     echo "Failed to run command"
     raise e
 
-proc watchFile(sourcePath: string): void =
-  let child = startProcess("/usr/local/bin/fswatch", "", [sourcePath])
+let snapshotFile = "example/compact.cirru"
+let incrementFile = "example/.compact-inc.cirru"
+
+var snapshot: int = 0
+
+proc loadSnapshot(): void =
+  let content = readFile snapshotFile
+  let initialData = parseEdnFromStr content
+
+  echo "loaded", $initialData
+
+proc evalSnapshot(): void =
+  echo "evaling", snapshot
+
+proc loadChanges(): void =
+  let content = readFile incrementFile
+  let changes = parseEdnFromStr content
+  echo "TODO changes", $changes
+
+proc watchFile(): void =
+  if not existsFile(incrementFile):
+    writeFile incrementFile, "{}"
+  let child = startProcess("/usr/local/bin/fswatch", "", [incrementFile])
   let sub = outputStream(child)
   while true:
     let line = readLine(sub)
@@ -117,8 +142,7 @@ proc watchFile(sourcePath: string): void =
     echo "\n-------- file change --------\n"
     resetAttributes()
 
-    # TODO, tell which file to reload
-    evalFile(sourcePath)
+    loadChanges()
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
@@ -126,19 +150,10 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main(): void =
-  case paramCount()
-  of 0:
-    echo "No file to eval!"
-  of 1:
-    let sourcePath = paramStr(1)
-    evalFile(sourcePath)
+  loadSnapshot()
+  evalSnapshot()
 
-    setControlCHook(handleControl)
-
-    watchFile(sourcePath)
-
-  else:
-    echo "Not sure"
-
+  setControlCHook(handleControl)
+  watchFile()
 
 main()
