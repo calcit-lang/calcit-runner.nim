@@ -1,14 +1,15 @@
 
 import os
 import re
-import cirruParser
 import sequtils
 from strutils import join, parseInt
 import strformat
 import osproc
 import streams
 import terminal
+import tables
 
+import cirruParser
 import cirruEdn
 
 import cirruInterpreter/types
@@ -111,16 +112,88 @@ proc evalFile(sourcePath: string): void =
     echo "Failed to run command"
     raise e
 
+type
+  SourceKind* = enum
+    sourceStr,
+    sourceSeq
+
+  SourceNode* = object
+    case kind*: SourceKind
+    of sourceStr:
+      text*: string
+    of sourceSeq:
+      list*: seq[SourceNode]
+
+type FileSource = object
+  ns: SourceNode
+  run: SourceNode
+  defs: Table[string, SourceNode]
+
+var currentPackage: string
+var compactFiles = initTable[string, FileSource]()
+
 let snapshotFile = "example/compact.cirru"
 let incrementFile = "example/.compact-inc.cirru"
 
 var snapshot: int = 0
 
+proc getSourceNode(v: CirruEdnValue): SourceNode =
+  case v.kind:
+  of crEdnString: return SourceNode(kind: sourceStr, text: v.stringVal)
+  of crEdnVector:
+    return SourceNode(kind: sourceSeq, list: v.vectorVal.map(getSourceNode))
+  of crEdnList:
+    return SourceNode(kind: sourceSeq, list: v.listVal.map(getSourceNode))
+  else:
+    raise newException(ValueError, "TODO")
+
+
+proc extractFile(v: CirruEdnValue): FileSource =
+  if v.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+  var file: FileSource
+  let ns = v.mapVal[crEdn("ns", true)]
+  file.ns = getSourceNode(ns)
+
+  let run = v.mapVal[crEdn("proc", true)]
+  file.run = getSourceNode(run)
+
+  let defs = v.mapVal[crEdn("defs", true)]
+  if defs.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+
+  for name, def in defs.mapVal:
+    if name.kind != crEdnString:
+      raise newException(ValueError, "TODO")
+    file.defs[name.stringVal] = getSourceNode(def)
+
+  return file
+
 proc loadSnapshot(): void =
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
 
-  echo "loaded", $initialData
+  if initialData.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+
+  let package = initialData.mapVal[crEdn("package", true)]
+  if package.kind != crEdnString:
+    raise newException(ValueError, "TODO")
+  currentPackage = package.stringVal
+
+  let files = initialData.mapVal[crEdn("files", true)]
+
+  if files.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+  for k, v in files.mapVal:
+    if k.kind != crEdnString:
+      raise newException(ValueError, "TODO")
+    compactFiles[k.stringVal] = extractFile(v)
+
+  echo "loaded"
+  echo compactFiles
+  echo ""
+
 
 proc evalSnapshot(): void =
   echo "evaling", snapshot
