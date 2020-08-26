@@ -112,6 +112,18 @@ proc evalFile(sourcePath: string): void =
     echo "Failed to run command"
     raise e
 
+
+type
+  MaybeNilKind = enum
+    beNil,
+    beSomething
+  MaybeNil[T] = ref object
+    case kind: MaybeNilKind
+    of beNil:
+      discard
+    of beSomething:
+      value: T
+
 type
   SourceKind* = enum
     sourceStr,
@@ -125,8 +137,8 @@ type
       list*: seq[SourceNode]
 
 type FileSource = object
-  ns: SourceNode
-  run: SourceNode
+  ns: MaybeNil[SourceNode]
+  run: MaybeNil[SourceNode]
   defs: Table[string, SourceNode]
 
 var currentPackage: string
@@ -152,11 +164,18 @@ proc extractFile(v: CirruEdnValue): FileSource =
   if v.kind != crEdnMap:
     raise newException(ValueError, "TODO")
   var file: FileSource
-  let ns = v.mapVal[crEdn("ns", true)]
-  file.ns = getSourceNode(ns)
 
-  let run = v.mapVal[crEdn("proc", true)]
-  file.run = getSourceNode(run)
+  if v.mapVal.hasKey(crEdn("ns", true)):
+    let ns = v.mapVal[crEdn("ns", true)]
+    file.ns = MaybeNil[SourceNode](kind: beSomething, value: getSourceNode(ns))
+  else:
+    file.ns = MaybeNil[SourceNode](kind: beNil)
+
+  if v.mapVal.hasKey(crEdn("proc", true)):
+    let run = v.mapVal[crEdn("proc", true)]
+    file.run = MaybeNil[SourceNode](kind: beSomething, value: getSourceNode(run))
+  else:
+    file.run = MaybeNil[SourceNode](kind: beNil)
 
   let defs = v.mapVal[crEdn("defs", true)]
   if defs.kind != crEdnMap:

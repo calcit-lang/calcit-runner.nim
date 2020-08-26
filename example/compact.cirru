@@ -5,5 +5,5 @@
       :defs $ {}
         |main! $ [] |defn |main! ([]) ([] |println "|\"main loaded.")
         |echo $ [] |defn |echo ([]) ([] |println "|\"this is just echo2")
-      :proc $ []
+
       :configs $ {}
