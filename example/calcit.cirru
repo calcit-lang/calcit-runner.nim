@@ -52,9 +52,37 @@
               |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598439771227)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598439772858) (:text |echo) (:id |3AhepAztbleaf)
-                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598439773656) (:text "|\"1") (:id |LlnVFnhQZE)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458541879) (:text "|\"2") (:id |LlnVFnhQZE)
                 :id |3AhepAztb
             :id |1m9te43DL0
+          |emit $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458545546)
+            :data $ {}
+              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458545546) (:text |defn) (:id |-UzJpbMobj)
+              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458545546) (:text |emit) (:id |xad59A9eXH)
+              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458545546) (:data $ {}) (:id |a830IitRnD)
+            :id |a6HJsqd92r
         :proc $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598439760216) (:data $ {}) (:id |zK3CBIO3Od)
+        :configs $ {}
+      |app.core $ {}
+        :ns $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458028669)
+          :data $ {}
+            |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458028669) (:text |ns) (:id |wJ5tit63Z-)
+            |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458028669) (:text |app.core) (:id |h9TpxFMeye)
+          :id |hpqPPylJUq
+        :defs $ {}
+          |cute $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458033737)
+            :data $ {}
+              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458033737) (:text |defn) (:id |DYq9PP9haU)
+              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458033737) (:text |cute) (:id |dKzwGyyWPc)
+              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458033737) (:data $ {}) (:id |nk-McD8bdm)
+            :id |5hBfFjt35y
+        :proc $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458028669)
+          :data $ {}
+            |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598458037785)
+              :data $ {}
+                |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458038583) (:text |echo) (:id |SpDaa4XSM)
+                |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598458038881) (:text |1) (:id |juXF0Yy5wz)
+              :id |gQBeU6kjDN
+          :id |WPW45J9oqC
         :configs $ {}
   :configs $ {} (:output |src) (:port 6001) (:extension |.cljs) (:storage-key |calcit.cirru) (:compact-output? true)

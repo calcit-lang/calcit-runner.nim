@@ -230,6 +230,10 @@ proc loadSnapshot(): void =
 proc evalSnapshot(): void =
   echo "evaling", snapshot
 
+proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
+  echo "extracting... ", changedFile
+  return FileChangeDetail()
+
 proc loadChanges(): void =
   let content = readFile incrementFile
   let changesInfo = parseEdnFromStr content
@@ -253,6 +257,33 @@ proc loadChanges(): void =
     changedData.removed = MaybeNil[HashSet[string]](kind: beSomething, value: toHashSet(names))
   else:
     changedData.removed = MaybeNil[HashSet[string]](kind: beNil)
+
+  if changesInfo.mapVal.hasKey(crEdn("added", true)):
+    var newFiles = Table[string, FileSource]()
+    let added = changesInfo.mapVal[crEdn("added", true)]
+    if added.kind != crEdnMap:
+      raise newException(ValueError, "TODO")
+    for k, v in added.mapVal:
+      if k.kind != crEdnString:
+        raise newException(ValueError, "TODO")
+      newFiles[k.stringVal] = extractFile(v)
+    changedData.added = MaybeNil[Table[string, FileSource]](kind: beSomething, value: newFiles)
+  else:
+    changedData.added = MaybeNil[Table[string, FileSource]](kind: beNil)
+
+  if changesInfo.mapVal.hasKey(crEdn("changed", true)):
+    let changed = changesInfo.mapVal[crEdn("changed", true)]
+    if changed.kind != crEdnMap:
+      raise newException(ValueError, "TODO")
+
+    var dict = Table[string, FileChangeDetail]()
+    for k, v in changed.mapVal:
+      if k.kind != crEdnString:
+        raise newException(ValueError, "TODO")
+      dict[k.stringVal] = extractFileChangeDetail(v)
+    changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beSomething, value: dict)
+  else:
+    changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beNil)
 
   echo "TODO changes", changedData
 
