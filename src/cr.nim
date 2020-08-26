@@ -8,6 +8,7 @@ import osproc
 import streams
 import terminal
 import tables
+import sets
 
 import cirruParser
 import cirruEdn
@@ -141,6 +142,18 @@ type FileSource = object
   run: MaybeNil[SourceNode]
   defs: Table[string, SourceNode]
 
+type FileChangeDetail = object
+  ns: MaybeNil[SourceNode]
+  run: MaybeNil[SourceNode]
+  removedDefs: MaybeNil[HashSet[string]]
+  addedDefs: MaybeNil[Table[string, SourceNode]]
+  changedDefs: MaybeNil[Table[string, SourceNode]]
+
+type FileChanges = object
+  removed: MaybeNil[HashSet[string]]
+  added: MaybeNil[Table[string, FileSource]]
+  changed: MaybeNil[Table[string, FileChangeDetail]]
+
 var currentPackage: string
 var compactFiles = initTable[string, FileSource]()
 
@@ -219,8 +232,29 @@ proc evalSnapshot(): void =
 
 proc loadChanges(): void =
   let content = readFile incrementFile
-  let changes = parseEdnFromStr content
-  echo "TODO changes", $changes
+  let changesInfo = parseEdnFromStr content
+
+  var changedData = FileChanges()
+
+  if changesInfo.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+
+  if changesInfo.mapVal.hasKey(crEdn("removed", true)):
+    let namesInfo = changesInfo.mapVal[crEdn("removed", true)]
+    if namesInfo.kind != crEdnSet:
+      raise newException(ValueError, "TODO")
+
+    let names = namesInfo.map(proc (name: CirruEdnValue): string =
+      if name.kind != crEdnString:
+        raise newException(ValueError, "TODO")
+      return name.stringVal
+    )
+
+    changedData.removed = MaybeNil[HashSet[string]](kind: beSomething, value: toHashSet(names))
+  else:
+    changedData.removed = MaybeNil[HashSet[string]](kind: beNil)
+
+  echo "TODO changes", changedData
 
 proc watchFile(): void =
   if not existsFile(incrementFile):
