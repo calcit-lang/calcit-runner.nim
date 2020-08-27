@@ -37,6 +37,31 @@ type
     of crValueTable: tableVal*: Table[Hash, TablePair]
     else: xVal*: string
 
+type
+  MaybeNilKind* = enum
+    beNil,
+    beSomething
+
+  MaybeNil*[T] = ref object
+    case kind*: MaybeNilKind
+    of beNil:
+      discard
+    of beSomething:
+      value*: T
+
+type
+  SourceKind* = enum
+    sourceStr,
+    sourceSeq
+
+  SourceNode* = object
+    case kind*: SourceKind
+    of sourceStr:
+      text*: string
+    of sourceSeq:
+      list*: seq[SourceNode]
+
+
 proc toString*(val: CirruValue): string
 
 proc fromArrayToString(children: seq[CirruValue]): string =

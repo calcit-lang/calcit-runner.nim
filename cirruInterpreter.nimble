@@ -13,7 +13,7 @@ binDir        = "out/"
 # Dependencies
 
 requires "nim >= 0.20.0"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.1.0"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.1.1"
 
 
 task cr, "Try cr command":
