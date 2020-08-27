@@ -172,6 +172,18 @@ proc getSourceNode(v: CirruEdnValue): SourceNode =
   else:
     raise newException(ValueError, "TODO")
 
+proc extractDefs(defs: CirruEdnValue): Table[string, SourceNode] =
+  result = initTable[string, SourceNode]()
+
+  if defs.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+
+  for name, def in defs.mapVal:
+    if name.kind != crEdnString:
+      raise newException(ValueError, "TODO")
+    result[name.stringVal] = getSourceNode(def)
+
+  return result
 
 proc extractFile(v: CirruEdnValue): FileSource =
   if v.kind != crEdnMap:
@@ -191,13 +203,7 @@ proc extractFile(v: CirruEdnValue): FileSource =
     file.run = MaybeNil[SourceNode](kind: beNil)
 
   let defs = v.mapVal[crEdn("defs", true)]
-  if defs.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
-
-  for name, def in defs.mapVal:
-    if name.kind != crEdnString:
-      raise newException(ValueError, "TODO")
-    file.defs[name.stringVal] = getSourceNode(def)
+  file.defs = extractDefs(defs)
 
   return file
 
@@ -230,7 +236,54 @@ proc loadSnapshot(): void =
 proc evalSnapshot(): void =
   echo "evaling", snapshot
 
+proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
+  if xs.kind != crEdnSet:
+    raise newException(ValueError, "parameter is not a EDN set, can't extract")
+
+  let values = xs.map(proc (x: CirruEdnValue): string =
+    if x.kind != crEdnString:
+      raise newException(ValueError, "expects strings in set")
+    return x.stringVal
+  )
+
+  return toHashSet(values)
+
 proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
+  if changedFile.kind != crEdnMap:
+    raise newException(ValueError, "TODO")
+
+  var changesDetail: FileChangeDetail
+
+  if changedFile.mapVal.hasKey(crEdn("ns", true)):
+    let data = changedFile.mapVal[crEdn("ns", true)]
+    changesDetail.ns = MaybeNil[SourceNode](kind: beSomething, value: getSourceNode(data))
+  else:
+    changesDetail.ns = MaybeNil[SourceNode](kind: beNil)
+
+  if changedFile.mapVal.hasKey(crEdn("proc", true)):
+    let data = changedFile.mapVal[crEdn("proc", true)]
+    changesDetail.run = MaybeNil[SourceNode](kind: beSomething, value: getSourceNode(data))
+  else:
+    changesDetail.run = MaybeNil[SourceNode](kind: beNil)
+
+  if changedFile.mapVal.hasKey(crEdn("removed-defs", true)):
+    let data = changedFile.mapVal[crEdn("removed-defs", true)]
+    changesDetail.removedDefs = MaybeNil[HashSet[string]](kind: beSomething, value: extractStringSet(data))
+  else:
+    changesDetail.removedDefs = MaybeNil[HashSet[string]](kind: beNil)
+
+  if changedFile.mapVal.hasKey(crEdn("added-defs", true)):
+    let data = changedFile.mapVal[crEdn("added-defs", true)]
+    changesDetail.addedDefs = MaybeNil[Table[string, SourceNode]](kind: beSomething, value: extractDefs(data))
+  else:
+    changesDetail.addedDefs = MaybeNil[Table[string, SourceNode]](kind: beNil)
+
+  if changedFile.mapVal.hasKey(crEdn("changed-defs", true)):
+    let data = changedFile.mapVal[crEdn("changed-defs", true)]
+    changesDetail.changedDefs = MaybeNil[Table[string, SourceNode]](kind: beSomething, value: extractDefs(data))
+  else:
+    changesDetail.changedDefs = MaybeNil[Table[string, SourceNode]](kind: beNil)
+
   echo "extracting... ", changedFile
   return FileChangeDetail()
 
@@ -245,16 +298,7 @@ proc loadChanges(): void =
 
   if changesInfo.mapVal.hasKey(crEdn("removed", true)):
     let namesInfo = changesInfo.mapVal[crEdn("removed", true)]
-    if namesInfo.kind != crEdnSet:
-      raise newException(ValueError, "TODO")
-
-    let names = namesInfo.map(proc (name: CirruEdnValue): string =
-      if name.kind != crEdnString:
-        raise newException(ValueError, "TODO")
-      return name.stringVal
-    )
-
-    changedData.removed = MaybeNil[HashSet[string]](kind: beSomething, value: toHashSet(names))
+    changedData.removed = MaybeNil[HashSet[string]](kind: beSomething, value: extractStringSet(namesInfo))
   else:
     changedData.removed = MaybeNil[HashSet[string]](kind: beNil)
 
