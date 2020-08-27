@@ -131,7 +131,7 @@ proc watchFile(): void =
     echo "\n-------- file change --------\n"
     resetAttributes()
 
-    loadChanges()
+    echo loadChanges()
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =

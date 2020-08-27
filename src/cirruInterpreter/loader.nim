@@ -38,24 +38,24 @@ proc getSourceNode(v: CirruEdnValue): SourceNode =
   of crEdnList:
     return SourceNode(kind: sourceSeq, list: v.listVal.map(getSourceNode))
   else:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "Unexpected node for generating source node")
 
 proc extractDefs(defs: CirruEdnValue): Table[string, SourceNode] =
   result = initTable[string, SourceNode]()
 
   if defs.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
 
   for name, def in defs.mapVal:
     if name.kind != crEdnString:
-      raise newException(ValueError, "TODO")
+      raise newException(ValueError, "expects a string")
     result[name.stringVal] = getSourceNode(def)
 
   return result
 
 proc extractFile(v: CirruEdnValue): FileSource =
   if v.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
   var file: FileSource
 
   if v.mapVal.hasKey(crEdn("ns", true)):
@@ -80,20 +80,20 @@ proc loadSnapshot*(): void =
   let initialData = parseEdnFromStr content
 
   if initialData.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
 
   let package = initialData.mapVal[crEdn("package", true)]
   if package.kind != crEdnString:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a string")
   currentPackage = package.stringVal
 
   let files = initialData.mapVal[crEdn("files", true)]
 
   if files.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
   for k, v in files.mapVal:
     if k.kind != crEdnString:
-      raise newException(ValueError, "TODO")
+      raise newException(ValueError, "expects a string")
     compactFiles[k.stringVal] = extractFile(v)
 
   echo "loaded"
@@ -115,7 +115,7 @@ proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
 
 proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
   if changedFile.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
 
   var changesDetail: FileChangeDetail
 
@@ -151,14 +151,14 @@ proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
 
   return changesDetail
 
-proc loadChanges*(): void =
+proc loadChanges*(): FileChanges =
   let content = readFile incrementFile
   let changesInfo = parseEdnFromStr content
 
   var changedData = FileChanges()
 
   if changesInfo.kind != crEdnMap:
-    raise newException(ValueError, "TODO")
+    raise newException(ValueError, "expects a map")
 
   if changesInfo.mapVal.hasKey(crEdn("removed", true)):
     let namesInfo = changesInfo.mapVal[crEdn("removed", true)]
@@ -170,10 +170,10 @@ proc loadChanges*(): void =
     var newFiles = Table[string, FileSource]()
     let added = changesInfo.mapVal[crEdn("added", true)]
     if added.kind != crEdnMap:
-      raise newException(ValueError, "TODO")
+      raise newException(ValueError, "expects a map")
     for k, v in added.mapVal:
       if k.kind != crEdnString:
-        raise newException(ValueError, "TODO")
+        raise newException(ValueError, "expects a string")
       newFiles[k.stringVal] = extractFile(v)
     changedData.added = MaybeNil[Table[string, FileSource]](kind: beSomething, value: newFiles)
   else:
@@ -182,15 +182,15 @@ proc loadChanges*(): void =
   if changesInfo.mapVal.hasKey(crEdn("changed", true)):
     let changed = changesInfo.mapVal[crEdn("changed", true)]
     if changed.kind != crEdnMap:
-      raise newException(ValueError, "TODO")
+      raise newException(ValueError, "expects a map")
 
     var dict = Table[string, FileChangeDetail]()
     for k, v in changed.mapVal:
       if k.kind != crEdnString:
-        raise newException(ValueError, "TODO")
+        raise newException(ValueError, "expects a string")
       dict[k.stringVal] = extractFileChangeDetail(v)
     changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beSomething, value: dict)
   else:
     changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beNil)
 
-  echo "TODO changes", changedData
+  return changedData
