@@ -2,7 +2,7 @@
 import os
 import re
 import sequtils
-from strutils import join, parseInt
+from strutils import join, parseFloat, parseInt
 import strformat
 import osproc
 import streams
@@ -16,19 +16,18 @@ import cirruInterpreter/operations
 import cirruInterpreter/helpers
 import cirruInterpreter/loader
 
-
-proc interpret(expr: CirruNode): CirruValue =
+proc interpret(expr: CirruNode): CirruEdnValue =
   if expr.kind == cirruString:
     if match(expr.text, re"\d+"):
-      return CirruValue(kind: crValueInt, intVal: parseInt(expr.text))
+      return CirruEdnValue(kind: crEdnNumber, numberVal: parseFloat(expr.text))
     elif expr.text == "true":
-      return CirruValue(kind: crValueBool, boolVal: true)
+      return CirruEdnValue(kind: crEdnBool, boolVal: true)
     elif expr.text == "false":
-      return CirruValue(kind: crValueBool, boolVal: false)
+      return CirruEdnValue(kind: crEdnBool, boolVal: false)
     elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
-      return CirruValue(kind: crValueString, stringVal: expr.text[1..^1])
+      return CirruEdnValue(kind: crEdnString, stringVal: expr.text[1..^1])
     else:
-      return CirruValue(kind: crValueString, stringVal: expr.text)
+      return CirruEdnValue(kind: crEdnString, stringVal: expr.text)
   else:
     if expr.list.len == 0:
       return
@@ -38,7 +37,7 @@ proc interpret(expr: CirruNode): CirruValue =
       of cirruString:
         case head.text
         of "println", "echo":
-          echo expr.list[1..^1].map(interpret).map(toString).join(" ")
+          echo expr.list[1..^1].map(interpret).map(`$`).join(" ")
         of "+":
           return evalAdd(expr.list, interpret)
         of "-":
@@ -62,7 +61,7 @@ proc interpret(expr: CirruNode): CirruValue =
         else:
           let value = interpret(head)
           case value.kind
-          of crValueString:
+          of crEdnString:
             var value = value.stringVal
             return callStringMethod(value, expr.list, interpret)
           else:
@@ -70,14 +69,14 @@ proc interpret(expr: CirruNode): CirruValue =
       else:
         let headValue = interpret(expr.list[0])
         case headValue.kind:
-        of crValueFn:
+        of crEdnFn:
           echo "NOT implemented fn"
           quit 1
-        of crValueArray:
-          var value = headValue.arrayVal
+        of crEdnVector:
+          var value = headValue.vectorVal
           return callArrayMethod(value, expr.list, interpret)
-        of crValueTable:
-          var value = headValue.tableVal
+        of crEdnMap:
+          var value = headValue.mapVal
           return callTableMethod(value, expr.list, interpret)
         else:
           echo "TODO"

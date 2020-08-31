@@ -12,32 +12,6 @@ type CirruInterpretError* = ref object of ValueError
 type CirruCommandError* = ValueError
 
 type
-  CirruValueKind* = enum
-    crValueNil,
-    crValueBool,
-    crValueInt,
-    crValueFloat,
-    crValueString,
-    crValueArray,
-    crValueSeq,
-    crValueTable,
-    crValueFn
-
-  TablePair* = tuple[key: CirruValue, value: CirruValue]
-
-  CirruValue* = object
-    case kind*: CirruValueKind
-    of crValueNil: nilVal: bool
-    of crValueBool: boolVal*: bool
-    of crValueInt: intVal*: int
-    of crValueFloat: floatVal*: float
-    of crValueString: stringVal*: string
-    of crValueFn: fnVal*: proc()
-    of crValueArray: arrayVal*: seq[CirruValue]
-    of crValueTable: tableVal*: Table[Hash, TablePair]
-    else: xVal*: string
-
-type
   MaybeNilKind* = enum
     beNil,
     beSomething
@@ -48,53 +22,3 @@ type
       discard
     of beSomething:
       value*: T
-
-proc toString*(val: CirruValue): string
-
-proc fromArrayToString(children: seq[CirruValue]): string =
-  return "[" & children.mapIt(toString(it)).join(" ") & "]"
-
-proc fromTableToString(children: Table[Hash, TablePair]): string =
-  let size = children.len()
-  if size > 20:
-    return "{...(20)...}"
-  var tableStr = "{"
-  for k, child in pairs(children):
-    # TODO, need a way to get original key
-    tableStr = tableStr & toString(child.key) & " " & toString(child.value) & ", "
-  tableStr = tableStr & "}"
-  return tableStr
-
-proc toString*(val: CirruValue): string =
-  case val.kind:
-    of crValueInt: $(val.intVal)
-    of crValueBool:
-      if val.boolVal:
-        "true"
-      else:
-        "false"
-    of crValueFloat: $(val.floatVal)
-    of crValueString: escape(val.stringVal)
-    of crValueArray: fromArrayToString(val.arrayVal)
-    of crValueTable: fromTableToString(val.tableVal)
-    else: "::CirruValue::"
-
-proc hashCirruValue*(value: CirruValue): Hash =
-  case value.kind
-    of crValueInt:
-      return hash(value.intVal)
-    of crValueFloat:
-      return hash(value.floatVal)
-    of crValueString:
-      return hash(value.stringVal)
-    of crValueNil:
-      # TODO not safe enough
-      return hash("")
-    of crValueBool:
-      # TODO not safe enough
-      return hash(fmt"{value.boolVal}")
-    of crValueArray:
-      return hash("TODO")
-    else:
-      # TODO
-      return hash("TODO")
