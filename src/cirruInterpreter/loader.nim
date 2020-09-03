@@ -1,5 +1,6 @@
 import tables
 import sets
+import json
 
 import cirruEdn
 import cirruParser
@@ -25,21 +26,22 @@ type FileChanges = object
   changed: MaybeNil[Table[string, FileChangeDetail]]
 
 var currentPackage*: string
-var compactFiles* = initTable[string, FileSource]()
 
 let snapshotFile* = "example/compact.cirru"
 let incrementFile* = "example/.compact-inc.cirru"
 
+proc `%`*(xs: HashSet[string]): JsonNode =
+  var list: seq[JsonNode] = @[]
+  for x in xs:
+    list.add JsonNode(kind: JString, str: x)
+  JsonNode(kind: JArray, elems: list)
 
 proc getSourceNode(v: CirruEdnValue): CirruNode =
-  case v.kind:
-  of crEdnString: return CirruNode(kind: cirruString, text: v.stringVal, line: v.line, column: v.column)
-  of crEdnVector:
-    return CirruNode(kind: cirruSeq, list: v.vectorVal.map(getSourceNode), line: v.line, column: v.column)
-  of crEdnList:
-    return CirruNode(kind: cirruSeq, list: v.listVal.map(getSourceNode), line: v.line, column: v.column)
-  else:
-    raise newException(ValueError, "Unexpected node for generating source node")
+  if v.kind != crEdnQuotedCirru:
+    echo "current node: ", v
+    raise newException(ValueError, "Unexpected quoted cirru node")
+
+  return v.quotedVal
 
 proc extractDefs(defs: CirruEdnValue): Table[string, CirruNode] =
   result = initTable[string, CirruNode]()
@@ -76,9 +78,10 @@ proc extractFile(v: CirruEdnValue): FileSource =
 
   return file
 
-proc loadSnapshot*(): void =
+proc loadSnapshot*(): Table[string, FileSource] =
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
+  var compactFiles = initTable[string, FileSource]()
 
   if initialData.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
@@ -97,9 +100,7 @@ proc loadSnapshot*(): void =
       raise newException(ValueError, "expects a string")
     compactFiles[k.stringVal] = extractFile(v)
 
-  echo "loaded"
-  echo compactFiles
-  echo ""
+  return compactFiles
 
 
 proc extractStringSet(xs: CirruEdnValue): HashSet[string] =

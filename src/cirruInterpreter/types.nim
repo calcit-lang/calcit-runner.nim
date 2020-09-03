@@ -1,10 +1,4 @@
 
-import strutils
-import sequtils
-import tables
-import hashes
-import strformat
-
 type CirruInterpretError* = ref object of ValueError
   line*: int
   column*: int

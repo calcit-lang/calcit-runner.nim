@@ -1,20 +1,27 @@
 
 {} (:package |app)
   :files $ {}
-    |app.main $ {} (:ns $ [] |ns |app.main)
+    |app.main $ {}
+      :ns $ quote (ns app.main)
       :defs $ {}
-        |main! $ [] |defn |main! ([]) ([] |println "|\"main loaded.")
-        |echo $ [] |defn |echo ([]) ([] |println |2)
-      :proc $ []
+        |main! $ quote
+          defn main! () (println "\"main loaded!")
+        |echo $ quote
+          defn echo () (println 2)
+      :proc $ quote ()
       :configs $ {}
-    |app.lib $ {} (:ns $ [] |ns |app.lib)
+    |app.lib $ {}
+      :ns $ quote (ns app.lib)
       :defs $ {}
-        |handle $ [] |defn |handle ([]) ([] |echo "|\"2")
-        |emit $ [] |defn |emit ([])
-      :proc $ []
+        |handle $ quote
+          defn handle () (echo "\"2")
+        |emit $ quote (defn emit $)
+      :proc $ quote ()
       :configs $ {}
-    |app.core $ {} (:ns $ [] |ns |app.core)
+    |app.core $ {}
+      :ns $ quote (ns app.core)
       :defs $ {}
-        |cute $ [] |defn |cute ([])
-      :proc $ [] ([] |echo |1)
+        |cute $ quote (defn cute $)
+      :proc $ quote
+          echo 1
       :configs $ {}

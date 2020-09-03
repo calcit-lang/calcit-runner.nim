@@ -3,6 +3,7 @@ import os
 import re
 import sequtils
 from strutils import join, parseFloat, parseInt
+import json
 import strformat
 import osproc
 import streams
@@ -114,7 +115,6 @@ proc evalFile(sourcePath: string): void =
 
 var snapshot: int = 0
 
-
 proc evalSnapshot(): void =
   echo "evaling", snapshot
 
@@ -130,7 +130,7 @@ proc watchFile(): void =
     echo "\n-------- file change --------\n"
     resetAttributes()
 
-    echo loadChanges()
+    echo %*loadChanges()
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
@@ -138,7 +138,10 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main(): void =
-  loadSnapshot()
+  let files = loadSnapshot()
+
+  echo "Loaded: ", %*files
+
   evalSnapshot()
 
   setControlCHook(handleControl)

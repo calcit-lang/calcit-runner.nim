@@ -21,7 +21,7 @@
               |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598199471640)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598199472456) (:text |println) (:id |VMIjBX-_Mrleaf)
-                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1598371431674) (:text "|\"main loaded.") (:id |9YM-sSKw_-)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599035895562) (:text "|\"main loaded!") (:id |9YM-sSKw_-)
                 :id |VMIjBX-_Mr
             :id |-67uVWVTDb
           |echo $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598199495605)

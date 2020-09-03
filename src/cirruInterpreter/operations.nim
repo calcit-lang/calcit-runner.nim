@@ -259,7 +259,7 @@ proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnVa
   let content = readFile(filePath.stringVal)
   try:
     let jsonData = parseJson(content)
-    return fromJson(jsonData)
+    return jsonData.toCirruEdn()
   except JsonParsingError as e:
     echo "Failed to parse"
     raiseInterpretExceptionAtNode("Failed to parse file", exprList[1])
