@@ -259,7 +259,7 @@ proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnVa
   let content = readFile(filePath.stringVal)
   try:
     let jsonData = parseJson(content)
-    return fromJson(jsonData)
+    return jsonData.toCirruEdn()
   except JsonParsingError as e:
     echo "Failed to parse"
     raiseInterpretExceptionAtNode("Failed to parse file", exprList[1])
@@ -277,3 +277,13 @@ proc evalType*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue 
     of crEdnMap: CirruEdnValue(kind: crEdnString, stringVal: "table")
     of crEdnFn: CirruEdnValue(kind: crEdnString, stringVal: "fn")
     else: CirruEdnValue(kind: crEdnString, stringVal: "unknown")
+
+proc evalDefn*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+  let f = proc(xs: seq[CirruEdnValue], interpret2: fnInterpret): CirruEdnValue =
+    var ret = CirruEdnValue(kind: crEdnNil)
+    for child in exprList[3..^1]:
+      echo "code: ", child
+      ret = interpret(child)
+    return ret
+
+  return CirruEdnValue(kind: crEdnFn, fnVal: f)

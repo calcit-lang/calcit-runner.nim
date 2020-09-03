@@ -1,8 +1,6 @@
 
 import cirruParser
-import tables
-import json
-import hashes
+
 import ./types
 
 proc raiseInterpretException*(msg: string, line, column: int) =
