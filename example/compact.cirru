@@ -5,7 +5,7 @@
       :ns $ quote (ns app.main)
       :defs $ {}
         |main! $ quote
-          defn main! () (println "\"main loaded!")
+          defn main! () (echo $ + 1 2 3 4) (println "\"main loaded!")
         |echo $ quote
           defn echo () (println 2)
       :proc $ quote ()

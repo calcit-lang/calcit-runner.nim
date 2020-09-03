@@ -8,22 +8,22 @@ import cirruParser
 import ./types
 
 
-type FileSource = object
-  ns: MaybeNil[CirruNode]
+type FileSource* = object
+  ns*: MaybeNil[CirruNode]
   run: MaybeNil[CirruNode]
-  defs: Table[string, CirruNode]
+  defs*: Table[string, CirruNode]
 
 type FileChangeDetail = object
-  ns: MaybeNil[CirruNode]
+  ns*: MaybeNil[CirruNode]
   run: MaybeNil[CirruNode]
-  removedDefs: MaybeNil[HashSet[string]]
-  addedDefs: MaybeNil[Table[string, CirruNode]]
-  changedDefs: MaybeNil[Table[string, CirruNode]]
+  removedDefs*: MaybeNil[HashSet[string]]
+  addedDefs*: MaybeNil[Table[string, CirruNode]]
+  changedDefs*: MaybeNil[Table[string, CirruNode]]
 
 type FileChanges = object
-  removed: MaybeNil[HashSet[string]]
-  added: MaybeNil[Table[string, FileSource]]
-  changed: MaybeNil[Table[string, FileChangeDetail]]
+  removed*: MaybeNil[HashSet[string]]
+  added*: MaybeNil[Table[string, FileSource]]
+  changed*: MaybeNil[Table[string, FileChangeDetail]]
 
 var currentPackage*: string
 

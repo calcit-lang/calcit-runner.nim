@@ -8,6 +8,7 @@ import strformat
 import osproc
 import streams
 import terminal
+import tables
 
 import cirruParser
 import cirruEdn
@@ -59,6 +60,8 @@ proc interpret(expr: CirruNode): CirruEdnValue =
           return evalLoadJson(expr.list, interpret)
         of "type-of":
           return evalType(expr.list, interpret)
+        of "defn":
+          return evalDefn(expr.list, interpret)
         else:
           let value = interpret(head)
           case value.kind
@@ -112,11 +115,22 @@ proc evalFile(sourcePath: string): void =
     echo "Failed to run command"
     raise e
 
+var programCode: Table[string, FileSource]
+var programData: Table[string, Table[string, MaybeNil[CirruEdnValue]]]
 
-var snapshot: int = 0
+proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
+  if not programData.hasKey(ns):
+    var newFile: Table[string, MaybeNil[CirruEdnValue]]
+    programData[ns] = newFile
 
-proc evalSnapshot(): void =
-  echo "evaling", snapshot
+  var file = programData[ns]
+
+  if not file.hasKey(def):
+    let code = programCode[ns].defs[def]
+
+    file[def] = MaybeNil[CirruEdnValue](kind: beSomething, value: interpret(code))
+
+  return file[def].value
 
 proc watchFile(): void =
   if not existsFile(incrementFile):
@@ -138,11 +152,17 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main(): void =
-  let files = loadSnapshot()
+  programCode = loadSnapshot()
 
-  echo "Loaded: ", %*files
 
-  evalSnapshot()
+  let entry = getEvaluatedByPath("app.main", "main!")
+
+  if entry.kind != crEdnFn:
+    raise newException(ValueError, "expects a function at app.main/main!")
+
+  let f = entry.fnVal
+  let args: seq[CirruEdnValue] = @[]
+  echo f(args, interpret)
 
   setControlCHook(handleControl)
   watchFile()
