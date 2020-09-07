@@ -132,26 +132,7 @@ proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
 
   return file[def].value
 
-proc watchFile(): void =
-  if not existsFile(incrementFile):
-    writeFile incrementFile, "{}"
-  let child = startProcess("/usr/local/bin/fswatch", "", [incrementFile])
-  let sub = outputStream(child)
-  while true:
-    let line = readLine(sub)
-
-    setForegroundColor(fgCyan)
-    echo "\n-------- file change --------\n"
-    resetAttributes()
-
-    echo %*loadChanges()
-
-# https://rosettacode.org/wiki/Handle_a_signal#Nim
-proc handleControl() {.noconv.} =
-  echo "\nKilled with Control c."
-  quit 0
-
-proc main(): void =
+proc runProgram(): void =
   programCode = loadSnapshot()
 
 
@@ -164,6 +145,28 @@ proc main(): void =
   let args: seq[CirruEdnValue] = @[]
   echo f(args, interpret)
 
+proc watchFile(): void =
+  if not existsFile(incrementFile):
+    writeFile incrementFile, "{}"
+  let child = startProcess("/usr/local/bin/fswatch", "", [incrementFile])
+  let sub = outputStream(child)
+  while true:
+    let line = readLine(sub)
+
+    setForegroundColor(fgCyan)
+    echo "\n-------- file change --------\n"
+    resetAttributes()
+
+    loadChanges(programCode)
+    runProgram()
+
+# https://rosettacode.org/wiki/Handle_a_signal#Nim
+proc handleControl() {.noconv.} =
+  echo "\nKilled with Control c."
+  quit 0
+
+proc main(): void =
+  runProgram()
   setControlCHook(handleControl)
   watchFile()
 

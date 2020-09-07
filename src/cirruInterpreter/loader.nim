@@ -153,7 +153,7 @@ proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
 
   return changesDetail
 
-proc loadChanges*(): FileChanges =
+proc loadChanges*(programData: var Table[string, FileSource]): void =
   let content = readFile incrementFile
   let changesInfo = parseEdnFromStr content
 
@@ -195,4 +195,5 @@ proc loadChanges*(): FileChanges =
   else:
     changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beNil)
 
-  return changedData
+
+  discard changedData
