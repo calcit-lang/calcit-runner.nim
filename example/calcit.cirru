@@ -34,7 +34,10 @@
                         :data $ {}
                           |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599547904668) (:text |+) (:id |bIL3wtmhs)
                           |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599547908464) (:text |4) (:id |xbraPNF3Rl)
+                          |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599548320243) (:text |5) (:id |mQkKSQlJ53)
+                          |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599548343820) (:text |9) (:id |PMmpHrFe9)
                         :id |nq-UNzkAC
+                      |n $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599548333728) (:text |2) (:id |sqzeQxInB3)
                     :id |EwzaYzTu5z
                 :id |6L7X2g79wR
             :id |-67uVWVTDb

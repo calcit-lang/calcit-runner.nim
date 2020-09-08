@@ -6,7 +6,7 @@
       :defs $ {}
         |main! $ quote
           defn main! ()
-            echo $ + 1 (+ 4)
+            echo $ + 1 2 (+ 4 5 9)
             println "\"Loaded program!"
         |demo $ quote
           defn demo () (echo "\"demo 4")

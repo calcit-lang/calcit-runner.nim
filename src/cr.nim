@@ -12,6 +12,8 @@ import tables
 
 import cirruParser
 import cirruEdn
+import libfswatch
+import libfswatch/fswatch
 
 import cirruInterpreter/types
 import cirruInterpreter/operations
@@ -139,18 +141,19 @@ proc runProgram(): void =
   let args: seq[CirruEdnValue] = @[]
   discard f(args, interpret)
 
+proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
+  coloredEcho fgYellow, "\n-------- file change --------\n"
+  loadChanges(programCode)
+  runProgram()
+
 proc watchFile(): void =
   if not existsFile(incrementFile):
     writeFile incrementFile, "{}"
-  let child = startProcess("/usr/local/bin/fswatch", "", [incrementFile])
-  let sub = outputStream(child)
-  while true:
-    let line = readLine(sub)
 
-    coloredEcho fgYellow, "\n-------- file change --------\n"
-
-    loadChanges(programCode)
-    runProgram()
+  var mon = newMonitor()
+  mon.addPath(incrementFile)
+  mon.setCallback(fileChangeCb)
+  mon.start()
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
