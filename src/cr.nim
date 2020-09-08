@@ -12,6 +12,8 @@ import tables
 
 import cirruParser
 import cirruEdn
+import libfswatch
+import libfswatch/fswatch
 
 import cirruInterpreter/types
 import cirruInterpreter/operations
@@ -99,20 +101,15 @@ proc evalFile(sourcePath: string): void =
       echo "doing nothing"
 
   except CirruParseError as e:
-    setForegroundColor(fgRed)
-    echo "\nError: failed to parse"
-    resetAttributes()
+    coloredEcho fgRed, "\nError: failed to parse"
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
 
   except CirruInterpretError as e:
-    setForegroundColor(fgRed)
-    echo "\nError: failed to interpret"
-    resetAttributes()
+    coloredEcho fgRed, "\nError: failed to interpret"
     echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
 
   except CirruCommandError as e:
-    setForegroundColor(fgRed)
-    echo "Failed to run command"
+    coloredEcho fgRed, "Failed to run command"
     raise e
 
 var programCode: Table[string, FileSource]
@@ -132,28 +129,8 @@ proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
 
   return file[def].value
 
-proc watchFile(): void =
-  if not existsFile(incrementFile):
-    writeFile incrementFile, "{}"
-  let child = startProcess("/usr/local/bin/fswatch", "", [incrementFile])
-  let sub = outputStream(child)
-  while true:
-    let line = readLine(sub)
-
-    setForegroundColor(fgCyan)
-    echo "\n-------- file change --------\n"
-    resetAttributes()
-
-    echo %*loadChanges()
-
-# https://rosettacode.org/wiki/Handle_a_signal#Nim
-proc handleControl() {.noconv.} =
-  echo "\nKilled with Control c."
-  quit 0
-
-proc main(): void =
+proc runProgram(): void =
   programCode = loadSnapshot()
-
 
   let entry = getEvaluatedByPath("app.main", "main!")
 
@@ -162,8 +139,29 @@ proc main(): void =
 
   let f = entry.fnVal
   let args: seq[CirruEdnValue] = @[]
-  echo f(args, interpret)
+  discard f(args, interpret)
 
+proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
+  coloredEcho fgYellow, "\n-------- file change --------\n"
+  loadChanges(programCode)
+  runProgram()
+
+proc watchFile(): void =
+  if not existsFile(incrementFile):
+    writeFile incrementFile, "{}"
+
+  var mon = newMonitor()
+  mon.addPath(incrementFile)
+  mon.setCallback(fileChangeCb)
+  mon.start()
+
+# https://rosettacode.org/wiki/Handle_a_signal#Nim
+proc handleControl() {.noconv.} =
+  echo "\nKilled with Control c."
+  quit 0
+
+proc main(): void =
+  runProgram()
   setControlCHook(handleControl)
   watchFile()
 

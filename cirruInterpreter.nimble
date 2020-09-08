@@ -13,6 +13,7 @@ binDir        = "out/"
 # Dependencies
 
 requires "nim >= 0.20.0"
+requires "libfswatch"
 requires "https://github.com/Cirru/cirru-edn.nim#v0.1.8"
 
 

@@ -1,29 +1,18 @@
 import tables
 import sets
 import json
+import terminal
 
 import cirruEdn
 import cirruParser
 
 import ./types
-
+import ./helpers
 
 type FileSource* = object
   ns*: MaybeNil[CirruNode]
   run: MaybeNil[CirruNode]
   defs*: Table[string, CirruNode]
-
-type FileChangeDetail = object
-  ns*: MaybeNil[CirruNode]
-  run: MaybeNil[CirruNode]
-  removedDefs*: MaybeNil[HashSet[string]]
-  addedDefs*: MaybeNil[Table[string, CirruNode]]
-  changedDefs*: MaybeNil[Table[string, CirruNode]]
-
-type FileChanges = object
-  removed*: MaybeNil[HashSet[string]]
-  added*: MaybeNil[Table[string, FileSource]]
-  changed*: MaybeNil[Table[string, FileChangeDetail]]
 
 var currentPackage*: string
 
@@ -115,58 +104,52 @@ proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
 
   return toHashSet(values)
 
-proc extractFileChangeDetail(changedFile: CirruEdnValue): FileChangeDetail =
+proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdnValue): void =
   if changedFile.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
-  var changesDetail: FileChangeDetail
-
   if changedFile.contains(crEdn("ns", true)):
     let data = changedFile.get(crEdn("ns", true))
-    changesDetail.ns = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode(data))
-  else:
-    changesDetail.ns = MaybeNil[CirruNode](kind: beNil)
+    coloredEcho fgMagenta, "patching: ns changed"
+    originalFile.ns = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode data)
 
   if changedFile.contains(crEdn("proc", true)):
     let data = changedFile.get(crEdn("proc", true))
-    changesDetail.run = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode(data))
-  else:
-    changesDetail.run = MaybeNil[CirruNode](kind: beNil)
+    coloredEcho fgMagenta, "patching: proc changed"
+    originalFile.run = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode data)
 
   if changedFile.contains(crEdn("removed-defs", true)):
     let data = changedFile.get(crEdn("removed-defs", true))
-    changesDetail.removedDefs = MaybeNil[HashSet[string]](kind: beSomething, value: extractStringSet(data))
-  else:
-    changesDetail.removedDefs = MaybeNil[HashSet[string]](kind: beNil)
+    let removedDefs = extractStringSet(data)
+    for x in removedDefs:
+      coloredEcho fgMagenta, "patching: removed def ", x
+      originalFile.defs.del x
 
   if changedFile.contains(crEdn("added-defs", true)):
     let data = changedFile.get(crEdn("added-defs", true))
-    changesDetail.addedDefs = MaybeNil[Table[string, CirruNode]](kind: beSomething, value: extractDefs(data))
-  else:
-    changesDetail.addedDefs = MaybeNil[Table[string, CirruNode]](kind: beNil)
+    for k, v in extractDefs(data):
+      coloredEcho fgMagenta, "patching: added def ", k
+      originalFile.defs[k] = v
 
   if changedFile.contains(crEdn("changed-defs", true)):
     let data = changedFile.get(crEdn("changed-defs", true))
-    changesDetail.changedDefs = MaybeNil[Table[string, CirruNode]](kind: beSomething, value: extractDefs(data))
-  else:
-    changesDetail.changedDefs = MaybeNil[Table[string, CirruNode]](kind: beNil)
+    for k, v in extractDefs(data):
+      coloredEcho fgMagenta, "patching: updated def ", k
+      originalFile.defs[k] = v
 
-  return changesDetail
-
-proc loadChanges*(): FileChanges =
+proc loadChanges*(programData: var Table[string, FileSource]): void =
   let content = readFile incrementFile
   let changesInfo = parseEdnFromStr content
-
-  var changedData = FileChanges()
 
   if changesInfo.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
   if changesInfo.contains(crEdn("removed", true)):
     let namesInfo = changesInfo.get(crEdn("removed", true))
-    changedData.removed = MaybeNil[HashSet[string]](kind: beSomething, value: extractStringSet(namesInfo))
-  else:
-    changedData.removed = MaybeNil[HashSet[string]](kind: beNil)
+    let removedNs = extractStringSet(namesInfo)
+    for x in removedNs:
+      coloredEcho fgMagenta, "patching, removing ns: ", x
+      programData.del x
 
   if changesInfo.contains(crEdn("added", true)):
     var newFiles = Table[string, FileSource]()
@@ -176,23 +159,17 @@ proc loadChanges*(): FileChanges =
     for k, v in added.mapVal:
       if k.kind != crEdnString:
         raise newException(ValueError, "expects a string")
-      newFiles[k.stringVal] = extractFile(v)
-    changedData.added = MaybeNil[Table[string, FileSource]](kind: beSomething, value: newFiles)
-  else:
-    changedData.added = MaybeNil[Table[string, FileSource]](kind: beNil)
+      coloredEcho fgMagenta, "patching, add ns: ", k.stringVal
+      programData[k.stringVal] = extractFile(v)
 
   if changesInfo.contains(crEdn("changed", true)):
     let changed = changesInfo.get(crEdn("changed", true))
     if changed.kind != crEdnMap:
       raise newException(ValueError, "expects a map")
 
-    var dict = Table[string, FileChangeDetail]()
     for k, v in changed.mapVal:
       if k.kind != crEdnString:
         raise newException(ValueError, "expects a string")
-      dict[k.stringVal] = extractFileChangeDetail(v)
-    changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beSomething, value: dict)
-  else:
-    changedData.changed = MaybeNil[Table[string, FileChangeDetail]](kind: beNil)
+      extractFileChangeDetail(programData[k.stringVal], v)
 
-  return changedData
+  coloredEcho fgMagenta, "code updated from inc files"
