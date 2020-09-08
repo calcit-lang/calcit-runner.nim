@@ -5,23 +5,10 @@
       :ns $ quote (ns app.main)
       :defs $ {}
         |main! $ quote
-          defn main! () (echo $ + 1 2 3 4) (println "\"main loaded!")
-        |echo $ quote
-          defn echo () (println 2)
+          defn main! ()
+            echo $ + 1 (+ 4)
+            println "\"Loaded program!"
+        |demo $ quote
+          defn demo () (echo "\"demo 4")
       :proc $ quote ()
-      :configs $ {}
-    |app.lib $ {}
-      :ns $ quote (ns app.lib)
-      :defs $ {}
-        |handle $ quote
-          defn handle () (echo "\"2")
-        |emit $ quote (defn emit $)
-      :proc $ quote ()
-      :configs $ {}
-    |app.core $ {}
-      :ns $ quote (ns app.core)
-      :defs $ {}
-        |cute $ quote (defn cute $)
-      :proc $ quote
-          echo 1
       :configs $ {}

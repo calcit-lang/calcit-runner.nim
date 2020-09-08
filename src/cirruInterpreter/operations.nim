@@ -9,7 +9,6 @@ import terminal
 import cirruParser
 import cirruEdn
 
-import ./types
 import ./helpers
 
 type fnInterpret = proc(expr: CirruNode): CirruEdnValue
@@ -117,9 +116,8 @@ proc evalWriteFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnV
     if content.kind != crEdnString:
       raiseInterpretException("Expected content in string", contentNode.line, contentNode.column)
     writeFile(fileName.stringVal, content.stringVal)
-    setForegroundColor(fgCyan)
-    echo fmt"Wrote to file {fileName.stringVal}"
-    resetAttributes()
+
+    coloredEcho fgRed, fmt"Wrote to file {fileName.stringVal}"
     return CirruEdnValue(kind: crEdnNil)
   else:
     let node = exprList[3]
@@ -188,7 +186,7 @@ proc callArrayMethod*(value: var seq[CirruEdnValue], exprList: seq[CirruNode], i
   of "len":
     return CirruEdnValue(kind: crEdnNumber, numberVal: value.len().float)
   else:
-    raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+    raiseInterpretExceptionAtNode("Unknown method" & exprList[1].text, exprList[1])
 
 proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
   var value = initTable[CirruEdnValue, CirruEdnValue]()
@@ -236,7 +234,7 @@ proc callTableMethod*(value: var Table[CirruEdnValue, CirruEdnValue], exprList: 
     return CirruEdnValue(kind: crEdnNumber, numberVal: value.len().float)
 
   else:
-    raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+    raiseInterpretExceptionAtNode("Unknown method " & exprList[1].text, exprList[1])
 
 proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
   if exprList.len < 2:
@@ -248,7 +246,7 @@ proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInt
   of "len":
     return CirruEdnValue(kind: crEdnNumber, numberVal: value.len().float)
   else:
-    raiseInterpretExceptionAtNode("Unknown method", exprList[1])
+    raiseInterpretExceptionAtNode("Unknown method " & exprList[1].text , exprList[1])
 
 proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
   if exprList.len != 2:
@@ -282,7 +280,7 @@ proc evalDefn*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue 
   let f = proc(xs: seq[CirruEdnValue], interpret2: fnInterpret): CirruEdnValue =
     var ret = CirruEdnValue(kind: crEdnNil)
     for child in exprList[3..^1]:
-      echo "code: ", child
+      # echo "code: ", child
       ret = interpret(child)
     return ret
 

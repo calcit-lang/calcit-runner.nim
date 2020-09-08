@@ -1,5 +1,6 @@
 
 import cirruParser
+import terminal
 
 import ./types
 
@@ -13,3 +14,12 @@ proc raiseInterpretException*(msg: string, line, column: int) =
 
 proc raiseInterpretExceptionAtNode*(msg: string, node: CirruNode) =
   raiseInterpretException(msg, node.line, node.column)
+
+proc coloredEcho*(color: ForegroundColor, text: varargs[string]): void =
+  var buffer = ""
+  for x in text:
+    buffer = buffer & x
+  setForegroundColor(color)
+  echo buffer
+  resetAttributes()
+
