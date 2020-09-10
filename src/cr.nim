@@ -86,30 +86,6 @@ proc interpret(expr: CirruNode): CirruEdnValue =
           echo "TODO"
           quit 1
 
-proc evalFile(sourcePath: string): void =
-  var source: string
-  try:
-    source = readFile sourcePath
-    let program = parseCirru source
-    case program.kind
-    of cirruString:
-      raise newException(CirruCommandError, "Call eval with code")
-    of cirruSeq:
-      # discard program.list.mapIt(interpret(it))
-      echo "doing nothing"
-
-  except CirruParseError as e:
-    coloredEcho fgRed, "\nError: failed to parse"
-    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-
-  except CirruInterpretError as e:
-    coloredEcho fgRed, "\nError: failed to interpret"
-    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-
-  except CirruCommandError as e:
-    coloredEcho fgRed, "Failed to run command"
-    raise e
-
 var programCode: Table[string, FileSource]
 var programData: Table[string, Table[string, MaybeNil[CirruEdnValue]]]
 
@@ -150,6 +126,7 @@ proc runProgram(): void =
 
 proc reloadProgram(): void =
   programCode = loadSnapshot()
+  programData.clear()
 
   let pieces = codeConfigs.reloadFn.split('/')
 
@@ -174,6 +151,18 @@ proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
     reloadProgram()
   except ValueError as e:
     echo "Failed to rerun program: "
+
+  except CirruParseError as e:
+    coloredEcho fgRed, "\nError: failed to parse"
+    echo e.msg
+
+  except CirruInterpretError as e:
+    coloredEcho fgRed, "\nError: failed to interpret"
+    echo e.msg
+
+  except CirruCommandError as e:
+    coloredEcho fgRed, "Failed to run command"
+    echo e.msg
 
 proc watchFile(): void =
   if not existsFile(incrementFile):
