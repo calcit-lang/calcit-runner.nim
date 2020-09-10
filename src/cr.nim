@@ -2,11 +2,9 @@
 import os
 import re
 import sequtils
-from strutils import join, parseFloat, parseInt
+from strutils import join, parseFloat, parseInt, split
 import json
 import strformat
-import osproc
-import streams
 import terminal
 import tables
 
@@ -115,6 +113,8 @@ proc evalFile(sourcePath: string): void =
 var programCode: Table[string, FileSource]
 var programData: Table[string, Table[string, MaybeNil[CirruEdnValue]]]
 
+var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
+
 proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
   if not programData.hasKey(ns):
     var newFile: Table[string, MaybeNil[CirruEdnValue]]
@@ -131,8 +131,15 @@ proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
 
 proc runProgram(): void =
   programCode = loadSnapshot()
+  codeConfigs = loadCodeConfigs()
 
-  let entry = getEvaluatedByPath("app.main", "main!")
+  let pieces = codeConfigs.initFn.split('/')
+
+  if pieces.len != 2:
+    echo "Unknown initFn", pieces
+    raise newException(ValueError, "Unknown initFn")
+
+  let entry = getEvaluatedByPath(pieces[0], pieces[1])
 
   if entry.kind != crEdnFn:
     raise newException(ValueError, "expects a function at app.main/main!")
@@ -141,10 +148,32 @@ proc runProgram(): void =
   let args: seq[CirruEdnValue] = @[]
   discard f(args, interpret)
 
+proc reloadProgram(): void =
+  programCode = loadSnapshot()
+
+  let pieces = codeConfigs.reloadFn.split('/')
+
+  if pieces.len != 2:
+    echo "Unknown initFn", pieces
+    raise newException(ValueError, "Unknown initFn")
+
+  let entry = getEvaluatedByPath(pieces[0], pieces[1])
+
+  if entry.kind != crEdnFn:
+    raise newException(ValueError, "expects a function at app.main/main!")
+
+  let f = entry.fnVal
+  let args: seq[CirruEdnValue] = @[]
+  discard f(args, interpret)
+
+
 proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
   coloredEcho fgYellow, "\n-------- file change --------\n"
   loadChanges(programCode)
-  runProgram()
+  try:
+    reloadProgram()
+  except ValueError as e:
+    echo "Failed to rerun program: "
 
 proc watchFile(): void =
   if not existsFile(incrementFile):

@@ -14,6 +14,10 @@ type FileSource* = object
   run: MaybeNil[CirruNode]
   defs*: Table[string, CirruNode]
 
+type CodeConfigs* = object
+  initFn*: string
+  reloadFn*: string
+
 var currentPackage*: string
 
 let snapshotFile* = "example/compact.cirru"
@@ -173,3 +177,27 @@ proc loadChanges*(programData: var Table[string, FileSource]): void =
       extractFileChangeDetail(programData[k.stringVal], v)
 
   coloredEcho fgMagenta, "code updated from inc files"
+
+proc loadCodeConfigs*(): CodeConfigs =
+  let content = readFile snapshotFile
+  let initialData = parseEdnFromStr content
+
+  var codeConfigs = CodeConfigs()
+
+  if not initialData.contains(crEdn("configs", true)):
+    raise newException(ValueError, "expects configs field")
+  let configs = initialData.get(crEdn("configs", true))
+  if configs.kind != crEdnMap:
+    raise newException(ValueError, "expects configs to be a map")
+
+  if configs.contains(crEdn("init-fn", true)):
+    let initFn = configs.get(crEdn("init-fn", true))
+    if initFn.kind == crEdnString:
+      codeConfigs.initFn = initFn.stringVal
+
+  if configs.contains(crEdn("reload-fn", true)):
+    let reloadFn = configs.get(crEdn("reload-fn", true))
+    if reloadFn.kind == crEdnString:
+      codeConfigs.reloadFn = reloadFn.stringVal
+
+  return codeConfigs

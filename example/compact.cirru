@@ -1,5 +1,6 @@
 
 {} (:package |app)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
   :files $ {}
     |app.main $ {}
       :ns $ quote (ns app.main)
@@ -10,5 +11,7 @@
             println "\"Loaded program!"
         |demo $ quote
           defn demo () (echo "\"demo 4")
+        |reload! $ quote
+          defn reload! () (echo "\"reloaded... 5")
       :proc $ quote ()
       :configs $ {}
