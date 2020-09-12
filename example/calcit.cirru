@@ -62,6 +62,22 @@
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599734038115) (:text |echo) (:id |a-yQPmOclPleaf)
                   |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599902232713) (:text "|\"reloaded... 7") (:id |GGTuwn1AZ6)
                 :id |a-yQPmOclP
+              |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1599910031888)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910032396) (:text |echo) (:id |V5iVLXg54zleaf)
+                  |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1599910032747)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910033140) (:text |+) (:id |KKHVIf1Fag)
+                      |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910033460) (:text |1) (:id |3X_Fi8nQs3)
+                      |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910033713) (:text |2) (:id |GdwlnF-qS4)
+                      |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910034034) (:text |3) (:id |L8X6cp3aO5)
+                      |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1599910036984)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910109546) (:text |*) (:id |bLd0IFefT)
+                          |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1599910038605) (:text |4) (:id |SdsXNAZQ4)
+                        :id |COTthlmeSu
+                    :id |Lk2BzIWyD8
+                :id |V5iVLXg54z
             :id |1WeHLjkbMe
         :proc $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1596344532593) (:data $ {}) (:id |dXfpexltWn)
         :configs $ {}

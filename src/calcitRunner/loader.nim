@@ -15,10 +15,6 @@ type FileSource* = object
   run: Option[CirruNode]
   defs*: Table[string, CirruNode]
 
-type CodeConfigs* = object
-  initFn*: string
-  reloadFn*: string
-
 var currentPackage*: string
 
 let snapshotFile* = "example/compact.cirru"

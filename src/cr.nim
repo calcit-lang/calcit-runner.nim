@@ -18,6 +18,12 @@ import calcitRunner/types
 import calcitRunner/operations
 import calcitRunner/helpers
 import calcitRunner/loader
+import calcitRunner/scope
+
+var programCode: Table[string, FileSource]
+var programData: Table[string, ProgramFile]
+
+var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
 proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
@@ -30,7 +36,11 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
     elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
       return CirruEdnValue(kind: crEdnString, stringVal: expr.text[1..^1])
     else:
-      return CirruEdnValue(kind: crEdnString, stringVal: expr.text)
+      let fromScope = scope.get(expr.text)
+      if fromScope.isSome:
+        return fromScope.get
+      else:
+        raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
   else:
     if expr.list.len == 0:
       return
@@ -89,23 +99,6 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
           echo "TODO"
           quit 1
 
-var programCode: Table[string, FileSource]
-type ImportKind = enum
-  importNs, importDef
-type ImportInfo = object
-  ns*: string
-  case kind: ImportKind
-  of importNs:
-    discard
-  of importDef:
-    def: string
-type ProgramFile = object
-  ns*: Table[string, ImportInfo]
-  defs*: Table[string, CirruEdnValue]
-var programData: Table[string, ProgramFile]
-
-var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
-
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue =
   if not programData.hasKey(ns):
     var newFile = ProgramFile()
@@ -123,7 +116,7 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdn
 proc runProgram(): void =
   programCode = loadSnapshot()
   codeConfigs = loadCodeConfigs()
-  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
+  var scope = CirruEdnScope(parent: none(CirruEdnScope))
 
   let pieces = codeConfigs.initFn.split('/')
 
@@ -143,7 +136,7 @@ proc runProgram(): void =
 proc reloadProgram(): void =
   programCode = loadSnapshot()
   programData.clear()
-  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
+  var scope = CirruEdnScope(parent: none(CirruEdnScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
 
@@ -167,7 +160,7 @@ proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
   try:
     reloadProgram()
   except ValueError as e:
-    echo "Failed to rerun program: "
+    coloredEcho fgRed, "Failed to rerun program: ", e.msg
 
   except CirruParseError as e:
     coloredEcho fgRed, "\nError: failed to parse"

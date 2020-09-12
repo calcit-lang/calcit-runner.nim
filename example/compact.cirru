@@ -13,5 +13,6 @@
           defn demo () (echo "\"demo 4")
         |reload! $ quote
           defn reload! () (echo "\"reloaded... 7")
+            echo $ + 1 2 3 (* 4)
       :proc $ quote ()
       :configs $ {}

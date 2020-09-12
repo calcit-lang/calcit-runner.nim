@@ -276,6 +276,7 @@ proc evalType*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope
 
 proc evalDefn*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   let f = proc(xs: seq[CirruEdnValue], interpret2: EdnEvalFn, ns2: string, scope2: CirruEdnScope): CirruEdnValue =
+    echo "TODO, arguments not handled, scope not handled"
     var ret = CirruEdnValue(kind: crEdnNil)
     for child in exprList[3..^1]:
       # echo "code: ", child
