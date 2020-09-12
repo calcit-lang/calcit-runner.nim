@@ -4,15 +4,3 @@ type CirruInterpretError* = ref object of ValueError
   column*: int
 
 type CirruCommandError* = ValueError
-
-type
-  MaybeNilKind* = enum
-    beNil,
-    beSomething
-
-  MaybeNil*[T] = ref object
-    case kind*: MaybeNilKind
-    of beNil:
-      discard
-    of beSomething:
-      value*: T

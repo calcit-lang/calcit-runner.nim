@@ -2,6 +2,7 @@ import tables
 import sets
 import json
 import terminal
+import options
 
 import cirruEdn
 import cirruParser
@@ -10,8 +11,8 @@ import ./types
 import ./helpers
 
 type FileSource* = object
-  ns*: MaybeNil[CirruNode]
-  run: MaybeNil[CirruNode]
+  ns*: Option[CirruNode]
+  run: Option[CirruNode]
   defs*: Table[string, CirruNode]
 
 type CodeConfigs* = object
@@ -56,15 +57,15 @@ proc extractFile(v: CirruEdnValue): FileSource =
 
   if v.contains(crEdn("ns", true)):
     let ns = v.get(crEdn("ns", true))
-    file.ns = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode(ns))
+    file.ns = some(getSourceNode(ns))
   else:
-    file.ns = MaybeNil[CirruNode](kind: beNil)
+    file.ns = none(CirruNode)
 
   if v.contains(crEdn("proc", true)):
     let run = v.get(crEdn("proc", true))
-    file.run = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode(run))
+    file.run = some(getSourceNode(run))
   else:
-    file.run = MaybeNil[CirruNode](kind: beNil)
+    file.run = none(CirruNode)
 
   let defs = v.get(crEdn("defs", true))
   file.defs = extractDefs(defs)
@@ -115,12 +116,12 @@ proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdn
   if changedFile.contains(crEdn("ns", true)):
     let data = changedFile.get(crEdn("ns", true))
     coloredEcho fgMagenta, "patching: ns changed"
-    originalFile.ns = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode data)
+    originalFile.ns = some(getSourceNode(data))
 
   if changedFile.contains(crEdn("proc", true)):
     let data = changedFile.get(crEdn("proc", true))
     coloredEcho fgMagenta, "patching: proc changed"
-    originalFile.run = MaybeNil[CirruNode](kind: beSomething, value: getSourceNode data)
+    originalFile.run = some(getSourceNode(data))
 
   if changedFile.contains(crEdn("removed-defs", true)):
     let data = changedFile.get(crEdn("removed-defs", true))
