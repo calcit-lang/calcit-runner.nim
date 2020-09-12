@@ -14,10 +14,10 @@ import cirruEdn
 import libfswatch
 import libfswatch/fswatch
 
-import cirruInterpreter/types
-import cirruInterpreter/operations
-import cirruInterpreter/helpers
-import cirruInterpreter/loader
+import calcitRunner/types
+import calcitRunner/operations
+import calcitRunner/helpers
+import calcitRunner/loader
 
 proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
