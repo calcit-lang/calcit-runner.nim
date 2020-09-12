@@ -7,6 +7,7 @@ import json
 import strformat
 import terminal
 import tables
+import options
 
 import cirruParser
 import cirruEdn
@@ -18,9 +19,9 @@ import cirruInterpreter/operations
 import cirruInterpreter/helpers
 import cirruInterpreter/loader
 
-proc interpret(expr: CirruNode): CirruEdnValue =
+proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
-    if match(expr.text, re"\d+"):
+    if match(expr.text, re"\d+(\.\d+)?"):
       return CirruEdnValue(kind: crEdnNumber, numberVal: parseFloat(expr.text))
     elif expr.text == "true":
       return CirruEdnValue(kind: crEdnBool, boolVal: true)
@@ -39,83 +40,61 @@ proc interpret(expr: CirruNode): CirruEdnValue =
       of cirruString:
         case head.text
         of "println", "echo":
-          echo expr.list[1..^1].map(interpret).map(`$`).join(" ")
+          echo expr.list[1..^1].map(proc(x: CirruNode): CirruEdnValue =
+            interpret(x, ns, scope)
+          ).map(`$`).join(" ")
         of "+":
-          return evalAdd(expr.list, interpret)
+          return evalAdd(expr.list, interpret, ns, scope)
         of "-":
-          return evalMinus(expr.list, interpret)
+          return evalMinus(expr.list, interpret, ns, scope)
         of "if":
-          return evalIf(expr.list, interpret)
+          return evalIf(expr.list, interpret, ns, scope)
         of "[]":
-          return evalArray(expr.list, interpret)
+          return evalArray(expr.list, interpret, ns, scope)
         of "{}":
-          return evalTable(expr.list, interpret)
+          return evalTable(expr.list, interpret, ns, scope)
         of "read-file":
-          return evalReadFile(expr.list, interpret)
+          return evalReadFile(expr.list, interpret, ns, scope)
         of "write-file":
-          return evalWriteFile(expr.list, interpret)
+          return evalWriteFile(expr.list, interpret, ns, scope)
         of ";":
           return evalComment()
         of "load-json":
-          return evalLoadJson(expr.list, interpret)
+          return evalLoadJson(expr.list, interpret, ns, scope)
         of "type-of":
-          return evalType(expr.list, interpret)
+          return evalType(expr.list, interpret, ns, scope)
         of "defn":
-          return evalDefn(expr.list, interpret)
+          return evalDefn(expr.list, interpret, ns, scope)
         else:
-          let value = interpret(head)
+          let value = interpret(head, ns, scope)
           case value.kind
           of crEdnString:
             var value = value.stringVal
-            return callStringMethod(value, expr.list, interpret)
+            return callStringMethod(value, expr.list, interpret, ns, scope)
           else:
             raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
       else:
-        let headValue = interpret(expr.list[0])
+        let headValue = interpret(expr.list[0], ns, scope)
         case headValue.kind:
         of crEdnFn:
           echo "NOT implemented fn"
           quit 1
         of crEdnVector:
           var value = headValue.vectorVal
-          return callArrayMethod(value, expr.list, interpret)
+          return callArrayMethod(value, expr.list, interpret, ns, scope)
         of crEdnMap:
           var value = headValue.mapVal
-          return callTableMethod(value, expr.list, interpret)
+          return callTableMethod(value, expr.list, interpret, ns, scope)
         else:
           echo "TODO"
           quit 1
-
-proc evalFile(sourcePath: string): void =
-  var source: string
-  try:
-    source = readFile sourcePath
-    let program = parseCirru source
-    case program.kind
-    of cirruString:
-      raise newException(CirruCommandError, "Call eval with code")
-    of cirruSeq:
-      # discard program.list.mapIt(interpret(it))
-      echo "doing nothing"
-
-  except CirruParseError as e:
-    coloredEcho fgRed, "\nError: failed to parse"
-    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-
-  except CirruInterpretError as e:
-    coloredEcho fgRed, "\nError: failed to interpret"
-    echo formatParserFailure(source, e.msg, sourcePath, e.line, e.column)
-
-  except CirruCommandError as e:
-    coloredEcho fgRed, "Failed to run command"
-    raise e
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, Table[string, MaybeNil[CirruEdnValue]]]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
-proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
+proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue =
   if not programData.hasKey(ns):
     var newFile: Table[string, MaybeNil[CirruEdnValue]]
     programData[ns] = newFile
@@ -125,13 +104,14 @@ proc getEvaluatedByPath(ns: string, def: string): CirruEdnValue =
   if not file.hasKey(def):
     let code = programCode[ns].defs[def]
 
-    file[def] = MaybeNil[CirruEdnValue](kind: beSomething, value: interpret(code))
+    file[def] = MaybeNil[CirruEdnValue](kind: beSomething, value: interpret(code, ns, scope))
 
   return file[def].value
 
 proc runProgram(): void =
   programCode = loadSnapshot()
   codeConfigs = loadCodeConfigs()
+  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
 
   let pieces = codeConfigs.initFn.split('/')
 
@@ -139,17 +119,19 @@ proc runProgram(): void =
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
-  let entry = getEvaluatedByPath(pieces[0], pieces[1])
+  let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
   if entry.kind != crEdnFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let f = entry.fnVal
   let args: seq[CirruEdnValue] = @[]
-  discard f(args, interpret)
+  discard f(args, interpret, pieces[0], scope)
 
 proc reloadProgram(): void =
   programCode = loadSnapshot()
+  programData.clear()
+  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
 
@@ -157,14 +139,14 @@ proc reloadProgram(): void =
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
-  let entry = getEvaluatedByPath(pieces[0], pieces[1])
+  let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
   if entry.kind != crEdnFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let f = entry.fnVal
   let args: seq[CirruEdnValue] = @[]
-  discard f(args, interpret)
+  discard f(args, interpret, pieces[0], scope)
 
 
 proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
@@ -174,6 +156,18 @@ proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
     reloadProgram()
   except ValueError as e:
     echo "Failed to rerun program: "
+
+  except CirruParseError as e:
+    coloredEcho fgRed, "\nError: failed to parse"
+    echo e.msg
+
+  except CirruInterpretError as e:
+    coloredEcho fgRed, "\nError: failed to interpret"
+    echo e.msg
+
+  except CirruCommandError as e:
+    coloredEcho fgRed, "Failed to run command"
+    echo e.msg
 
 proc watchFile(): void =
   if not existsFile(incrementFile):

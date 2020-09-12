@@ -11,51 +11,49 @@ import cirruEdn
 
 import ./helpers
 
-type fnInterpret = proc(expr: CirruNode): CirruEdnValue
-
-proc evalAdd*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalAdd*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   var ret = 0.0
   for node in exprList[1..^1]:
-    let v = interpret(node)
+    let v = interpret(node, ns, scope)
     if v.kind == crEdnNumber:
       ret += v.numberVal
     else:
       raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
   return CirruEdnValue(kind: crEdnNumber, numberVal: ret)
 
-proc evalMinus*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalMinus*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if (exprList.len == 1):
     return CirruEdnValue(kind: crEdnNumber, numberVal: 0)
   elif (exprList.len == 2):
     let node = exprList[1]
-    let ret = interpret(node)
+    let ret = interpret(node, ns, scope)
     if ret.kind == crEdnNumber:
       return ret
     else:
       raiseInterpretException(fmt"Not a number {ret.kind}", node.line, node.column)
   else:
     let node = exprList[1]
-    let x0 = interpret(node)
+    let x0 = interpret(node, ns, scope)
     var ret: float = 0
     if x0.kind == crEdnNumber:
       ret = x0.numberVal
     else:
       raiseInterpretException(fmt"Not a number {x0.kind}", node.line, node.column)
     for node in exprList[2..^1]:
-      let v = interpret(node)
+      let v = interpret(node, ns, scope)
       if v.kind == crEdnNumber:
         ret -= v.numberVal
       else:
         raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
     return CirruEdnValue(kind: crEdnNumber, numberVal: ret)
 
-proc evalArray*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalArray*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   var arrayData: seq[CirruEdnValue]
   for child in exprList[1..^1]:
-    arrayData.add(interpret(child))
+    arrayData.add(interpret(child, ns, scope))
   return CirruEdnValue(kind: crEdnVector, vectorVal: arrayData)
 
-proc evalIf*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalIf*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if (exprList.len == 1):
     let node = exprList[0]
     raiseInterpretException("No arguments for if", node.line, node.column)
@@ -64,35 +62,35 @@ proc evalIf*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
     raiseInterpretException("No arguments for if", node.line, node.column)
   elif (exprList.len == 3):
     let node = exprList[1]
-    let cond = interpret(node)
+    let cond = interpret(node, ns, scope)
     if cond.kind == crEdnBool:
       if cond.boolVal:
-        return interpret(exprList[2])
+        return interpret(exprList[2], ns, scope)
       else:
         return CirruEdnValue(kind: crEdnNil)
     else:
       raiseInterpretException("Not a bool in if", node.line, node.column)
   elif (exprList.len == 4):
     let node = exprList[1]
-    let cond = interpret(node)
+    let cond = interpret(node, ns, scope)
     if cond.kind == crEdnBool:
       if cond.boolVal:
-        return interpret(exprList[2])
+        return interpret(exprList[2], ns, scope)
       else:
-        return interpret(exprList[3])
+        return interpret(exprList[3], ns, scope)
     else:
       raiseInterpretException("Not a bool in if", node.line, node.column)
   else:
     let node = exprList[0]
     raiseInterpretException("Too many arguments for if", node.line, node.column)
 
-proc evalReadFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalReadFile*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len == 1:
     let node = exprList[0]
     raiseInterpretException("Lack of file name", node.line, node.column)
   elif exprList.len == 2:
     let node = exprList[1]
-    let fileName = interpret(node)
+    let fileName = interpret(node, ns, scope)
     if fileName.kind == crEdnString:
       let content = readFile(fileName.stringVal)
       return CirruEdnValue(kind: crEdnString, stringVal: content)
@@ -102,17 +100,17 @@ proc evalReadFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnVa
     let node = exprList[2]
     raiseInterpretException("Too many arguments!", node.line, node.column)
 
-proc evalWriteFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalWriteFile*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len < 3:
     let node = exprList[0]
     raiseInterpretException("Lack of file name or target", node.line, node.column)
   elif exprList.len == 3:
     let node = exprList[1]
-    let fileName = interpret(node)
+    let fileName = interpret(node, ns, scope)
     if fileName.kind != crEdnString:
       raiseInterpretException("Expected path name in string", node.line, node.column)
     let contentNode = exprList[2]
-    let content = interpret(contentNode)
+    let content = interpret(contentNode, ns, scope)
     if content.kind != crEdnString:
       raiseInterpretException("Expected content in string", contentNode.line, contentNode.column)
     writeFile(fileName.stringVal, content.stringVal)
@@ -126,14 +124,14 @@ proc evalWriteFile*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnV
 proc evalComment*(): CirruEdnValue =
   return CirruEdnValue(kind: crEdnNil)
 
-proc evalArraySlice(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalArraySlice(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len == 2:
     let node = exprList[1]
     raiseInterpretExceptionAtNode("Expression not supported for methods", node)
   if exprList.len > 4:
     let node = exprList[4]
     raiseInterpretExceptionAtNode("Too many arguments for Array slice", node)
-  let fromIdx = interpret(exprList[2])
+  let fromIdx = interpret(exprList[2], ns, scope)
   if fromIdx.kind != crEdnNumber:
     raiseInterpretExceptionAtNode("Not a number of from index", exprList[2])
 
@@ -145,7 +143,7 @@ proc evalArraySlice(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpr
   if exprList.len == 3:
     return CirruEdnValue(kind: crEdnVector, vectorVal: value[fromIdx.numberVal..^1])
 
-  let toIdx = interpret(exprList[3])
+  let toIdx = interpret(exprList[3], ns, scope)
   if toIdx.kind != crEdnNumber:
     raiseInterpretExceptionAtNode("Not a number of to index", exprList[3])
   if toIdx.numberVal < fromIdx.numberVal:
@@ -155,12 +153,12 @@ proc evalArraySlice(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpr
 
   return CirruEdnValue(kind: crEdnVector, vectorVal: value[fromIdx.numberVal..toIdx.numberVal])
 
-proc evalArrayConcat(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalArrayConcat(value: seq[CirruEdnValue], exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len < 2:
     raiseInterpretExceptionAtNode("Too few arguments", exprList[1])
   var arr: seq[CirruEdnValue]
   for idx, child in exprList[2..^1]:
-    let item = interpret(child)
+    let item = interpret(child, ns, scope)
     if item.kind != crEdnVector:
       raiseInterpretExceptionAtNode("Not an array in concat", exprList[idx + 2])
     for valueItem in item.vectorVal:
@@ -168,7 +166,7 @@ proc evalArrayConcat(value: seq[CirruEdnValue], exprList: seq[CirruNode], interp
 
   return CirruEdnValue(kind: crEdnVector, vectorVal: arr)
 
-proc callArrayMethod*(value: var seq[CirruEdnValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc callArrayMethod*(value: var seq[CirruEdnValue], exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len < 2:
     raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
   if exprList[1].kind == cirruSeq:
@@ -176,32 +174,32 @@ proc callArrayMethod*(value: var seq[CirruEdnValue], exprList: seq[CirruNode], i
   case exprList[1].text
   of "add":
     for child in exprList[2..^1]:
-      let item = interpret(child)
+      let item = interpret(child, ns, scope)
       value.add item
     return CirruEdnValue(kind: crEdnVector, vectorVal: value)
   of "slice":
-    return evalArraySlice(value, exprList, interpret)
+    return evalArraySlice(value, exprList, interpret, ns, scope)
   of "concat":
-    return evalArrayConcat(value, exprList, interpret)
+    return evalArrayConcat(value, exprList, interpret, ns, scope)
   of "len":
     return CirruEdnValue(kind: crEdnNumber, numberVal: value.len().float)
   else:
     raiseInterpretExceptionAtNode("Unknown method" & exprList[1].text, exprList[1])
 
-proc evalTable*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalTable*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   var value = initTable[CirruEdnValue, CirruEdnValue]()
   for pair in exprList[1..^1]:
     if pair.kind == cirruString:
       raiseInterpretExceptionAtNode("Table requires nested children pairs", pair)
     if pair.list.len() != 2:
       raiseInterpretExceptionAtNode("Each pair of table contains 2 elements", pair)
-    let k = interpret(pair.list[0])
-    let v = interpret(pair.list[1])
+    let k = interpret(pair.list[0], ns, scope)
+    let v = interpret(pair.list[1], ns, scope)
     # TODO, import hash for CirruNode
     # value.add(k, v)
   return CirruEdnValue(kind: crEdnMap, mapVal: value)
 
-proc callTableMethod*(value: var Table[CirruEdnValue, CirruEdnValue], exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc callTableMethod*(value: var Table[CirruEdnValue, CirruEdnValue], exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len < 2:
     raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
   if exprList[1].kind == cirruSeq:
@@ -210,21 +208,21 @@ proc callTableMethod*(value: var Table[CirruEdnValue, CirruEdnValue], exprList: 
   of "get":
     if exprList.len != 3:
       raiseInterpretExceptionAtNode("Get method expects 1 argument", exprList[1])
-    let k = interpret(exprList[2])
+    let k = interpret(exprList[2], ns, scope)
     return value[k]
 
   of "add":
     if exprList.len != 4:
       raiseInterpretExceptionAtNode("Add method expects 2 arguments", exprList[1])
-    let k = interpret(exprList[2])
-    let v = interpret(exprList[3])
+    let k = interpret(exprList[2], ns, scope)
+    let v = interpret(exprList[3], ns, scope)
     # value.add(k, v)
     return CirruEdnValue(kind: crEdnMap, mapVal: value)
 
   of "del":
     if exprList.len != 3:
       raiseInterpretExceptionAtNode("Del method expects 1 argument", exprList[1])
-    let k = interpret(exprList[2])
+    let k = interpret(exprList[2], ns, scope)
     value.del(k)
     return CirruEdnValue(kind: crEdnMap, mapVal: value)
 
@@ -236,7 +234,7 @@ proc callTableMethod*(value: var Table[CirruEdnValue, CirruEdnValue], exprList: 
   else:
     raiseInterpretExceptionAtNode("Unknown method " & exprList[1].text, exprList[1])
 
-proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len < 2:
     raiseInterpretExceptionAtNode("No enough arguments for calling methods", exprList[1])
   if exprList[1].kind == cirruSeq:
@@ -248,10 +246,10 @@ proc callStringMethod*(value: string, exprList: seq[CirruNode], interpret: fnInt
   else:
     raiseInterpretExceptionAtNode("Unknown method " & exprList[1].text , exprList[1])
 
-proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalLoadJson*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len != 2:
     raiseInterpretExceptionAtNode("load-json requires relative path to json file", exprList[0])
-  let filePath = interpret(exprList[1])
+  let filePath = interpret(exprList[1], ns, scope)
   if filePath.kind != crEdnString:
     raiseInterpretExceptionAtNode("load-json requires path in string", exprList[1])
   let content = readFile(filePath.stringVal)
@@ -262,10 +260,10 @@ proc evalLoadJson*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnVa
     echo "Failed to parse"
     raiseInterpretExceptionAtNode("Failed to parse file", exprList[1])
 
-proc evalType*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
+proc evalType*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.len != 2:
     raiseInterpretExceptionAtNode("type gets 1 argument", exprList[0])
-  let v = interpret(exprList[1])
+  let v = interpret(exprList[1], ns, scope)
   case v.kind
     of crEdnNil: CirruEdnValue(kind: crEdnString, stringVal: "nil")
     of crEdnNumber: CirruEdnValue(kind: crEdnString, stringVal: "int")
@@ -276,12 +274,12 @@ proc evalType*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue 
     of crEdnFn: CirruEdnValue(kind: crEdnString, stringVal: "fn")
     else: CirruEdnValue(kind: crEdnString, stringVal: "unknown")
 
-proc evalDefn*(exprList: seq[CirruNode], interpret: fnInterpret): CirruEdnValue =
-  let f = proc(xs: seq[CirruEdnValue], interpret2: fnInterpret): CirruEdnValue =
+proc evalDefn*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
+  let f = proc(xs: seq[CirruEdnValue], interpret2: EdnEvalFn, ns2: string, scope2: CirruEdnScope): CirruEdnValue =
     var ret = CirruEdnValue(kind: crEdnNil)
     for child in exprList[3..^1]:
       # echo "code: ", child
-      ret = interpret(child)
+      ret = interpret(child, ns2, scope2)
     return ret
 
   return CirruEdnValue(kind: crEdnFn, fnVal: f)
