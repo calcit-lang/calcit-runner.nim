@@ -90,23 +90,35 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
           quit 1
 
 var programCode: Table[string, FileSource]
-var programData: Table[string, Table[string, Option[CirruEdnValue]]]
+type ImportKind = enum
+  importNs, importDef
+type ImportInfo = object
+  ns*: string
+  case kind: ImportKind
+  of importNs:
+    discard
+  of importDef:
+    def: string
+type ProgramFile = object
+  ns*: Table[string, ImportInfo]
+  defs*: Table[string, CirruEdnValue]
+var programData: Table[string, ProgramFile]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue =
   if not programData.hasKey(ns):
-    var newFile: Table[string, Option[CirruEdnValue]]
+    var newFile = ProgramFile()
     programData[ns] = newFile
 
   var file = programData[ns]
 
-  if not file.hasKey(def):
+  if not file.defs.hasKey(def):
     let code = programCode[ns].defs[def]
 
-    file[def] = some(interpret(code, ns, scope))
+    file.defs[def] = interpret(code, ns, scope)
 
-  return file[def].get
+  return file.defs[def]
 
 proc runProgram(): void =
   programCode = loadSnapshot()
