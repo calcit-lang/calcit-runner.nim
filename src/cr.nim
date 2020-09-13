@@ -42,63 +42,63 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
       else:
         raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
   else:
-    if expr.list.len == 0:
+    if expr.len == 0:
       return
     else:
-      let head = expr.list[0]
+      let head = expr[0]
       case head.kind
       of cirruString:
         case head.text
         of "println", "echo":
-          echo expr.list[1..^1].map(proc(x: CirruNode): CirruEdnValue =
+          echo expr[1..^1].map(proc(x: CirruNode): CirruEdnValue =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
         of "+":
-          return evalAdd(expr.list, interpret, ns, scope)
+          return evalAdd(expr, interpret, ns, scope)
         of "-":
-          return evalMinus(expr.list, interpret, ns, scope)
+          return evalMinus(expr, interpret, ns, scope)
         of "if":
-          return evalIf(expr.list, interpret, ns, scope)
+          return evalIf(expr, interpret, ns, scope)
         of "[]":
-          return evalArray(expr.list, interpret, ns, scope)
+          return evalArray(expr, interpret, ns, scope)
         of "{}":
-          return evalTable(expr.list, interpret, ns, scope)
+          return evalTable(expr, interpret, ns, scope)
         of "read-file":
-          return evalReadFile(expr.list, interpret, ns, scope)
+          return evalReadFile(expr, interpret, ns, scope)
         of "write-file":
-          return evalWriteFile(expr.list, interpret, ns, scope)
+          return evalWriteFile(expr, interpret, ns, scope)
         of ";":
           return evalComment()
         of "load-json":
-          return evalLoadJson(expr.list, interpret, ns, scope)
+          return evalLoadJson(expr, interpret, ns, scope)
         of "type-of":
-          return evalType(expr.list, interpret, ns, scope)
+          return evalType(expr, interpret, ns, scope)
         of "defn":
-          return evalDefn(expr.list, interpret, ns, scope)
+          return evalDefn(expr, interpret, ns, scope)
         of "let":
-          return evalLet(expr.list, interpret, ns, scope)
+          return evalLet(expr, interpret, ns, scope)
         of "do":
-          return evalDo(expr.list, interpret, ns, scope)
+          return evalDo(expr, interpret, ns, scope)
         else:
           let value = interpret(head, ns, scope)
           case value.kind
           of crEdnString:
             var value = value.stringVal
-            return callStringMethod(value, expr.list, interpret, ns, scope)
+            return callStringMethod(value, expr, interpret, ns, scope)
           else:
             raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
       else:
-        let headValue = interpret(expr.list[0], ns, scope)
+        let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
         of crEdnFn:
           echo "NOT implemented fn"
           quit 1
         of crEdnVector:
           var value = headValue.vectorVal
-          return callArrayMethod(value, expr.list, interpret, ns, scope)
+          return callArrayMethod(value, expr, interpret, ns, scope)
         of crEdnMap:
           var value = headValue.mapVal
-          return callTableMethod(value, expr.list, interpret, ns, scope)
+          return callTableMethod(value, expr, interpret, ns, scope)
         else:
           echo "TODO"
           quit 1

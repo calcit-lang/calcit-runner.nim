@@ -13,7 +13,7 @@
           defn demo () (echo "\"demo 4")
         |reload! $ quote
           defn reload! ()
-            do (echo 1) (echo 2)
+            do (echo 1) (echo 2 3)
             let
                 a $ + 10 10
               echo "\"reloaded... 7" a
