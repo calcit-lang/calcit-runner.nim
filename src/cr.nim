@@ -75,6 +75,10 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
           return evalType(expr.list, interpret, ns, scope)
         of "defn":
           return evalDefn(expr.list, interpret, ns, scope)
+        of "let":
+          return evalLet(expr.list, interpret, ns, scope)
+        of "do":
+          return evalDo(expr.list, interpret, ns, scope)
         else:
           let value = interpret(head, ns, scope)
           case value.kind

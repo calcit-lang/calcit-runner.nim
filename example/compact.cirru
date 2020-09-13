@@ -12,7 +12,11 @@
         |demo $ quote
           defn demo () (echo "\"demo 4")
         |reload! $ quote
-          defn reload! () (echo "\"reloaded... 7")
-            echo $ + 1 2 3 (* 4)
+          defn reload! ()
+            do (echo 1) (echo 2)
+            let
+                a $ + 10 10
+              echo "\"reloaded... 7" a
+            echo $ + 1 2 3
       :proc $ quote ()
       :configs $ {}

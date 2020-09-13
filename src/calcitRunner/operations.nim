@@ -5,6 +5,7 @@ import tables
 import hashes
 import json
 import terminal
+import options
 
 import cirruParser
 import cirruEdn
@@ -284,3 +285,32 @@ proc evalDefn*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope
     return ret
 
   return CirruEdnValue(kind: crEdnFn, fnVal: f)
+
+proc evalLet*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
+  let letScope = CirruEdnScope(parent: some(scope))
+  if exprList.len < 2:
+    raiseInterpretExceptionAtNode("No enough code for let, too short", exprList[0])
+  let pairs = exprList[1]
+  let body = exprList[2..^1]
+  if pairs.kind != cirruSeq:
+    raiseInterpretExceptionAtNode("Expect bindings in a vector", pairs)
+  for pair in pairs.list:
+    if pair.kind != cirruSeq:
+      raiseInterpretExceptionAtNode("Expect binding in a vector", pair)
+    if pair.list.len != 2:
+      raiseInterpretExceptionAtNode("Expect binding in length 2", pair)
+    let name = pair.list[0]
+    let value = pair.list[1]
+    if name.kind != cirruString:
+      raiseInterpretExceptionAtNode("Expecting binding name in string", name)
+    letScope.dict[name.text] = interpret(value, ns, letScope)
+  result = CirruEdnValue(kind: crEdnNil)
+  for child in body:
+    result = interpret(child, ns, letScope)
+
+
+proc evalDo*(exprList: seq[CirruNode], interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
+  let body = exprList[1..^1]
+  result = CirruEdnValue(kind: crEdnNil)
+  for child in body:
+    result = interpret(child, ns, scope)
