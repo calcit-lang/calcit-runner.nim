@@ -306,11 +306,19 @@ proc evalDefn*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: Cir
   if exprList.kind == cirruString:
     raiseInterpretExceptionAtNode(fmt"Expected cirru expr", exprList)
   let f = proc(xs: seq[CirruEdnValue], interpret2: EdnEvalFn, ns2: string, scope2: CirruEdnScope): CirruEdnValue =
-    echo "TODO, arguments not handled, scope not handled"
+    let fnScope = CirruEdnScope(parent: some(scope))
+    let argsList = exprList[2]
+    var counter = 0
+    if argsList.len != xs.len:
+      raiseInterpretExceptionAtNode(fmt"Args length mismatch", argsList)
+    for arg in argsList:
+      if arg.kind != cirruString:
+        raiseInterpretExceptionAtNode(fmt"Expects arg in string", arg)
+      fnScope.dict[arg.text] = xs[counter]
+      counter += 1
     var ret = CirruEdnValue(kind: crEdnNil)
     for child in exprList[3..^1]:
-      # echo "code: ", child
-      ret = interpret(child, ns2, scope2)
+      ret = interpret(child, ns, fnScope)
     return ret
 
   return CirruEdnValue(kind: crEdnFn, fnVal: f)
@@ -338,7 +346,6 @@ proc evalLet*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: Cirr
   result = CirruEdnValue(kind: crEdnNil)
   for child in body:
     result = interpret(child, ns, letScope)
-
 
 proc evalDo*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.kind == cirruString:

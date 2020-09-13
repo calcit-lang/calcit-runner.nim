@@ -25,6 +25,16 @@ var programData: Table[string, ProgramFile]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
+proc hasNsAndDef(ns: string, def: string): bool =
+  if not programCode.hasKey(ns):
+    return false
+  if not programCode[ns].defs.hasKey(def):
+    return false
+  return true
+
+# mutual recursion
+proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue
+
 proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
     if match(expr.text, re"\d+(\.\d+)?"):
@@ -40,6 +50,8 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
       if fromScope.isSome:
         return fromScope.get
       else:
+        if hasNsAndDef(ns, expr.text):
+          return getEvaluatedByPath(ns, expr.text, scope)
         raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
   else:
     if expr.len == 0:
@@ -86,7 +98,20 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
             var value = value.stringVal
             return callStringMethod(value, expr, interpret, ns, scope)
           else:
-            raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
+            if hasNsAndDef(ns, head.text):
+              let fValue = getEvaluatedByPath(ns, head.text, scope)
+              if fValue.kind != crEdnFn:
+                raise newException(ValueError, "expects a function for calling")
+              let f = fValue.fnVal
+              var args: seq[CirruEdnValue] = @[]
+              let argsCode = expr[1..^1]
+              for x in argsCode:
+                args.add interpret(x, ns, scope)
+              return f(args, interpret, ns, scope)
+
+            else:
+              # TODO, check ns for imported defs
+              raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
       else:
         let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
