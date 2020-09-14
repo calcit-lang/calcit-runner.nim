@@ -17,8 +17,8 @@ type FileSource* = object
 
 var currentPackage*: string
 
-let snapshotFile* = "example/compact.cirru"
-let incrementFile* = "example/.compact-inc.cirru"
+var snapshotFile* = "compact.cirru"
+var incrementFile* = ".compact-inc.cirru"
 
 proc `%`*(xs: HashSet[string]): JsonNode =
   var list: seq[JsonNode] = @[]
