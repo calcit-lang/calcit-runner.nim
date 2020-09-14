@@ -14,10 +14,26 @@ import cirruEdn
 import libfswatch
 import libfswatch/fswatch
 
-import cirruInterpreter/types
-import cirruInterpreter/operations
-import cirruInterpreter/helpers
-import cirruInterpreter/loader
+import calcitRunner/types
+import calcitRunner/operations
+import calcitRunner/helpers
+import calcitRunner/loader
+import calcitRunner/scope
+
+var programCode: Table[string, FileSource]
+var programData: Table[string, ProgramFile]
+
+var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
+
+proc hasNsAndDef(ns: string, def: string): bool =
+  if not programCode.hasKey(ns):
+    return false
+  if not programCode[ns].defs.hasKey(def):
+    return false
+  return true
+
+# mutual recursion
+proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue
 
 proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
@@ -30,88 +46,106 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
     elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
       return CirruEdnValue(kind: crEdnString, stringVal: expr.text[1..^1])
     else:
-      return CirruEdnValue(kind: crEdnString, stringVal: expr.text)
+      let fromScope = scope.get(expr.text)
+      if fromScope.isSome:
+        return fromScope.get
+      else:
+        if hasNsAndDef(ns, expr.text):
+          return getEvaluatedByPath(ns, expr.text, scope)
+        raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
   else:
-    if expr.list.len == 0:
+    if expr.len == 0:
       return
     else:
-      let head = expr.list[0]
+      let head = expr[0]
       case head.kind
       of cirruString:
         case head.text
         of "println", "echo":
-          echo expr.list[1..^1].map(proc(x: CirruNode): CirruEdnValue =
+          echo expr[1..^1].map(proc(x: CirruNode): CirruEdnValue =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
         of "+":
-          return evalAdd(expr.list, interpret, ns, scope)
+          return evalAdd(expr, interpret, ns, scope)
         of "-":
-          return evalMinus(expr.list, interpret, ns, scope)
+          return evalMinus(expr, interpret, ns, scope)
         of "if":
-          return evalIf(expr.list, interpret, ns, scope)
+          return evalIf(expr, interpret, ns, scope)
         of "[]":
-          return evalArray(expr.list, interpret, ns, scope)
+          return evalArray(expr, interpret, ns, scope)
         of "{}":
-          return evalTable(expr.list, interpret, ns, scope)
+          return evalTable(expr, interpret, ns, scope)
         of "read-file":
-          return evalReadFile(expr.list, interpret, ns, scope)
+          return evalReadFile(expr, interpret, ns, scope)
         of "write-file":
-          return evalWriteFile(expr.list, interpret, ns, scope)
+          return evalWriteFile(expr, interpret, ns, scope)
         of ";":
           return evalComment()
         of "load-json":
-          return evalLoadJson(expr.list, interpret, ns, scope)
+          return evalLoadJson(expr, interpret, ns, scope)
         of "type-of":
-          return evalType(expr.list, interpret, ns, scope)
+          return evalType(expr, interpret, ns, scope)
         of "defn":
-          return evalDefn(expr.list, interpret, ns, scope)
+          return evalDefn(expr, interpret, ns, scope)
+        of "let":
+          return evalLet(expr, interpret, ns, scope)
+        of "do":
+          return evalDo(expr, interpret, ns, scope)
         else:
           let value = interpret(head, ns, scope)
           case value.kind
           of crEdnString:
             var value = value.stringVal
-            return callStringMethod(value, expr.list, interpret, ns, scope)
+            return callStringMethod(value, expr, interpret, ns, scope)
           else:
-            raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
+            if hasNsAndDef(ns, head.text):
+              let fValue = getEvaluatedByPath(ns, head.text, scope)
+              if fValue.kind != crEdnFn:
+                raise newException(ValueError, "expects a function for calling")
+              let f = fValue.fnVal
+              var args: seq[CirruEdnValue] = @[]
+              let argsCode = expr[1..^1]
+              for x in argsCode:
+                args.add interpret(x, ns, scope)
+              return f(args, interpret, ns, scope)
+
+            else:
+              # TODO, check ns for imported defs
+              raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
       else:
-        let headValue = interpret(expr.list[0], ns, scope)
+        let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
         of crEdnFn:
           echo "NOT implemented fn"
           quit 1
         of crEdnVector:
           var value = headValue.vectorVal
-          return callArrayMethod(value, expr.list, interpret, ns, scope)
+          return callArrayMethod(value, expr, interpret, ns, scope)
         of crEdnMap:
           var value = headValue.mapVal
-          return callTableMethod(value, expr.list, interpret, ns, scope)
+          return callTableMethod(value, expr, interpret, ns, scope)
         else:
           echo "TODO"
           quit 1
 
-var programCode: Table[string, FileSource]
-var programData: Table[string, Table[string, MaybeNil[CirruEdnValue]]]
-
-var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
-
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue =
   if not programData.hasKey(ns):
-    var newFile: Table[string, MaybeNil[CirruEdnValue]]
+    var newFile = ProgramFile()
     programData[ns] = newFile
 
   var file = programData[ns]
 
-  if not file.hasKey(def):
+  if not file.defs.hasKey(def):
     let code = programCode[ns].defs[def]
 
-    file[def] = MaybeNil[CirruEdnValue](kind: beSomething, value: interpret(code, ns, scope))
+    file.defs[def] = interpret(code, ns, scope)
 
-  return file[def].value
+  return file.defs[def]
 
 proc runProgram(): void =
   programCode = loadSnapshot()
   codeConfigs = loadCodeConfigs()
-  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
+  var scope = CirruEdnScope(parent: none(CirruEdnScope))
 
   let pieces = codeConfigs.initFn.split('/')
 
@@ -131,7 +165,7 @@ proc runProgram(): void =
 proc reloadProgram(): void =
   programCode = loadSnapshot()
   programData.clear()
-  var scope = CirruEdnScope(parent: none(ref CirruEdnScope))
+  var scope = CirruEdnScope(parent: none(CirruEdnScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
 
@@ -155,7 +189,7 @@ proc fileChangeCb(event: fsw_cevent, event_num: cuint): void =
   try:
     reloadProgram()
   except ValueError as e:
-    echo "Failed to rerun program: "
+    coloredEcho fgRed, "Failed to rerun program: ", e.msg
 
   except CirruParseError as e:
     coloredEcho fgRed, "\nError: failed to parse"
