@@ -2,7 +2,7 @@
 import os
 import re
 import sequtils
-from strutils import join, parseFloat, parseInt, split
+from strutils import join, parseFloat, parseInt, split, replace
 import json
 import strformat
 import terminal
@@ -218,6 +218,12 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main(): void =
+  if paramCount() == 0:
+    dimEcho "loading compact.cirru"
+  elif paramCount() == 1:
+    snapshotFile = paramStr(1)
+    incrementFile = paramStr(1).replace("compact", ".compact-inc")
+
   runProgram()
   setControlCHook(handleControl)
   watchFile()
