@@ -2,18 +2,12 @@ import tables
 import sets
 import json
 import terminal
-import options
 
 import cirruEdn
 import cirruParser
 
 import ./types
 import ./helpers
-
-type FileSource* = object
-  ns*: Option[CirruNode]
-  run: Option[CirruNode]
-  defs*: Table[string, CirruNode]
 
 var currentPackage*: string
 
@@ -53,15 +47,11 @@ proc extractFile(v: CirruEdnValue): FileSource =
 
   if v.contains(crEdn("ns", true)):
     let ns = v.get(crEdn("ns", true))
-    file.ns = some(getSourceNode(ns))
-  else:
-    file.ns = none(CirruNode)
+    file.ns = getSourceNode(ns)
 
   if v.contains(crEdn("proc", true)):
     let run = v.get(crEdn("proc", true))
-    file.run = some(getSourceNode(run))
-  else:
-    file.run = none(CirruNode)
+    file.run = getSourceNode(run)
 
   let defs = v.get(crEdn("defs", true))
   file.defs = extractDefs(defs)
@@ -112,12 +102,12 @@ proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdn
   if changedFile.contains(crEdn("ns", true)):
     let data = changedFile.get(crEdn("ns", true))
     coloredEcho fgMagenta, "patching: ns changed"
-    originalFile.ns = some(getSourceNode(data))
+    originalFile.ns = getSourceNode(data)
 
   if changedFile.contains(crEdn("proc", true)):
     let data = changedFile.get(crEdn("proc", true))
     coloredEcho fgMagenta, "patching: proc changed"
-    originalFile.run = some(getSourceNode(data))
+    originalFile.run = getSourceNode(data)
 
   if changedFile.contains(crEdn("removed-defs", true)):
     let data = changedFile.get(crEdn("removed-defs", true))

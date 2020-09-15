@@ -34,6 +34,7 @@ proc hasNsAndDef(ns: string, def: string): bool =
 
 # mutual recursion
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue
+proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 
 proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if expr.kind == cirruString:
@@ -49,10 +50,33 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
       let fromScope = scope.get(expr.text)
       if fromScope.isSome:
         return fromScope.get
+      elif hasNsAndDef(ns, expr.text):
+        return getEvaluatedByPath(ns, expr.text, scope)
       else:
-        if hasNsAndDef(ns, expr.text):
-          return getEvaluatedByPath(ns, expr.text, scope)
-        raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
+        let importDict = loadImportDictByNs(ns)
+        if expr.text.contains("/"):
+          let pieces = expr.text.split('/')
+          if pieces.len != 2:
+            raiseInterpretExceptionAtNode("Expects token in ns/def", expr)
+          let nsPart = pieces[0]
+          let defPart = pieces[1]
+          if importDict.hasKey(nsPart):
+            let importTarget = importDict[nsPart]
+            case importTarget.kind:
+            of importNs:
+              return getEvaluatedByPath(importTarget.ns, defPart, scope)
+            of importDef:
+              raiseInterpretExceptionAtNode(fmt"Unknown ns ${expr.text}", expr)
+        else:
+          if importDict.hasKey(expr.text):
+            let importTarget = importDict[expr.text]
+            case importTarget.kind:
+            of importDef:
+              return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
+            of importNs:
+              raiseInterpretExceptionAtNode(fmt"Unknown def ${expr.text}", expr)
+
+          raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
   else:
     if expr.len == 0:
       return
@@ -97,21 +121,16 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
           of crEdnString:
             var value = value.stringVal
             return callStringMethod(value, expr, interpret, ns, scope)
-          else:
-            if hasNsAndDef(ns, head.text):
-              let fValue = getEvaluatedByPath(ns, head.text, scope)
-              if fValue.kind != crEdnFn:
-                raise newException(ValueError, "expects a function for calling")
-              let f = fValue.fnVal
-              var args: seq[CirruEdnValue] = @[]
-              let argsCode = expr[1..^1]
-              for x in argsCode:
-                args.add interpret(x, ns, scope)
-              return f(args, interpret, ns, scope)
+          of crEdnFn:
+            let f = value.fnVal
+            var args: seq[CirruEdnValue] = @[]
+            let argsCode = expr[1..^1]
+            for x in argsCode:
+              args.add interpret(x, ns, scope)
+            return f(args, interpret, ns, scope)
 
-            else:
-              # TODO, check ns for imported defs
-              raiseInterpretExceptionAtNode(fmt"Unknown head {head.text}", head)
+          else:
+            raiseInterpretExceptionAtNode(fmt"Unknown head {head.text} for calling", head)
       else:
         let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
@@ -142,6 +161,15 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdn
 
   return file.defs[def]
 
+proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
+  let dict = programData[ns].ns
+  if dict.isSome:
+    return dict.get
+  else:
+    let v = extractNsInfo(programCode[ns].ns)
+    programData[ns].ns = some(v)
+    return v
+
 proc runProgram(): void =
   programCode = loadSnapshot()
   codeConfigs = loadCodeConfigs()
@@ -160,7 +188,13 @@ proc runProgram(): void =
 
   let f = entry.fnVal
   let args: seq[CirruEdnValue] = @[]
-  discard f(args, interpret, pieces[0], scope)
+  try:
+    discard f(args, interpret, pieces[0], scope)
+
+  except CirruInterpretError as e:
+    coloredEcho fgRed, "\nError: failed to interpret"
+    echo e.msg
+    raise e
 
 proc reloadProgram(): void =
   programCode = loadSnapshot()
