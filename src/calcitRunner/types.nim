@@ -1,6 +1,8 @@
 
 import tables
+import options
 
+import cirruParser
 import cirruEdn
 
 type CirruInterpretError* = ref object of ValueError
@@ -9,18 +11,23 @@ type CirruInterpretError* = ref object of ValueError
 
 type CirruCommandError* = ValueError
 
-type ImportKind = enum
+type ImportKind* = enum
   importNs, importDef
 type ImportInfo* = object
   ns*: string
-  case kind: ImportKind
+  case kind*: ImportKind
   of importNs:
     discard
   of importDef:
-    def: string
+    def*: string
+
+type FileSource* = object
+  ns*: CirruNode
+  run*: CirruNode
+  defs*: Table[string, CirruNode]
 
 type ProgramFile* = object
-  ns*: Table[string, ImportInfo]
+  ns*: Option[Table[string, ImportInfo]]
   defs*: Table[string, CirruEdnValue]
 
 type CodeConfigs* = object
