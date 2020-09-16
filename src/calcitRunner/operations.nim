@@ -24,6 +24,42 @@ proc evalAdd*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: Cirr
       raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
   return CirruEdnValue(kind: crEdnNumber, numberVal: ret)
 
+proc evalCompare*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
+  if exprList.kind == cirruString:
+    raiseInterpretExceptionAtNode(fmt"Expected cirru expr", exprList)
+  if exprList.len < 3:
+    raiseInterpretExceptionAtNode(fmt"Too few arguments to compare", exprList)
+  let opNode = exprList[0]
+  if opNode.kind != cirruString:
+    raiseInterpretExceptionAtNode(fmt"Expected compare symbol", exprList)
+  var comparator = proc(a, b: float): bool = a == b
+  case opNode.text:
+  of "<":
+    comparator = proc(a, b: float): bool = a < b
+  of ">":
+    comparator = proc(a, b: float): bool = a > b
+  of "=":
+    comparator = proc(a, b: float): bool = a == b
+  of "!=":
+    comparator = proc(a, b: float): bool = a != b
+  else:
+    raiseInterpretExceptionAtNode(fmt"Unknown compare symbol", opNode)
+
+  let body = exprList.list[1..^1]
+  for idx, node in body:
+    if idx >= (exprList.len - 2):
+      break
+    let v = interpret(node, ns, scope)
+    if v.kind != crEdnNumber:
+      raiseInterpretExceptionAtNode(fmt"Not a number {v.kind}", node)
+    let vNext = interpret(body[idx + 1], ns, scope)
+    if vNext.kind != crEdnNumber:
+      raiseInterpretExceptionAtNode(fmt"Not a number {v.kind}", body[idx + 1])
+    if not comparator(v.numberVal, vNext.numberVal):
+      return CirruEdnValue(kind: crEdnBool, boolVal: false)
+
+  return CirruEdnValue(kind: crEdnBool, boolVal: true)
+
 proc evalMinus*(exprList: CirruNode, interpret: EdnEvalFn, ns: string, scope: CirruEdnScope): CirruEdnValue =
   if exprList.kind == cirruString:
     raiseInterpretExceptionAtNode(fmt"Expected cirru expr", exprList)
