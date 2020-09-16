@@ -115,6 +115,8 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
           return evalLet(expr, interpret, ns, scope)
         of "do":
           return evalDo(expr, interpret, ns, scope)
+        of ">", "<", "=", "!=":
+          return evalCompare(expr, interpret, ns, scope)
         else:
           let value = interpret(head, ns, scope)
           case value.kind
