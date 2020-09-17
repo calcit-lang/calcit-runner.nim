@@ -8,6 +8,7 @@ import strformat
 import terminal
 import tables
 import options
+import parseopt
 
 import cirruParser
 import cirruEdn
@@ -23,6 +24,7 @@ import calcitRunner/format
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
+var runOnce = false
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
@@ -256,14 +258,28 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main(): void =
-  if paramCount() == 0:
-    dimEcho "loading compact.cirru"
-  elif paramCount() == 1:
-    snapshotFile = paramStr(1)
-    incrementFile = paramStr(1).replace("compact", ".compact-inc")
+  var cliArgs = initOptParser(commandLineParams().join(" "))
+
+  while true:
+    cliArgs.next()
+    case cliArgs.kind
+    of cmdEnd: break
+    of cmdShortOption:
+      if cliArgs.key == "1":
+        if cliArgs.val == "" or cliArgs.val == "true":
+          runOnce = true
+    of cmdLongOption:
+      if cliArgs.key == "once":
+        if cliArgs.val == "" or cliArgs.val == "true":
+          runOnce = true
+    of cmdArgument:
+      snapshotFile = cliArgs.key
+      incrementFile = cliArgs.key.replace("compact", ".compact-inc")
 
   runProgram()
-  setControlCHook(handleControl)
-  watchFile()
+
+  if not runOnce:
+    setControlCHook(handleControl)
+    watchFile()
 
 main()
