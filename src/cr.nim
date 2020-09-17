@@ -19,6 +19,7 @@ import calcitRunner/operations
 import calcitRunner/helpers
 import calcitRunner/loader
 import calcitRunner/scope
+import calcitRunner/format
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
@@ -33,19 +34,19 @@ proc hasNsAndDef(ns: string, def: string): bool =
   return true
 
 # mutual recursion
-proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue
+proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 
-proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue =
+proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
   if expr.kind == cirruString:
     if match(expr.text, re"\d+(\.\d+)?"):
-      return CirruEdnValue(kind: crEdnNumber, numberVal: parseFloat(expr.text))
+      return CirruData(kind: crDataNumber, numberVal: parseFloat(expr.text))
     elif expr.text == "true":
-      return CirruEdnValue(kind: crEdnBool, boolVal: true)
+      return CirruData(kind: crDataBool, boolVal: true)
     elif expr.text == "false":
-      return CirruEdnValue(kind: crEdnBool, boolVal: false)
+      return CirruData(kind: crDataBool, boolVal: false)
     elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
-      return CirruEdnValue(kind: crEdnString, stringVal: expr.text[1..^1])
+      return CirruData(kind: crDataString, stringVal: expr.text[1..^1])
     else:
       let fromScope = scope.get(expr.text)
       if fromScope.isSome:
@@ -86,7 +87,7 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
       of cirruString:
         case head.text
         of "println", "echo":
-          echo expr[1..^1].map(proc(x: CirruNode): CirruEdnValue =
+          echo expr[1..^1].map(proc(x: CirruNode): CirruData =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
         of "+":
@@ -120,12 +121,12 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
         else:
           let value = interpret(head, ns, scope)
           case value.kind
-          of crEdnString:
+          of crDataString:
             var value = value.stringVal
             return callStringMethod(value, expr, interpret, ns, scope)
-          of crEdnFn:
+          of crDataFn:
             let f = value.fnVal
-            var args: seq[CirruEdnValue] = @[]
+            var args: seq[CirruData] = @[]
             let argsCode = expr[1..^1]
             for x in argsCode:
               args.add interpret(x, ns, scope)
@@ -136,20 +137,20 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruEdnScope): CirruEdnValue
       else:
         let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
-        of crEdnFn:
+        of crDataFn:
           echo "NOT implemented fn"
           quit 1
-        of crEdnVector:
+        of crDataVector:
           var value = headValue.vectorVal
           return callArrayMethod(value, expr, interpret, ns, scope)
-        of crEdnMap:
+        of crDataMap:
           var value = headValue.mapVal
           return callTableMethod(value, expr, interpret, ns, scope)
         else:
           echo "TODO"
           quit 1
 
-proc getEvaluatedByPath(ns: string, def: string, scope: CirruEdnScope): CirruEdnValue =
+proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData =
   if not programData.hasKey(ns):
     var newFile = ProgramFile()
     programData[ns] = newFile
@@ -175,7 +176,7 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
 proc runProgram(): void =
   programCode = loadSnapshot()
   codeConfigs = loadCodeConfigs()
-  var scope = CirruEdnScope(parent: none(CirruEdnScope))
+  var scope = CirruDataScope(parent: none(CirruDataScope))
 
   let pieces = codeConfigs.initFn.split('/')
 
@@ -185,11 +186,11 @@ proc runProgram(): void =
 
   let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
-  if entry.kind != crEdnFn:
+  if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let f = entry.fnVal
-  let args: seq[CirruEdnValue] = @[]
+  let args: seq[CirruData] = @[]
   try:
     discard f(args, interpret, pieces[0], scope)
 
@@ -201,7 +202,7 @@ proc runProgram(): void =
 proc reloadProgram(): void =
   programCode = loadSnapshot()
   programData.clear()
-  var scope = CirruEdnScope(parent: none(CirruEdnScope))
+  var scope = CirruDataScope(parent: none(CirruDataScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
 
@@ -211,11 +212,11 @@ proc reloadProgram(): void =
 
   let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
-  if entry.kind != crEdnFn:
+  if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let f = entry.fnVal
-  let args: seq[CirruEdnValue] = @[]
+  let args: seq[CirruData] = @[]
   discard f(args, interpret, pieces[0], scope)
 
 

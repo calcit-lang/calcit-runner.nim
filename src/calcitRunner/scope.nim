@@ -3,19 +3,18 @@ import tables
 import options
 
 import cirruParser
-import cirruEdn
 
 import ./types
 import ./helpers
 
-proc get*(scope: CirruEdnScope, name: string): Option[CirruEdnValue] =
+proc get*(scope: CirruDataScope, name: string): Option[CirruData] =
   if scope.dict.hasKey(name):
     return some(scope.dict[name])
   else:
     if scope.parent.isSome:
       return get(scope.parent.get, name)
     else:
-      return none(CirruEdnValue)
+      return none(CirruData)
 
 # originally from clojure `(ns app.lib (:require [a.b :as a] [a.c :refer [b]]))`
 # not in Cirru vectors, a little different, but `:as` and `:refer` are copied

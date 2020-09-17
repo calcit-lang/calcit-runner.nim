@@ -14,7 +14,7 @@ binDir        = "out/"
 
 requires "nim >= 0.20.0"
 requires "libfswatch"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.1.11"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.2.0"
 
 
 task cr, "Try cr command":
