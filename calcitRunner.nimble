@@ -18,7 +18,7 @@ requires "https://github.com/Cirru/cirru-edn.nim#v0.2.0"
 
 
 task cr, "Try cr command":
-  exec "nim compile --verbosity:0 --hints:off -r src/cr example/compact.cirru"
+  exec "nim compile --verbosity:0 --hints:off -r src/cr --once example/compact.cirru"
 
 task t, "Runs the test suite":
   exec "nim c -r --hints:off tests/testExpr.nim"
