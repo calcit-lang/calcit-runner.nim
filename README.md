@@ -10,6 +10,23 @@ In latest Calcit Editor, settings `:compact-output? true` in `:configs` enables 
 which writes `compact.cirru` and `.compact-inc.cirru` instead of Clojure(Script).
 And this project provides a runner for `compact.cirru` directly, written on Nim for low overhead.
 
+An example for `compact.cirru` may be:
+
+```cirru
+{} (:package |app)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+  :files $ {}
+    |app.main $ {}
+      :ns $ quote
+        ns app.main $ :require
+      :defs $ {}
+        |main! $ quote
+          defn main! () (+ 1 2)
+        |reload! $ quote
+          defn reload! ()
+      :proc $ quote ()
+```
+
 ### Usage
 
 Install dependency:
@@ -22,7 +39,13 @@ nimble install
 Run in dev mode:
 
 ```bash
-nimble cr
+nimble watch
+
+# or
+nimble once
+
+# or tests
+nimble t
 ```
 
 It also watches the changes and rerun program.
