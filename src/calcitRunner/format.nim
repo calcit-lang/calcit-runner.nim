@@ -38,7 +38,7 @@ proc toString*(val: CirruData): string =
       else:
         "false"
     of crDataNumber: $(val.numberVal)
-    of crDataString: escape(val.stringVal)
+    of crDataString: val.stringVal
     of crDataVector: fromArrayToString(val.vectorVal)
     of crDataList: fromSeqToString(val.listVal)
     of crDataSet: fromSetToString(val.setVal)
@@ -46,7 +46,7 @@ proc toString*(val: CirruData): string =
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
     of crDataFn: "::fn"
-    of crDataQuotedCirru: $(val.quotedVal)
+    of crDataSymbol: $(val.symbolVal)
 
 proc `$`*(v: CirruData): string =
   v.toString

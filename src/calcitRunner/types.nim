@@ -45,7 +45,7 @@ type
     crDataSet,
     crDataMap,
     crDataFn,
-    crDataQuotedCirru,
+    crDataSymbol,
 
   CirruData* = object
     line*: int
@@ -62,7 +62,7 @@ type
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: Table[CirruData, CirruData]
-    of crDataQuotedCirru: quotedVal*: CirruNode
+    of crDataSymbol: symbolVal*: CirruNode
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError

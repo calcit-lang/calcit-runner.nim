@@ -2,7 +2,7 @@
 import os
 import re
 import sequtils
-from strutils import join, parseFloat, parseInt, split, replace
+import strutils
 import json
 import strformat
 import terminal
@@ -96,6 +96,15 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
           echo expr[1..^1].map(proc(x: CirruNode): CirruData =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
+        of "pr-str":
+          echo expr[1..^1].map(proc(x: CirruNode): CirruData =
+            interpret(x, ns, scope)
+          ).map(proc (x: CirruData): string =
+            if x.kind == crDataString:
+              return escape(x.stringVal)
+            else:
+              return $x
+          ).join(" ")
         of "+":
           return evalAdd(expr, interpret, ns, scope)
         of "-":
