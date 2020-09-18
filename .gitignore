@@ -1,7 +1,6 @@
 
 out/*
 tests/testExpr
-src/calcitRunner
 src/cr
 
 example/.compact-inc.cirru

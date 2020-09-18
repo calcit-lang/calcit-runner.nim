@@ -22,12 +22,13 @@ import calcitRunner/helpers
 import calcitRunner/loader
 import calcitRunner/scope
 import calcitRunner/format
+import calcitRunner/genData
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
 var runOnce = false
 
-export CirruData, CirruDataKind, `==`
+export CirruData, CirruDataKind, `==`, crData
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
