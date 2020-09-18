@@ -140,7 +140,6 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
       programData.del x
 
   if changesInfo.contains(crEdn("added", true)):
-    var newFiles = Table[string, FileSource]()
     let added = changesInfo.get(crEdn("added", true))
     if added.kind != crEdnMap:
       raise newException(ValueError, "expects a map")

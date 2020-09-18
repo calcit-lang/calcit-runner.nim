@@ -262,7 +262,7 @@ proc handleControl() {.noconv.} =
   quit 0
 
 proc main*(): void =
-  var cliArgs = initOptParser(commandLineParams().join(" "))
+  var cliArgs = initOptParser(commandLineParams())
   var snapshotFile = "compact.cirru"
   var incrementFile = ".compact-inc.cirru"
 
