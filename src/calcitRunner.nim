@@ -2,7 +2,7 @@
 import os
 import re
 import sequtils
-from strutils import join, parseFloat, parseInt, split, replace
+import strutils
 import json
 import strformat
 import terminal
@@ -22,12 +22,13 @@ import calcitRunner/helpers
 import calcitRunner/loader
 import calcitRunner/scope
 import calcitRunner/format
+import calcitRunner/genData
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
 var runOnce = false
 
-export CirruData, CirruDataKind, `==`
+export CirruData, CirruDataKind, `==`, crData
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
@@ -95,6 +96,15 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
           echo expr[1..^1].map(proc(x: CirruNode): CirruData =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
+        of "pr-str":
+          echo expr[1..^1].map(proc(x: CirruNode): CirruData =
+            interpret(x, ns, scope)
+          ).map(proc (x: CirruData): string =
+            if x.kind == crDataString:
+              return escape(x.stringVal)
+            else:
+              return $x
+          ).join(" ")
         of "+":
           return evalAdd(expr, interpret, ns, scope)
         of "-":

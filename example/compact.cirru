@@ -7,7 +7,7 @@
         ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib)
       :defs $ {}
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (echo "\"fibo result:" $ fibo 16) (+ 1 2)
+          defn main! () (println "\"Loaded program!") (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true) (echo "\"fibo result:" $ fibo 16) (+ 1 2)
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
         |reload! $ quote

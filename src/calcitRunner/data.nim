@@ -62,9 +62,9 @@ proc hash*(value: CirruData): Hash =
 
       result = !$ result
 
-    of crDataQuotedCirru:
-      result =  hash("quoted:")
-      result = result !& hash(value.quotedVal)
+    of crDataSymbol:
+      result =  hash("symbol:")
+      result = result !& hash(value.symbolVal)
       result = !$ result
 
 proc `==`*(x, y: CirruData): bool =
@@ -121,8 +121,8 @@ proc `==`*(x, y: CirruData): bool =
 
       return true
 
-    of crDataQuotedCirru:
-      return x.quotedVal == y.quotedVal
+    of crDataSymbol:
+      return x.symbolVal == y.symbolVal
 
 proc `!=`*(x, y: CirruData): bool =
   not (x == y)
@@ -235,8 +235,8 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataFn:
     return JsonNode(kind: JNull)
 
-  of crDataQuotedCirru:
-    return toJson(x.quotedVal)
+  of crDataSymbol:
+    return JsonNode(kind: JString, str: x.symbolVal)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruEdn*(v: JsonNode): CirruData =
