@@ -13,10 +13,16 @@ proc crData*(x: float): CirruData =
 proc crData*(x: bool): CirruData =
   CirruData(kind: crDataBool, boolVal: x)
 
-proc crData*(x: string, asKeyword: bool = false): CirruData =
-  if asKeyword:
+proc crData*(x: string, target: string = "string"): CirruData =
+  case target:
+  of "keyword":
     CirruData(kind: crDataKeyword, keywordVal: x)
+  of "symbol":
+    CirruData(kind: crDataSymbol, symbolVal: x)
+  of "string":
+    CirruData(kind: crDataString, stringVal: x)
   else:
+    echo "[crData warn] Unknown kind target passed to crData"
     CirruData(kind: crDataString, stringVal: x)
 
 proc crData*(): CirruData =

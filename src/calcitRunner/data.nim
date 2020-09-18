@@ -236,7 +236,7 @@ proc toJson*(x: CirruData): JsonNode =
     return JsonNode(kind: JNull)
 
   of crDataSymbol:
-    return toJson(x.symbolVal)
+    return JsonNode(kind: JString, str: x.symbolVal)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruEdn*(v: JsonNode): CirruData =
