@@ -11,9 +11,6 @@ import ./helpers
 
 var currentPackage*: string
 
-var snapshotFile* = "compact.cirru"
-var incrementFile* = ".compact-inc.cirru"
-
 proc `%`*(xs: HashSet[string]): JsonNode =
   var list: seq[JsonNode] = @[]
   for x in xs:
@@ -58,7 +55,7 @@ proc extractFile(v: CirruEdnValue): FileSource =
 
   return file
 
-proc loadSnapshot*(): Table[string, FileSource] =
+proc loadSnapshot*(snapshotFile: string): Table[string, FileSource] =
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
   var compactFiles = initTable[string, FileSource]()
@@ -128,7 +125,7 @@ proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdn
       coloredEcho fgMagenta, "patching: updated def ", k
       originalFile.defs[k] = v
 
-proc loadChanges*(programData: var Table[string, FileSource]): void =
+proc loadChanges*(incrementFile: string, programData: var Table[string, FileSource]): void =
   let content = readFile incrementFile
   let changesInfo = parseEdnFromStr content
 
@@ -165,7 +162,7 @@ proc loadChanges*(programData: var Table[string, FileSource]): void =
 
   coloredEcho fgMagenta, "code updated from inc files"
 
-proc loadCodeConfigs*(): CodeConfigs =
+proc loadCodeConfigs*(snapshotFile: string): CodeConfigs =
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
 
