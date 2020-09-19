@@ -7,6 +7,7 @@ import cirruEdn
 import cirruParser
 
 import ./types
+import ./data
 import ./helpers
 
 var currentPackage*: string
@@ -17,15 +18,15 @@ proc `%`*(xs: HashSet[string]): JsonNode =
     list.add JsonNode(kind: JString, str: x)
   JsonNode(kind: JArray, elems: list)
 
-proc getSourceNode(v: CirruEdnValue): CirruNode =
+proc getSourceNode(v: CirruEdnValue): CirruData =
   if v.kind != crEdnQuotedCirru:
     echo "current node: ", v
     raise newException(ValueError, "Unexpected quoted cirru node")
 
-  return v.quotedVal
+  return v.quotedVal.toCirruData
 
-proc extractDefs(defs: CirruEdnValue): Table[string, CirruNode] =
-  result = initTable[string, CirruNode]()
+proc extractDefs(defs: CirruEdnValue): Table[string, CirruData] =
+  result = initTable[string, CirruData]()
 
   if defs.kind != crEdnMap:
     raise newException(ValueError, "expects a map")

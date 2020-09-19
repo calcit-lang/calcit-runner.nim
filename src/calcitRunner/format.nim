@@ -46,7 +46,7 @@ proc toString*(val: CirruData): string =
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
     of crDataFn: "::fn"
-    of crDataSymbol: $(val.symbolVal)
+    of crDataSymbol: val.ns & "/" & val.symbolVal
 
 proc `$`*(v: CirruData): string =
   v.toString

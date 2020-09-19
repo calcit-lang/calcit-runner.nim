@@ -2,6 +2,7 @@ import tables
 import hashes
 import sets
 import options
+import system
 
 import cirruParser
 
@@ -12,6 +13,7 @@ import json
 
 import cirruParser
 import ./types
+import ./helpers
 
 proc hash*(value: CirruNode): Hash =
   case value.kind:
@@ -122,6 +124,7 @@ proc `==`*(x, y: CirruData): bool =
       return true
 
     of crDataSymbol:
+      # TODO, ns not compared, not decided
       return x.symbolVal == y.symbolVal
 
 proc `!=`*(x, y: CirruData): bool =
@@ -239,7 +242,7 @@ proc toJson*(x: CirruData): JsonNode =
     return JsonNode(kind: JString, str: x.symbolVal)
 
 # notice that JSON does not have keywords or some other types
-proc toCirruEdn*(v: JsonNode): CirruData =
+proc toCirruData*(v: JsonNode): CirruData =
   case v.kind
   of JString:
     return CirruData(kind: crDataString, stringVal: v.str)
@@ -254,12 +257,73 @@ proc toCirruEdn*(v: JsonNode): CirruData =
   of JArray:
     var arr: seq[CirruData]
     for v in v.elems:
-      arr.add toCirruEdn(v)
+      arr.add toCirruData(v)
     return CirruData(kind: crDataVector, vectorVal: arr)
   of JObject:
     var table = initTable[CirruData, CirruData]()
     for key, value in v:
       let keyContent = CirruData(kind: crDataString, stringVal: key)
-      let value = toCirruEdn(value)
+      let value = toCirruData(value)
       table.add(keyContent, value)
     return CirruData(kind: crDataMap, mapVal: table)
+
+proc `[]`*(xs: CirruData, idx: int): CirruData =
+  case xs.kind:
+  of crDataList:
+    xs.listVal[idx]
+  of crDataVector:
+    xs.vectorVal[idx]
+  else:
+    raise newException(ValueError, "Cannot index on cirru string")
+
+proc len*(xs: CirruData): int =
+  case xs.kind:
+  of crDataList:
+    return xs.listVal.len
+  of crDataVector:
+    return xs.vectorVal.len
+  of crDataString:
+    return xs.stringVal.len
+  of crDataMap:
+    return xs.mapVal.len
+  of crDataNil:
+    return 0
+  else:
+    raiseEvalError("Data has no len function", xs)
+
+proc isListData*(xs: CirruData): bool =
+  case xs.kind
+    of crDataList: true
+    of crDataVector: true
+    else: false
+
+proc notListData*(xs: CirruData): bool =
+  not isListData(xs)
+
+proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
+  if notListData(xs):
+    raise newException(ValueError, "Cannot create iterator on a cirru string")
+
+  let fromA = fromTo.a
+  let toB = fromTo.b
+  let size = toB - fromA + 1
+  newSeq(result, size)
+  for idx in 0..<size:
+    result[idx] = xs[fromA + idx]
+
+proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
+  if notListData(xs):
+    raiseEvalError("Cannot create iterator on data", xs)
+
+  let fromA = fromTo.a
+  let toB =  xs.len - fromTo.b.int
+  xs[fromA .. toB]
+
+proc toCirruData*(xs: CirruNode): CirruData =
+  if xs.kind == cirruString:
+    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: "TODO")
+  else:
+    var list: seq[CirruData] = @[]
+    for x in xs:
+      list.add x.toCirruData
+    CirruData(kind: crDataList, listVal: list)

@@ -3,8 +3,6 @@ import tables
 import options
 import sets
 
-import cirruParser
-
 type CirruInterpretError* = ref object of ValueError
   line*: int
   column*: int
@@ -21,18 +19,11 @@ type ImportInfo* = object
   of importDef:
     def*: string
 
-type FileSource* = object
-  ns*: CirruNode
-  run*: CirruNode
-  defs*: Table[string, CirruNode]
-
 type
 
   CirruDataScope* = ref object
     dict*: Table[string, CirruData]
     parent*: Option[CirruDataScope]
-
-  EdnEvalFn* = proc(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData
 
   CirruDataKind* = enum
     crDataNil,
@@ -46,6 +37,8 @@ type
     crDataMap,
     crDataFn,
     crDataSymbol,
+
+  EdnEvalFn* = proc(expr: CirruData, ns: string, scope: CirruDataScope): CirruData
 
   CirruData* = object
     line*: int
@@ -62,7 +55,9 @@ type
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: Table[CirruData, CirruData]
-    of crDataSymbol: symbolVal*: string
+    of crDataSymbol:
+      symbolVal*: string
+      ns*: string
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError
@@ -76,3 +71,11 @@ type ProgramFile* = object
 type CodeConfigs* = object
   initFn*: string
   reloadFn*: string
+
+type CirruEvalError* = ref object of ValueError
+  code*: CirruData
+
+type FileSource* = object
+  ns*: CirruData
+  run*: CirruData
+  defs*: Table[string, CirruData]

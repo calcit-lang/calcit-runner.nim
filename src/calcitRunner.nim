@@ -43,28 +43,28 @@ proc hasNsAndDef(ns: string, def: string): bool =
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 
-proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
-  if expr.kind == cirruString:
-    if match(expr.text, re"\d+(\.\d+)?"):
-      return CirruData(kind: crDataNumber, numberVal: parseFloat(expr.text))
-    elif expr.text == "true":
+proc interpret(expr: CirruData, ns: string, scope: CirruDataScope): CirruData =
+  if expr.kind == crDataSymbol:
+    if match(expr.symbolVal, re"\d+(\.\d+)?"):
+      return CirruData(kind: crDataNumber, numberVal: parseFloat(expr.symbolVal))
+    elif expr.symbolVal == "true":
       return CirruData(kind: crDataBool, boolVal: true)
-    elif expr.text == "false":
+    elif expr.symbolVal == "false":
       return CirruData(kind: crDataBool, boolVal: false)
-    elif (expr.text.len > 0) and (expr.text[0] == '|' or expr.text[0] == '"'):
-      return CirruData(kind: crDataString, stringVal: expr.text[1..^1])
+    elif (expr.symbolVal.len > 0) and (expr.symbolVal[0] == '|' or expr.symbolVal[0] == '"'):
+      return CirruData(kind: crDataString, stringVal: expr.symbolVal[1..^1])
     else:
-      let fromScope = scope.get(expr.text)
+      let fromScope = scope.get(expr.symbolVal)
       if fromScope.isSome:
         return fromScope.get
-      elif hasNsAndDef(ns, expr.text):
-        return getEvaluatedByPath(ns, expr.text, scope)
+      elif hasNsAndDef(ns, expr.symbolVal):
+        return getEvaluatedByPath(ns, expr.symbolVal, scope)
       else:
         let importDict = loadImportDictByNs(ns)
-        if expr.text.contains("/"):
-          let pieces = expr.text.split('/')
+        if expr.symbolVal.contains("/"):
+          let pieces = expr.symbolVal.split('/')
           if pieces.len != 2:
-            raiseInterpretExceptionAtNode("Expects token in ns/def", expr)
+            raiseEvalError("Expects token in ns/def", expr)
           let nsPart = pieces[0]
           let defPart = pieces[1]
           if importDict.hasKey(nsPart):
@@ -73,35 +73,35 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
             of importNs:
               return getEvaluatedByPath(importTarget.ns, defPart, scope)
             of importDef:
-              raiseInterpretExceptionAtNode(fmt"Unknown ns ${expr.text}", expr)
+              raiseEvalError(fmt"Unknown ns ${expr.symbolVal}", expr)
         else:
-          if importDict.hasKey(expr.text):
-            let importTarget = importDict[expr.text]
+          if importDict.hasKey(expr.symbolVal):
+            let importTarget = importDict[expr.symbolVal]
             case importTarget.kind:
             of importDef:
               return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
             of importNs:
-              raiseInterpretExceptionAtNode(fmt"Unknown def ${expr.text}", expr)
+              raiseEvalError(fmt"Unknown def ${expr.symbolVal}", expr)
 
-          raiseInterpretExceptionAtNode(fmt"Unknown token {expr.text}", expr)
+          raiseEvalError(fmt"Unknown token {expr.symbolVal}", expr)
   else:
     if expr.len == 0:
       return
     else:
       let head = expr[0]
       case head.kind
-      of cirruString:
-        case head.text
+      of crDataSymbol:
+        case head.symbolVal
         of "println", "echo":
-          echo expr[1..^1].map(proc(x: CirruNode): CirruData =
+          echo expr[1..^1].map(proc(x: CirruData): CirruData =
             interpret(x, ns, scope)
           ).map(`$`).join(" ")
         of "pr-str":
-          echo expr[1..^1].map(proc(x: CirruNode): CirruData =
+          echo expr[1..^1].map(proc(x: CirruData): CirruData =
             interpret(x, ns, scope)
           ).map(proc (x: CirruData): string =
-            if x.kind == crDataString:
-              return escape(x.stringVal)
+            if x.kind == crDataSymbol:
+              return escape(x.symbolVal)
             else:
               return $x
           ).join(" ")
@@ -137,7 +137,7 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
           let value = interpret(head, ns, scope)
           case value.kind
           of crDataString:
-            var value = value.stringVal
+            var value = value.symbolVal
             return callStringMethod(value, expr, interpret, ns, scope)
           of crDataFn:
             let f = value.fnVal
@@ -148,7 +148,7 @@ proc interpret(expr: CirruNode, ns: string, scope: CirruDataScope): CirruData =
             return f(args, interpret, ns, scope)
 
           else:
-            raiseInterpretExceptionAtNode(fmt"Unknown head {head.text} for calling", head)
+            raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
       else:
         let headValue = interpret(expr[0], ns, scope)
         case headValue.kind:
@@ -209,9 +209,10 @@ proc runProgram*(snapshotFile: string): CirruData =
   try:
     return f(args, interpret, pieces[0], scope)
 
-  except CirruInterpretError as e:
+  except CirruEvalError as e:
     coloredEcho fgRed, "\nError: failed to interpret"
     echo e.msg
+    echo e.code
     raise e
 
 proc reloadProgram(snapshotFile: string): void =
