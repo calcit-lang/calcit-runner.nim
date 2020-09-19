@@ -127,6 +127,12 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
           return evalType(expr, interpret, scope)
         of "defn":
           return evalDefn(expr, interpret, scope)
+        of "defmacro":
+          return evalDefmacro(expr, interpret, scope)
+        of "eval":
+          return evalEval(expr, interpret, scope)
+        of "quote":
+          return evalQuote(expr, interpret, scope)
         of "let":
           return evalLet(expr, interpret, scope)
         of "do":
@@ -146,6 +152,9 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             for x in argsCode:
               args.add interpret(x, scope)
             return f(args, interpret, scope)
+          of crDataMacro:
+            let f = value.macroVal
+            return f(expr[1..^1], interpret, scope)
 
           else:
             raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
@@ -154,6 +163,9 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
         case headValue.kind:
         of crDataFn:
           echo "NOT implemented fn"
+          quit 1
+        of crDataMacro:
+          echo "TODO macro"
           quit 1
         of crDataVector:
           var value = headValue.vectorVal
@@ -211,8 +223,7 @@ proc runProgram*(snapshotFile: string): CirruData =
 
   except CirruEvalError as e:
     coloredEcho fgRed, "\nError: failed to interpret"
-    echo e.msg
-    echo e.code
+    coloredEcho fgRed, e.msg, " ", $e.code
     raise e
 
 proc reloadProgram(snapshotFile: string): void =

@@ -36,6 +36,7 @@ type
     crDataSet,
     crDataMap,
     crDataFn,
+    crDataMacro,
     crDataSymbol,
 
   EdnEvalFn* = proc(expr: CirruData, scope: CirruDataScope): CirruData
@@ -51,6 +52,8 @@ type
     of crDataKeyword: keywordVal*: string
     of crDataFn:
       fnVal*: proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
+    of crDataMacro:
+      macroVal*: proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
     of crDataVector: vectorVal*: seq[CirruData]
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]

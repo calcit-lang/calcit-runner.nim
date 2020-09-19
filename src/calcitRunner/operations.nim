@@ -10,6 +10,7 @@ import options
 import ./data
 import ./types
 import ./helpers
+import ./format
 
 proc evalAdd*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
@@ -389,3 +390,45 @@ proc evalDo*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
   result = CirruData(kind: crDataNil)
   for child in body:
     result = interpret(child, scope)
+
+proc evalEval*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if notListData(exprList):
+    raiseEvalError(fmt"Expected cirru expr", exprList)
+  if exprList.len != 2:
+    raiseEvalError(fmt"eval expects 1 argument", exprList)
+  let code = exprList[1]
+  if notListData(code):
+    raiseEvalError(fmt"Expected cirru expr in eval(...)", code)
+  dimEcho("eval: ", $code)
+  interpret code, scope
+
+proc evalQuote*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if notListData(exprList):
+    raiseEvalError(fmt"Expected cirru expr", exprList)
+  if exprList.len != 2:
+    raiseEvalError(fmt"eval expects 1 argument", exprList)
+  let code = exprList[1]
+  return code
+
+proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if notListData(exprList):
+    raiseEvalError(fmt"Expected cirru expr", exprList)
+  let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
+    let fnScope = CirruDataScope(parent: some(scope))
+    let argsList = exprList[2]
+    var counter = 0
+    if argsList.len != xs.len:
+      raiseEvalError(fmt"Args length mismatch", argsList)
+    for arg in argsList:
+      if arg.kind != crDataSymbol:
+        raiseEvalError(fmt"Expects arg in string", arg)
+      fnScope.dict[arg.symbolVal] = xs[counter]
+      counter += 1
+    var ret = CirruData(kind: crDataNil)
+    for child in exprList[3..^1]:
+      ret = interpret(child, fnScope)
+    if notListData(ret):
+      raiseEvalError(fmt"Expected cirru expr from defmacro", ret)
+    return interpret(ret, callingScope)
+
+  return CirruData(kind: crDataMacro, macroVal: f)

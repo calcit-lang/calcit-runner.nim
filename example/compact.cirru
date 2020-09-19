@@ -7,7 +7,10 @@
         ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib)
       :defs $ {}
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true) (echo "\"fibo result:" $ fibo 16) (+ 1 2)
+          defn main! () (println "\"Loaded program!") (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true) (; echo "\"fibo result:" $ fibo 16) (+ 1 2)
+            eval $ println (+ 1 2)
+            println $ quote (+ 1 2)
+            println $ gen-num 3 4 c
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
         |reload! $ quote
@@ -22,6 +25,8 @@
           defn fibo (x)
             if (< x 2) (, 1)
               + (fibo $ - x 1) (fibo $ - x 2)
+        |gen-num $ quote
+          defmacro gen-num (a b c) (echo a b c) (quote $ + 1 2 3)
       :proc $ quote ()
       :configs $ {} (:extension nil)
     |app.lib $ {}
