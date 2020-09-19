@@ -3,6 +3,7 @@ import hashes
 import sets
 import options
 import system
+import terminal
 
 import cirruParser
 
@@ -40,6 +41,10 @@ proc hash*(value: CirruData): Hash =
     of crDataFn:
       result = hash("fn:")
       result = result !& hash(value.fnVal)
+      result = !$ result
+    of crDataMacro:
+      result = hash("macro:")
+      result = result !& hash(value.macroVal)
       result = !$ result
     of crDataVector:
       result = hash("vector:")
@@ -86,6 +91,8 @@ proc `==`*(x, y: CirruData): bool =
       return x.keywordVal == y.keywordVal
     of crDataFn:
       return x.fnVal == y.fnVal
+    of crDataMacro:
+      return x.macroVal == y.macroVal
 
     of crDataVector:
       if x.vectorVal.len != y.vectorVal.len:
@@ -238,6 +245,9 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataFn:
     return JsonNode(kind: JNull)
 
+  of crDataMacro:
+    return JsonNode(kind: JNull)
+
   of crDataSymbol:
     return JsonNode(kind: JString, str: x.symbolVal)
 
@@ -289,6 +299,7 @@ proc len*(xs: CirruData): int =
   of crDataNil:
     return 0
   else:
+    coloredEcho(fgRed, $xs)
     raiseEvalError("Data has no len function", xs)
 
 proc isListData*(xs: CirruData): bool =
