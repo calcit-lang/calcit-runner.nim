@@ -15,6 +15,14 @@ proc raiseInterpretException*(msg: string, line, column: int) =
 proc raiseInterpretExceptionAtNode*(msg: string, node: CirruNode) =
   raiseInterpretException(msg, node.line, node.column)
 
+proc raiseEvalError*(msg: string, code: CirruData): void =
+  var e: CirruEvalError
+  new e
+  e.msg = msg
+  e.code = code
+
+  raise e
+
 proc coloredEcho*(color: ForegroundColor, text: varargs[string]): void =
   var buffer = ""
   for x in text:
