@@ -18,14 +18,14 @@ proc `%`*(xs: HashSet[string]): JsonNode =
     list.add JsonNode(kind: JString, str: x)
   JsonNode(kind: JArray, elems: list)
 
-proc getSourceNode(v: CirruEdnValue): CirruData =
+proc getSourceNode(v: CirruEdnValue, ns: string): CirruData =
   if v.kind != crEdnQuotedCirru:
     echo "current node: ", v
     raise newException(ValueError, "Unexpected quoted cirru node")
 
-  return v.quotedVal.toCirruData
+  return v.quotedVal.toCirruData(ns)
 
-proc extractDefs(defs: CirruEdnValue): Table[string, CirruData] =
+proc extractDefs(defs: CirruEdnValue, ns: string): Table[string, CirruData] =
   result = initTable[string, CirruData]()
 
   if defs.kind != crEdnMap:
@@ -34,25 +34,25 @@ proc extractDefs(defs: CirruEdnValue): Table[string, CirruData] =
   for name, def in defs.mapVal:
     if name.kind != crEdnString:
       raise newException(ValueError, "expects a string")
-    result[name.stringVal] = getSourceNode(def)
+    result[name.stringVal] = getSourceNode(def, ns)
 
   return result
 
-proc extractFile(v: CirruEdnValue): FileSource =
+proc extractFile(v: CirruEdnValue, ns: string): FileSource =
   if v.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
   var file: FileSource
 
   if v.contains(crEdn("ns", true)):
-    let ns = v.get(crEdn("ns", true))
-    file.ns = getSourceNode(ns)
+    let nsCode = v.get(crEdn("ns", true))
+    file.ns = getSourceNode(nsCode, ns)
 
   if v.contains(crEdn("proc", true)):
     let run = v.get(crEdn("proc", true))
-    file.run = getSourceNode(run)
+    file.run = getSourceNode(run, ns)
 
   let defs = v.get(crEdn("defs", true))
-  file.defs = extractDefs(defs)
+  file.defs = extractDefs(defs, ns)
 
   return file
 
@@ -76,7 +76,7 @@ proc loadSnapshot*(snapshotFile: string): Table[string, FileSource] =
   for k, v in files.mapVal:
     if k.kind != crEdnString:
       raise newException(ValueError, "expects a string")
-    compactFiles[k.stringVal] = extractFile(v)
+    compactFiles[k.stringVal] = extractFile(v, k.stringVal)
 
   return compactFiles
 
@@ -93,19 +93,19 @@ proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
 
   return toHashSet(values)
 
-proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdnValue): void =
+proc extractFileChangeDetail(originalFile: var FileSource, ns: string, changedFile: CirruEdnValue): void =
   if changedFile.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
   if changedFile.contains(crEdn("ns", true)):
     let data = changedFile.get(crEdn("ns", true))
     coloredEcho fgMagenta, "patching: ns changed"
-    originalFile.ns = getSourceNode(data)
+    originalFile.ns = getSourceNode(data, ns)
 
   if changedFile.contains(crEdn("proc", true)):
     let data = changedFile.get(crEdn("proc", true))
     coloredEcho fgMagenta, "patching: proc changed"
-    originalFile.run = getSourceNode(data)
+    originalFile.run = getSourceNode(data, ns)
 
   if changedFile.contains(crEdn("removed-defs", true)):
     let data = changedFile.get(crEdn("removed-defs", true))
@@ -116,13 +116,13 @@ proc extractFileChangeDetail(originalFile: var FileSource, changedFile: CirruEdn
 
   if changedFile.contains(crEdn("added-defs", true)):
     let data = changedFile.get(crEdn("added-defs", true))
-    for k, v in extractDefs(data):
+    for k, v in extractDefs(data, ns):
       coloredEcho fgMagenta, "patching: added def ", k
       originalFile.defs[k] = v
 
   if changedFile.contains(crEdn("changed-defs", true)):
     let data = changedFile.get(crEdn("changed-defs", true))
-    for k, v in extractDefs(data):
+    for k, v in extractDefs(data, ns):
       coloredEcho fgMagenta, "patching: updated def ", k
       originalFile.defs[k] = v
 
@@ -148,7 +148,7 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
       if k.kind != crEdnString:
         raise newException(ValueError, "expects a string")
       coloredEcho fgMagenta, "patching, add ns: ", k.stringVal
-      programData[k.stringVal] = extractFile(v)
+      programData[k.stringVal] = extractFile(v, k.stringVal)
 
   if changesInfo.contains(crEdn("changed", true)):
     let changed = changesInfo.get(crEdn("changed", true))
@@ -158,7 +158,7 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
     for k, v in changed.mapVal:
       if k.kind != crEdnString:
         raise newException(ValueError, "expects a string")
-      extractFileChangeDetail(programData[k.stringVal], v)
+      extractFileChangeDetail(programData[k.stringVal], k.stringVal, v)
 
   coloredEcho fgMagenta, "code updated from inc files"
 

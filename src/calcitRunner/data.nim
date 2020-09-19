@@ -319,11 +319,11 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
   let toB =  xs.len - fromTo.b.int
   xs[fromA .. toB]
 
-proc toCirruData*(xs: CirruNode): CirruData =
+proc toCirruData*(xs: CirruNode, ns: string): CirruData =
   if xs.kind == cirruString:
-    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: "TODO")
+    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: ns)
   else:
     var list: seq[CirruData] = @[]
     for x in xs:
-      list.add x.toCirruData
+      list.add x.toCirruData(ns)
     CirruData(kind: crDataList, listVal: list)
