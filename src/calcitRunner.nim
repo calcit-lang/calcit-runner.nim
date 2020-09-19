@@ -43,7 +43,7 @@ proc hasNsAndDef(ns: string, def: string): bool =
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 
-proc interpret(expr: CirruData, ns: string, scope: CirruDataScope): CirruData =
+proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
   if expr.kind == crDataSymbol:
     if match(expr.symbolVal, re"\d+(\.\d+)?"):
       return CirruData(kind: crDataNumber, numberVal: parseFloat(expr.symbolVal))
@@ -57,10 +57,10 @@ proc interpret(expr: CirruData, ns: string, scope: CirruDataScope): CirruData =
       let fromScope = scope.get(expr.symbolVal)
       if fromScope.isSome:
         return fromScope.get
-      elif hasNsAndDef(ns, expr.symbolVal):
-        return getEvaluatedByPath(ns, expr.symbolVal, scope)
+      elif hasNsAndDef(expr.ns, expr.symbolVal):
+        return getEvaluatedByPath(expr.ns, expr.symbolVal, scope)
       else:
-        let importDict = loadImportDictByNs(ns)
+        let importDict = loadImportDictByNs(expr.ns)
         if expr.symbolVal.contains("/"):
           let pieces = expr.symbolVal.split('/')
           if pieces.len != 2:
@@ -94,11 +94,11 @@ proc interpret(expr: CirruData, ns: string, scope: CirruDataScope): CirruData =
         case head.symbolVal
         of "println", "echo":
           echo expr[1..^1].map(proc(x: CirruData): CirruData =
-            interpret(x, ns, scope)
+            interpret(x, scope)
           ).map(`$`).join(" ")
         of "pr-str":
           echo expr[1..^1].map(proc(x: CirruData): CirruData =
-            interpret(x, ns, scope)
+            interpret(x, scope)
           ).map(proc (x: CirruData): string =
             if x.kind == crDataSymbol:
               return escape(x.symbolVal)
@@ -106,61 +106,61 @@ proc interpret(expr: CirruData, ns: string, scope: CirruDataScope): CirruData =
               return $x
           ).join(" ")
         of "+":
-          return evalAdd(expr, interpret, ns, scope)
+          return evalAdd(expr, interpret, scope)
         of "-":
-          return evalMinus(expr, interpret, ns, scope)
+          return evalMinus(expr, interpret, scope)
         of "if":
-          return evalIf(expr, interpret, ns, scope)
+          return evalIf(expr, interpret, scope)
         of "[]":
-          return evalArray(expr, interpret, ns, scope)
+          return evalArray(expr, interpret, scope)
         of "{}":
-          return evalTable(expr, interpret, ns, scope)
+          return evalTable(expr, interpret, scope)
         of "read-file":
-          return evalReadFile(expr, interpret, ns, scope)
+          return evalReadFile(expr, interpret, scope)
         of "write-file":
-          return evalWriteFile(expr, interpret, ns, scope)
+          return evalWriteFile(expr, interpret, scope)
         of ";":
           return evalComment()
         of "load-json":
-          return evalLoadJson(expr, interpret, ns, scope)
+          return evalLoadJson(expr, interpret, scope)
         of "type-of":
-          return evalType(expr, interpret, ns, scope)
+          return evalType(expr, interpret, scope)
         of "defn":
-          return evalDefn(expr, interpret, ns, scope)
+          return evalDefn(expr, interpret, scope)
         of "let":
-          return evalLet(expr, interpret, ns, scope)
+          return evalLet(expr, interpret, scope)
         of "do":
-          return evalDo(expr, interpret, ns, scope)
+          return evalDo(expr, interpret, scope)
         of ">", "<", "=", "!=":
-          return evalCompare(expr, interpret, ns, scope)
+          return evalCompare(expr, interpret, scope)
         else:
-          let value = interpret(head, ns, scope)
+          let value = interpret(head, scope)
           case value.kind
           of crDataString:
             var value = value.symbolVal
-            return callStringMethod(value, expr, interpret, ns, scope)
+            return callStringMethod(value, expr, interpret, scope)
           of crDataFn:
             let f = value.fnVal
             var args: seq[CirruData] = @[]
             let argsCode = expr[1..^1]
             for x in argsCode:
-              args.add interpret(x, ns, scope)
-            return f(args, interpret, ns, scope)
+              args.add interpret(x, scope)
+            return f(args, interpret, scope)
 
           else:
             raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
       else:
-        let headValue = interpret(expr[0], ns, scope)
+        let headValue = interpret(expr[0], scope)
         case headValue.kind:
         of crDataFn:
           echo "NOT implemented fn"
           quit 1
         of crDataVector:
           var value = headValue.vectorVal
-          return callArrayMethod(value, expr, interpret, ns, scope)
+          return callArrayMethod(value, expr, interpret, scope)
         of crDataMap:
           var value = headValue.mapVal
-          return callTableMethod(value, expr, interpret, ns, scope)
+          return callTableMethod(value, expr, interpret, scope)
         else:
           echo "TODO"
           quit 1
@@ -175,7 +175,7 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruDa
   if not file.defs.hasKey(def):
     let code = programCode[ns].defs[def]
 
-    file.defs[def] = interpret(code, ns, scope)
+    file.defs[def] = interpret(code, scope)
 
   return file.defs[def]
 
@@ -207,7 +207,7 @@ proc runProgram*(snapshotFile: string): CirruData =
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
   try:
-    return f(args, interpret, pieces[0], scope)
+    return f(args, interpret, scope)
 
   except CirruEvalError as e:
     coloredEcho fgRed, "\nError: failed to interpret"
@@ -233,7 +233,7 @@ proc reloadProgram(snapshotFile: string): void =
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
-  discard f(args, interpret, pieces[0], scope)
+  discard f(args, interpret, scope)
 
 proc watchFile(snapshotFile: string, incrementFile: string): void =
   if not existsFile(incrementFile):

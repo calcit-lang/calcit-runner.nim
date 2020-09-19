@@ -38,7 +38,7 @@ type
     crDataFn,
     crDataSymbol,
 
-  EdnEvalFn* = proc(expr: CirruData, ns: string, scope: CirruDataScope): CirruData
+  EdnEvalFn* = proc(expr: CirruData, scope: CirruDataScope): CirruData
 
   CirruData* = object
     line*: int
@@ -50,7 +50,7 @@ type
     of crDataString: stringVal*: string
     of crDataKeyword: keywordVal*: string
     of crDataFn:
-      fnVal*: proc(exprList: seq[CirruData], interpret: EdnEvalFn, ns: string, scope: CirruDataScope): CirruData
+      fnVal*: proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
     of crDataVector: vectorVal*: seq[CirruData]
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
