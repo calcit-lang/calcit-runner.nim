@@ -13,7 +13,7 @@
               echo "\"reloaded... 7" a
         |try-macro $ quote
           defn try-macro ()
-            eval $ println (+ 1 2)
+            eval $ quote (println $ + 1 2)
             println $ quote (+ 1 2)
             println $ gen-num 3 4 c
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)

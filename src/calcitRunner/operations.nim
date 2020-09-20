@@ -391,13 +391,26 @@ proc evalDo*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
   for child in body:
     result = interpret(child, scope)
 
+# TODO, currently only symbols and lists/vectors are allowed.
+# Clojure allows literals too, but I'm not sure. Not for now.
+proc checkExprStructure(exprList: CirruData): bool =
+  if exprList.kind == crDataSymbol:
+    return true
+  elif isListData(exprList):
+    for item in exprList:
+      if not checkExprStructure(item):
+        return false
+    return true
+  else:
+    return false
+
 proc evalEval*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len != 2:
     raiseEvalError(fmt"eval expects 1 argument", exprList)
-  let code = exprList[1]
-  if notListData(code):
+  let code = interpret(exprList[1], scope)
+  if not checkExprStructure(code):
     raiseEvalError(fmt"Expected cirru expr in eval(...)", code)
   dimEcho("eval: ", $code)
   interpret code, scope
@@ -444,7 +457,10 @@ proc evalQuoteReplace*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDa
   if exprList.len != 2:
     raiseEvalError(fmt"quote-replace expects 1 argument", exprList)
 
-  replaceExpr exprList[1], interpret, scope
+  let ret = replaceExpr(exprList[1], interpret, scope)
+  if not checkExprStructure(ret):
+    raiseEvalError("Unexpected structure from quote-replace", ret)
+  ret
 
 proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):

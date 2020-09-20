@@ -72,16 +72,20 @@
               |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585327582)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |eval) (:id |9hJCjTvJ0g)
-                  |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585327582)
+                  |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600613125214)
                     :data $ {}
-                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |println) (:id |89mJJ-u47C)
-                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585327582)
+                      |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585327582)
                         :data $ {}
-                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |+) (:id |Zed5Oxhoi3)
-                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |1) (:id |cTC1hfOkS0)
-                          |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |2) (:id |ToEQo3fX9E)
-                        :id |01ygifn-im
-                    :id |dUFynhvYOd
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |println) (:id |89mJJ-u47C)
+                          |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585327582)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |+) (:id |Zed5Oxhoi3)
+                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |1) (:id |cTC1hfOkS0)
+                              |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585327582) (:text |2) (:id |ToEQo3fX9E)
+                            :id |01ygifn-im
+                        :id |dUFynhvYOd
+                      |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600613127880) (:text |quote) (:id |0k1ug6aSTP)
+                    :id |_7WtzzJ4i
                 :id |WhjIsWb_36
               |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585334041)
                 :data $ {}
