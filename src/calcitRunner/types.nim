@@ -57,6 +57,7 @@ type
     of crDataSymbol:
       symbolVal*: string
       ns*: string
+      scope*: Option[CirruDataScope]
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError

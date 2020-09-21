@@ -18,11 +18,23 @@
             println $ gen-num 3 4 c
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (try-macro)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (try-hygienic)
+        |try-hygienic $ quote
+          defn try-hygienic ()
+            let
+                c 2
+              echo $ add-11 1 2
         |fibo $ quote
           defn fibo (x)
             if (< x 2) (, 1)
               + (fibo $ - x 1) (fibo $ - x 2)
+        |add-11 $ quote
+          defmacro add-11 (a b)
+            let
+                c 11
+              echo "\"internal c:" a b c
+              quote-replace $ do (echo "\"c is:" c)
+                + (quote-insert a) (quote-insert b) (, c)
         |insert-x $ quote
           defmacro insert-x (a b c)
             quote-replace $ do

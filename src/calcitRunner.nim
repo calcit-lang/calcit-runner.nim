@@ -54,10 +54,16 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
     elif (expr.symbolVal.len > 0) and (expr.symbolVal[0] == '|' or expr.symbolVal[0] == '"'):
       return CirruData(kind: crDataString, stringVal: expr.symbolVal[1..^1])
     else:
-      let fromScope = scope.get(expr.symbolVal)
-      if fromScope.isSome:
-        return fromScope.get
-      elif hasNsAndDef(expr.ns, expr.symbolVal):
+      if expr.scope.isSome:
+        let fromOriginalScope = expr.scope.get.get(expr.symbolVal)
+        if fromOriginalScope.isSome:
+          return fromOriginalScope.get
+      else:
+        let fromScope = scope.get(expr.symbolVal)
+        if fromScope.isSome:
+          return fromScope.get
+
+      if hasNsAndDef(expr.ns, expr.symbolVal):
         return getEvaluatedByPath(expr.ns, expr.symbolVal, scope)
       else:
         let importDict = loadImportDictByNs(expr.ns)

@@ -330,11 +330,11 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
   let toB =  xs.len - fromTo.b.int
   xs[fromA .. toB]
 
-proc toCirruData*(xs: CirruNode, ns: string): CirruData =
+proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:
-    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: ns)
+    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: ns, scope: scope)
   else:
     var list: seq[CirruData] = @[]
     for x in xs:
-      list.add x.toCirruData(ns)
+      list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: list)

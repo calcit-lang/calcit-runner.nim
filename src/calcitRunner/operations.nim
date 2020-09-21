@@ -415,12 +415,24 @@ proc evalEval*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope)
   dimEcho("eval: ", $code)
   interpret code, scope
 
+# TODO, symbols in macros refers to define scope
+proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
+  if exprList.kind == crDataSymbol:
+    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
+  elif isListData(exprList):
+    var list: seq[CirruData] = @[]
+    for item in exprList:
+      list.add attachScope(item, scope)
+    return CirruData(kind: crDataList, listVal: list)
+  else:
+    raiseEvalError("Unexpected data for attaching", exprList)
+
 proc evalQuote*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len != 2:
     raiseEvalError(fmt"quote expects 1 argument", exprList)
-  let code = exprList[1]
+  let code = attachScope(exprList[1], scope)
   return code
 
 proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
@@ -460,7 +472,7 @@ proc evalQuoteReplace*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDa
   let ret = replaceExpr(exprList[1], interpret, scope)
   if not checkExprStructure(ret):
     raiseEvalError("Unexpected structure from quote-replace", ret)
-  ret
+  attachScope ret, scope
 
 proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):

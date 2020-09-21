@@ -2,6 +2,7 @@ import tables
 import strutils
 import sequtils
 import sets
+import options
 
 import ./types
 
@@ -47,7 +48,11 @@ proc toString*(val: CirruData): string =
     of crDataKeyword: ":" & val.keywordVal
     of crDataFn: "::fn"
     of crDataMacro: "::macro"
-    of crDataSymbol: val.ns & "/" & val.symbolVal
+    of crDataSymbol:
+      if val.scope.isSome:
+        "scoped::" & val.ns & "/" & val.symbolVal
+      else:
+        val.ns & "/" & val.symbolVal
 
 proc `$`*(v: CirruData): string =
   v.toString

@@ -1,6 +1,7 @@
 
 import tables
 import sets
+import options
 
 import ./types
 
@@ -18,7 +19,7 @@ proc crData*(x: string, target: string = "string"): CirruData =
   of "keyword":
     CirruData(kind: crDataKeyword, keywordVal: x)
   of "symbol":
-    CirruData(kind: crDataSymbol, symbolVal: x, ns: "user")
+    CirruData(kind: crDataSymbol, symbolVal: x, ns: "user", scope: none(CirruDataScope))
   of "string":
     CirruData(kind: crDataString, stringVal: x)
   else:
