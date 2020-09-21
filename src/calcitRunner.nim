@@ -23,6 +23,7 @@ import calcitRunner/loader
 import calcitRunner/scope
 import calcitRunner/format
 import calcitRunner/genData
+import calcitRunner/coreLib
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
@@ -62,6 +63,10 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
         let fromScope = scope.get(expr.symbolVal)
         if fromScope.isSome:
           return fromScope.get
+
+      let coreDefs = programData[coreNs].defs
+      if coreDefs.contains(expr.symbolVal):
+        return coreDefs[expr.symbolVal]
 
       if hasNsAndDef(expr.ns, expr.symbolVal):
         return getEvaluatedByPath(expr.ns, expr.symbolVal, scope)
@@ -239,7 +244,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
 
 proc reloadProgram(snapshotFile: string): void =
   programCode = loadSnapshot(snapshotFile)
-  programData.clear()
+  clearProgramDefs(programData)
   var scope = CirruDataScope(parent: none(CirruDataScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
@@ -314,6 +319,7 @@ proc main*(): void =
       incrementFile = cliArgs.key.replace("compact", ".compact-inc")
       dimEcho "Runner: specifying files", snapshotFile, incrementFile
 
+  loadCoreDefs(programData, interpret)
   discard runProgram(snapshotFile)
 
   if not runOnce:

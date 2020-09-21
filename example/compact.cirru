@@ -18,7 +18,7 @@
             println $ gen-num 3 4 c
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (try-hygienic)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (try-core-lib)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -40,6 +40,10 @@
             quote-replace $ do
               echo $ + (quote-insert a) (quote-insert b)
               echo $ quote-insert-list c
+        |try-core-lib $ quote
+          defn try-core-lib () (echo $ + 1 2 3)
+            echo ("&+" 1 2) ("&-" 2 1)
+            echo $ "&+2" 44
         |gen-num $ quote
           defmacro gen-num (a b c) (echo a b c) (quote $ + 1 2 3)
         |reload! $ quote
