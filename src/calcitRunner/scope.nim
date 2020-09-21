@@ -1,6 +1,7 @@
 
 import tables
 import options
+import strutils
 
 import ./types
 import ./data
@@ -70,3 +71,10 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
         dict[defName.symbolVal] = ImportInfo(kind: importDef, ns: nsPart.symbolVal, def: defName.symbolVal)
 
   return dict
+
+proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
+  for ns, f in programData:
+    var file = programData[ns]
+    if not ns.startsWith("calcit."):
+      file.ns = none(Table[string, ImportInfo])
+      file.defs.clear

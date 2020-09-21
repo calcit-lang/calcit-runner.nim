@@ -277,6 +277,19 @@ proc toCirruData*(v: JsonNode): CirruData =
       table.add(keyContent, value)
     return CirruData(kind: crDataMap, mapVal: table)
 
+proc toCirruCode*(v: JsonNode, ns: string): CirruData =
+  case v.kind
+  of JString:
+    return CirruData(kind: crDataSymbol, symbolVal: v.str, ns: ns, scope: none(CirruDataScope))
+  of JArray:
+    var arr: seq[CirruData]
+    for v in v.elems:
+      arr.add toCirruCode(v, ns)
+    return CirruData(kind: crDataVector, vectorVal: arr)
+  else:
+    echo "Unexpected type: ", v
+    raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
+
 proc `[]`*(xs: CirruData, idx: int): CirruData =
   case xs.kind:
   of crDataList:
