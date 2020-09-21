@@ -8,7 +8,6 @@
       :defs $ {}
         |main! $ quote
           defn main! () (+ 1 2)
-        |reload! $ quote
-          defn reload! ()
+
       :proc $ quote ()
       :configs $ {} (:extension nil)

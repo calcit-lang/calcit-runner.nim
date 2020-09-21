@@ -6,8 +6,6 @@
       :ns $ quote
         ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib)
       :defs $ {}
-        |main! $ quote
-          defn main! () (try-hygienic)
         |try-hygienic $ quote
           defn try-hygienic ()
             let

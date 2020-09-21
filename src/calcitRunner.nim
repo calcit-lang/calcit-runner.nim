@@ -208,12 +208,15 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
     programData[ns].ns = some(v)
     return v
 
-proc runProgram*(snapshotFile: string): CirruData =
+proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
   var scope = CirruDataScope(parent: none(CirruDataScope))
 
-  let pieces = codeConfigs.initFn.split('/')
+  let pieces = if initFn.isSome:
+    initFn.get.split("/")
+  else:
+   codeConfigs.initFn.split('/')
 
   if pieces.len != 2:
     echo "Unknown initFn", pieces
