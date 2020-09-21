@@ -469,10 +469,10 @@ proc evalQuoteReplace*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDa
   if exprList.len != 2:
     raiseEvalError(fmt"quote-replace expects 1 argument", exprList)
 
-  let ret = replaceExpr(exprList[1], interpret, scope)
+  let ret = replaceExpr(attachScope(exprList[1], scope), interpret, scope)
   if not checkExprStructure(ret):
     raiseEvalError("Unexpected structure from quote-replace", ret)
-  attachScope ret, scope
+  ret
 
 proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
