@@ -133,6 +133,8 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
           return evalEval(expr, interpret, scope)
         of "quote":
           return evalQuote(expr, interpret, scope)
+        of "quote-replace":
+          return evalQuoteReplace(expr, interpret, scope)
         of "let":
           return evalLet(expr, interpret, scope)
         of "do":
@@ -260,10 +262,6 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
 
     except CirruParseError as e:
       coloredEcho fgRed, "\nError: failed to parse"
-      echo e.msg
-
-    except CirruInterpretError as e:
-      coloredEcho fgRed, "\nError: failed to interpret"
       echo e.msg
 
     except CirruCommandError as e:

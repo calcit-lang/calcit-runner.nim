@@ -71,7 +71,7 @@ proc evalMinus*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope
     if ret.kind == crDataNumber:
       return ret
     else:
-      raiseInterpretException(fmt"Not a number {ret.kind}", node.line, node.column)
+      raiseEvalError(fmt"Not a number {ret.kind}", node)
   else:
     let node = exprList[1]
     let x0 = interpret(node, scope)
@@ -79,13 +79,13 @@ proc evalMinus*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope
     if x0.kind == crDataNumber:
       ret = x0.numberVal
     else:
-      raiseInterpretException(fmt"Not a number {x0.kind}", node.line, node.column)
+      raiseEvalError(fmt"Not a number {x0.kind}", node)
     for node in exprList[2..^1]:
       let v = interpret(node, scope)
       if v.kind == crDataNumber:
         ret -= v.numberVal
       else:
-        raiseInterpretException(fmt"Not a number {v.kind}", node.line, node.column)
+        raiseEvalError(fmt"Not a number {v.kind}", node)
     return CirruData(kind: crDataNumber, numberVal: ret)
 
 proc evalArray*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
@@ -101,10 +101,10 @@ proc evalIf*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if (exprList.len == 1):
     let node = exprList[0]
-    raiseInterpretException("No arguments for if", node.line, node.column)
+    raiseEvalError("No arguments for if", node)
   elif (exprList.len == 2):
     let node = exprList[1]
-    raiseInterpretException("No arguments for if", node.line, node.column)
+    raiseEvalError("No arguments for if", node)
   elif (exprList.len == 3):
     let node = exprList[1]
     let cond = interpret(node, scope)
@@ -114,7 +114,7 @@ proc evalIf*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
       else:
         return CirruData(kind: crDataNil)
     else:
-      raiseInterpretException("Not a bool in if", node.line, node.column)
+      raiseEvalError("Not a bool in if", node)
   elif (exprList.len == 4):
     let node = exprList[1]
     let cond = interpret(node, scope)
@@ -124,16 +124,16 @@ proc evalIf*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
       else:
         return interpret(exprList[3], scope)
     else:
-      raiseInterpretException("Not a bool in if", node.line, node.column)
+      raiseEvalError("Not a bool in if", node)
   else:
     let node = exprList[0]
-    raiseInterpretException("Too many arguments for if", node.line, node.column)
+    raiseEvalError("Too many arguments for if", node)
 
 proc evalReadFile*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len == 1:
     let node = exprList[0]
-    raiseInterpretException("Lack of file name", node.line, node.column)
+    raiseEvalError("Lack of file name", node)
   elif exprList.len == 2:
     let node = exprList[1]
     let fileName = interpret(node, scope)
@@ -141,33 +141,33 @@ proc evalReadFile*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataSc
       let content = readFile(fileName.symbolVal)
       return CirruData(kind: crDataString, stringVal: content)
     else:
-      raiseInterpretException("Expected path name in string", node.line, node.column)
+      raiseEvalError("Expected path name in string", node)
   else:
     let node = exprList[2]
-    raiseInterpretException("Too many arguments!", node.line, node.column)
+    raiseEvalError("Too many arguments!", node)
 
 proc evalWriteFile*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len < 3:
     let node = exprList[0]
-    raiseInterpretException("Lack of file name or target", node.line, node.column)
+    raiseEvalError("Lack of file name or target", node)
   elif exprList.len == 3:
     let node = exprList[1]
     let fileName = interpret(node, scope)
     if fileName.kind != crDataSymbol:
-      raiseInterpretException("Expected path name in string", node.line, node.column)
+      raiseEvalError("Expected path name in string", node)
     let contentNode = exprList[2]
     let content = interpret(contentNode, scope)
     if content.kind != crDataSymbol:
-      raiseInterpretException("Expected content in string", contentNode.line, contentNode.column)
+      raiseEvalError("Expected content in string", contentNode)
     writeFile(fileName.symbolVal, content.symbolVal)
 
     coloredEcho fgRed, fmt"Wrote to file {fileName.symbolVal}"
     return CirruData(kind: crDataNil)
   else:
     let node = exprList[3]
-    raiseInterpretException("Too many arguments!", node.line, node.column)
+    raiseEvalError("Too many arguments!", node)
 
 proc evalComment*(): CirruData =
   return CirruData(kind: crDataNil)
@@ -391,13 +391,26 @@ proc evalDo*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
   for child in body:
     result = interpret(child, scope)
 
+# TODO, currently only symbols and lists/vectors are allowed.
+# Clojure allows literals too, but I'm not sure. Not for now.
+proc checkExprStructure(exprList: CirruData): bool =
+  if exprList.kind == crDataSymbol:
+    return true
+  elif isListData(exprList):
+    for item in exprList:
+      if not checkExprStructure(item):
+        return false
+    return true
+  else:
+    return false
+
 proc evalEval*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len != 2:
     raiseEvalError(fmt"eval expects 1 argument", exprList)
-  let code = exprList[1]
-  if notListData(code):
+  let code = interpret(exprList[1], scope)
+  if not checkExprStructure(code):
     raiseEvalError(fmt"Expected cirru expr in eval(...)", code)
   dimEcho("eval: ", $code)
   interpret code, scope
@@ -406,9 +419,48 @@ proc evalQuote*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len != 2:
-    raiseEvalError(fmt"eval expects 1 argument", exprList)
+    raiseEvalError(fmt"quote expects 1 argument", exprList)
   let code = exprList[1]
   return code
+
+proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if exprList.kind == crDataSymbol:
+    return exprList
+  elif exprList.kind == crDataList:
+    var list: seq[CirruData] = @[]
+    for item in exprList:
+      if item.kind == crDataList:
+        let head = item[0]
+        if head.symbolVal == "quote-insert":
+          if item.len != 2:
+            raiseEvalError "Expected 1 argument in quote-insert", item
+          list.add interpret(item[1], scope)
+        elif head.symbolVal == "quote-insert-list":
+          if item.len != 2:
+            raiseEvalError "Expected 1 argument in quote-insert-list", item
+          let xs = interpret(item[1], scope)
+          if notListData(xs):
+            raiseEvalError "Expected list for quote-insert-list", xs
+          for x in xs:
+            list.add x
+        else:
+          list.add replaceExpr(item, interpret, scope)
+      else:
+        list.add replaceExpr(item, interpret, scope)
+    return CirruData(kind: crDataList, listVal: list)
+  else:
+    raiseEvalError("Unknown data in expr", exprList)
+
+proc evalQuoteReplace*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if notListData(exprList):
+    raiseEvalError(fmt"Expected cirru expr", exprList)
+  if exprList.len != 2:
+    raiseEvalError(fmt"quote-replace expects 1 argument", exprList)
+
+  let ret = replaceExpr(exprList[1], interpret, scope)
+  if not checkExprStructure(ret):
+    raiseEvalError("Unexpected structure from quote-replace", ret)
+  ret
 
 proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
