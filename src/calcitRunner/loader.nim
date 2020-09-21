@@ -2,6 +2,7 @@ import tables
 import sets
 import json
 import terminal
+import options
 
 import cirruEdn
 import cirruParser
@@ -18,12 +19,12 @@ proc `%`*(xs: HashSet[string]): JsonNode =
     list.add JsonNode(kind: JString, str: x)
   JsonNode(kind: JArray, elems: list)
 
-proc getSourceNode(v: CirruEdnValue, ns: string): CirruData =
+proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:
     echo "current node: ", v
     raise newException(ValueError, "Unexpected quoted cirru node")
 
-  return v.quotedVal.toCirruData(ns)
+  return v.quotedVal.toCirruData(ns, scope)
 
 proc extractDefs(defs: CirruEdnValue, ns: string): Table[string, CirruData] =
   result = initTable[string, CirruData]()
