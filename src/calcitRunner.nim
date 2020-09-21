@@ -216,7 +216,9 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
-  var scope = CirruDataScope(parent: none(CirruDataScope))
+  loadCoreDefs(programData, interpret)
+
+  let scope = CirruDataScope()
 
   let pieces = if initFn.isSome:
     initFn.get.split("/")
@@ -319,7 +321,6 @@ proc main*(): void =
       incrementFile = cliArgs.key.replace("compact", ".compact-inc")
       dimEcho "Runner: specifying files", snapshotFile, incrementFile
 
-  loadCoreDefs(programData, interpret)
   discard runProgram(snapshotFile)
 
   if not runOnce:
