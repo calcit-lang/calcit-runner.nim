@@ -479,16 +479,16 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
     for item in exprList:
       if item.kind == crDataList:
         let head = item[0]
-        if head.symbolVal == "quote-insert":
+        if head.symbolVal == "~":
           if item.len != 2:
-            raiseEvalError "Expected 1 argument in quote-insert", item
+            raiseEvalError "Expected 1 argument in ~ of quote-replace", item
           list.add interpret(item[1], scope)
-        elif head.symbolVal == "quote-insert-list":
+        elif head.symbolVal == "~@":
           if item.len != 2:
-            raiseEvalError "Expected 1 argument in quote-insert-list", item
+            raiseEvalError "Expected 1 argument in ~@ of quote-replace", item
           let xs = interpret(item[1], scope)
           if notListData(xs):
-            raiseEvalError "Expected list for quote-insert-list", xs
+            raiseEvalError "Expected list for ~@ of quote-replace", xs
           for x in xs:
             list.add x
         else:

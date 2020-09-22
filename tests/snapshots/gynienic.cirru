@@ -17,7 +17,7 @@
                 c 11
               echo "\"internal c:" a b c
               quote-replace $ do (echo "\"c is:" c)
-                + (quote-insert a) (quote-insert b) (, c)
+                + (~ a) (~ b) (, c)
 
       :proc $ quote ()
       :configs $ {} (:extension nil)

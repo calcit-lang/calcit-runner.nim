@@ -27,14 +27,36 @@ proc nativeMinus(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
   if b.kind != crDataNumber: coreFnError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
 
+# TODO <
+# TODO >
+# TODO =
+# TODO !=
+# TODO >=
+# TODO <=
+
 # TODO &and
 # TODO &or
 # TODO not
+
+# TODO []
+# TODO {}
+# TODO list
+# TODO keyword
+# TODO symbol
+
+# TODO read-file
+# TODO write-file
+# TODO load-json
 
 # TODO empty?
 # TODO first
 # TODO rest
 
+# TODO assert
+
+# TODO reduce-to-false
+# TODO reduce-find
+# TODO reduce-acc
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
@@ -45,6 +67,13 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus)
 
   let codeOfAdd2 = (%* ["defn", "&+2", ["x"], ["&+", "x", "2"]]).toCirruCode(coreNs)
+  let codeOfUnless = (%*
+    ["defmacro", "unless", ["cond", "true-branch", "false-branch"],
+      ["quote-replace", ["if", ["~", "cond"],
+                               ["~", "false-branch"],
+                               ["~", "true-branch"]]]
+    ]).toCirruCode(coreNs)
   coreFile.defs["&+2"] = interpret(codeOfAdd2, rootScope)
+  coreFile.defs["unless"] = interpret(codeOfUnless, rootScope)
 
   programData[coreNs] = coreFile
