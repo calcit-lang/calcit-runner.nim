@@ -17,13 +17,13 @@ import libfswatch/fswatch
 
 import calcitRunner/types
 import calcitRunner/data
-import calcitRunner/operations
+import calcitRunner/specialForm
+import calcitRunner/coreLib
 import calcitRunner/helpers
 import calcitRunner/loader
 import calcitRunner/scope
 import calcitRunner/format
 import calcitRunner/genData
-import calcitRunner/coreLib
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
