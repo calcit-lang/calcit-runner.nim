@@ -338,23 +338,59 @@ proc evalType*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope)
     of crDataFn: CirruData(kind: crDataString, stringVal: "fn")
     else: CirruData(kind: crDataString, stringVal: "unknown")
 
+proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope: CirruDataScope): void =
+
+  var variadic = false
+  var splitPosition = -1
+  var counter = 0
+  for item in definedArgs:
+    if item.kind == crDataSymbol and item.symbolVal == "&":
+      variadic = true
+      splitPosition = counter
+      break
+    counter = counter + 1
+
+  if variadic:
+    if passedArgs.len < splitPosition:
+      raiseEvalError("No enough arguments", definedArgs)
+    echo splitPosition, definedArgs.len
+    if splitPosition != (definedArgs.len - 2):
+      raiseEvalError("& should appear before last argument", definedArgs)
+    for idx in 0..<splitPosition:
+      let definedArgName = definedArgs[idx]
+      if definedArgName.kind != crDataSymbol:
+        raiseEvalError("Expects arg in symbol", definedArgName)
+      scope.dict[definedArgName.symbolVal] = passedArgs[idx]
+    var varList: seq[CirruData] = @[]
+    for idx in splitPosition..<passedArgs.len:
+      varList.add passedArgs[idx]
+    let varArgName = definedArgs[definedArgs.len - 1]
+    if varArgName.kind != crDataSymbol:
+      raiseEvalError("Expected var arg in symbol", varArgName)
+    scope.dict[varArgName.symbolVal] = CirruData(kind: crDataList, listVal: varList)
+
+  else:
+    var counter = 0
+    if definedArgs.len != passedArgs.len:
+      raiseEvalError(fmt"Args length mismatch", definedArgs)
+    for arg in definedArgs:
+      if arg.kind != crDataSymbol:
+        raiseEvalError(fmt"Expects arg in symbol", arg)
+      scope.dict[arg.symbolVal] = passedArgs[counter]
+      counter += 1
+
 proc evalDefn*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   let f = proc(xs: seq[CirruData], interpret2: EdnEvalFn, scope2: CirruDataScope): CirruData =
-    let fnScope = CirruDataScope(parent: some(scope))
+    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[2]
-    var counter = 0
-    if argsList.len != xs.len:
-      raiseEvalError(fmt"Args length mismatch", argsList)
-    for arg in argsList:
-      if arg.kind != crDataSymbol:
-        raiseEvalError(fmt"Expects arg in string", arg)
-      fnScope.dict[arg.symbolVal] = xs[counter]
-      counter += 1
+
+    processArguments(argsList, xs, innerScope)
+
     var ret = CirruData(kind: crDataNil)
     for child in exprList[3..^1]:
-      ret = interpret(child, fnScope)
+      ret = interpret(child, innerScope)
     return ret
 
   return CirruData(kind: crDataFn, fnVal: f)
@@ -428,7 +464,7 @@ proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
     raiseEvalError("Unexpected data for attaching", exprList)
 
 proc evalQuote*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
+  if notListData(exprList) or exprList.isSymbol:
     raiseEvalError(fmt"Expected cirru expr", exprList)
   if exprList.len != 2:
     raiseEvalError(fmt"quote expects 1 argument", exprList)
@@ -478,19 +514,14 @@ proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataSc
   if notListData(exprList):
     raiseEvalError(fmt"Expected cirru expr", exprList)
   let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
-    let fnScope = CirruDataScope(parent: some(scope))
+    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[2]
-    var counter = 0
-    if argsList.len != xs.len:
-      raiseEvalError(fmt"Args length mismatch", argsList)
-    for arg in argsList:
-      if arg.kind != crDataSymbol:
-        raiseEvalError(fmt"Expects arg in string", arg)
-      fnScope.dict[arg.symbolVal] = xs[counter]
-      counter += 1
+
+    processArguments(argsList, xs, innerScope)
+
     var ret = CirruData(kind: crDataNil)
     for child in exprList[3..^1]:
-      ret = interpret(child, fnScope)
+      ret = interpret(child, innerScope)
     if notListData(ret):
       raiseEvalError(fmt"Expected cirru expr from defmacro", ret)
     return interpret(ret, callingScope)
