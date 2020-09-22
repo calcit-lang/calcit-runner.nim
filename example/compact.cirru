@@ -18,7 +18,7 @@
             println $ gen-num 3 4 c
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (try-unless)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (try-foldl)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -60,6 +60,10 @@
           defn var-fn (a & xs) (echo a xs)
         |try-func $ quote
           defn try-func () (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true) (; echo "\"fibo result:" $ fibo 16)
+        |try-foldl $ quote
+          defn try-foldl ()
+            ; echo $ get ([] 1 2 3) (, 0)
+            echo $ foldl &+ ([] 1 2 3) (, 0)
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
       :proc $ quote ()

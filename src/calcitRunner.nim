@@ -102,6 +102,14 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
       return
     else:
       let head = expr[0]
+      if head.symbolVal == "":
+        raiseEvalError("Unknown empty symbol", expr)
+
+      if head.symbolVal[0] == '|':
+        return CirruData(kind: crDataString, stringVal: head.symbolVal[1..^1])
+      elif head.symbolVal[0] == ':':
+        return CirruData(kind: crDataKeyword, keywordVal: head.symbolVal[1..^1])
+
       case head.kind
       of crDataSymbol:
         case head.symbolVal

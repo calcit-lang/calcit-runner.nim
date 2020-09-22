@@ -189,9 +189,7 @@ proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
 # TODO keyword
 # TODO symbol
 
-# TODO read-file
-# TODO write-file
-# TODO load-json
+# TODO load edn
 
 # TODO reduce-to-false
 # TODO reduce-find
@@ -210,6 +208,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs["&and"] = CirruData(kind: crDataFn, fnVal: nativeAnd)
   coreFile.defs["&or"] = CirruData(kind: crDataFn, fnVal: nativeOr)
   coreFile.defs["not"] = CirruData(kind: crDataFn, fnVal: nativeNot)
+  coreFile.defs["count"] = CirruData(kind: crDataFn, fnVal: nativeCount)
+  coreFile.defs["get"] = CirruData(kind: crDataFn, fnVal: nativeGet)
   coreFile.defs["rest"] = CirruData(kind: crDataFn, fnVal: nativeRest)
   coreFile.defs["raise-at"] = CirruData(kind: crDataFn, fnVal: nativeRaiseAt)
   coreFile.defs["type-of"] = CirruData(kind: crDataFn, fnVal: nativeTypeOf)
@@ -248,12 +248,18 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
 
   let codeFirst = (%*
     ["defmacro", "first", ["xs"],
-      ["get", "xs", "0"]]
+      ["quote-replace", ["get", ["~", "xs"], "0"]]]
   ).toCirruCode(coreNs)
 
   let codeWhen = (%*
     ["defmacro", "when", ["cond", "&", "body"],
       ["quote-replace", ["if", ["do", ["~@", "body"]], "nil"]]]
+  ).toCirruCode(coreNs)
+
+  let codeFoldl = (%*
+    ["defn", "foldl", ["f", "xs", "acc"],
+      ["if", ["empty?", "xs"], "acc",
+             ["foldl", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
   ).toCirruCode(coreNs)
 
   coreFile.defs["!="] = interpret(codeNotEqual, rootScope)
@@ -262,5 +268,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs["empty?"] = interpret(codeEmpty, rootScope)
   coreFile.defs["first"] = interpret(codeFirst, rootScope)
   coreFile.defs["when"] = interpret(codeWhen, rootScope)
+  coreFile.defs["foldl"] = interpret(codeFoldl, rootScope)
 
   programData[coreNs] = coreFile
