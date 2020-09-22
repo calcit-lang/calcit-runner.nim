@@ -315,6 +315,11 @@ proc len*(xs: CirruData): int =
     coloredEcho(fgRed, $xs)
     raiseEvalError("Data has no len function", xs)
 
+proc isSymbol*(xs: CirruData): bool =
+  case xs.kind
+    of crDataSymbol: true
+    else: false
+
 proc isListData*(xs: CirruData): bool =
   case xs.kind
     of crDataList: true

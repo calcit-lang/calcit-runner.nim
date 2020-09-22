@@ -27,6 +27,15 @@ proc nativeMinus(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
   if b.kind != crDataNumber: coreFnError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
 
+# TODO &and
+# TODO &or
+# TODO not
+
+# TODO empty?
+# TODO first
+# TODO rest
+
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   var coreFile: ProgramFile

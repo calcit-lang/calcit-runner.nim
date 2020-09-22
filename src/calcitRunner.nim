@@ -240,8 +240,9 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     return f(args, interpret, scope)
 
   except CirruEvalError as e:
-    coloredEcho fgRed, "\nError: failed to interpret"
+    echo ""
     coloredEcho fgRed, e.msg, " ", $e.code
+    echo ""
     raise e
 
 proc reloadProgram(snapshotFile: string): void =
