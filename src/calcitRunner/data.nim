@@ -356,3 +356,16 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
     for x in xs:
       list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: list)
+
+# TODO, currently only symbols and lists/vectors are allowed.
+# Clojure allows literals too, but I'm not sure. Not for now.
+proc checkExprStructure*(exprList: CirruData): bool =
+  if exprList.kind == crDataSymbol:
+    return true
+  elif isListData(exprList):
+    for item in exprList:
+      if not checkExprStructure(item):
+        return false
+    return true
+  else:
+    return false

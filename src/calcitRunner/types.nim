@@ -78,6 +78,9 @@ type CodeConfigs* = object
 type CirruEvalError* = ref object of ValueError
   code*: CirruData
 
+type CirruCoreError* = ref object of ValueError
+  data*: CirruData
+
 type FileSource* = object
   ns*: CirruData
   run*: CirruData

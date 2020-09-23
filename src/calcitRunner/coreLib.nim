@@ -10,9 +10,6 @@ import ./helpers
 
 let coreNs* = "calcit.core"
 
-proc coreFnError(msg: string, x: CirruData = CirruData(kind: crDataNil)) =
-  raise newException(ValueError, msg)
-
 proc nativeAdd(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
   let a = args[0]
@@ -28,6 +25,23 @@ proc nativeMinus(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
   if a.kind != crDataNumber: coreFnError("Required number for minus", a)
   if b.kind != crDataNumber: coreFnError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
+
+proc nativeMultiply(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: coreFnError("Expected 2 arguments in native multiply")
+  let a = args[0]
+  let b = args[1]
+  if a.kind != crDataNumber: coreFnError("Required number for multiply", a)
+  if b.kind != crDataNumber: coreFnError("Required number for multiply", b)
+  return CirruData(kind: crDataNumber, numberVal: a.numberVal * b.numberVal)
+
+proc nativeDivide(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: coreFnError("Expected 2 arguments in native divide")
+  let a = args[0]
+  let b = args[1]
+  if a.kind != crDataNumber: coreFnError("Required number for divide", a)
+  if b.kind != crDataNumber: coreFnError("Required number for divide", b)
+  if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: args))
+  return CirruData(kind: crDataNumber, numberVal: a.numberVal / b.numberVal)
 
 proc nativeLessThan(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native <")
@@ -202,6 +216,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
 
   coreFile.defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd)
   coreFile.defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus)
+  coreFile.defs["&*"] = CirruData(kind: crDataFn, fnVal: nativeMultiply)
+  coreFile.defs["&/"] = CirruData(kind: crDataFn, fnVal: nativeDivide)
   coreFile.defs["&<"] = CirruData(kind: crDataFn, fnVal: nativeLessThan)
   coreFile.defs["&>"] = CirruData(kind: crDataFn, fnVal: nativeGreaterThan)
   coreFile.defs["&="] = CirruData(kind: crDataFn, fnVal: nativeEqual)
@@ -217,10 +233,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile)
   coreFile.defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson)
 
-  # TODO, need more meaningful examples
-  let codeOfAdd2 = (%* ["defn", "&+2", ["x"], ["&+", "x", "2"]]).toCirruCode(coreNs)
-  coreFile.defs["&+2"] = interpret(codeOfAdd2, rootScope)
-
   let codeUnless = (%*
     ["defmacro", "unless", ["cond", "true-branch", "false-branch"],
       ["quote-replace", ["if", ["~", "cond"],
@@ -229,21 +241,23 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   ]).toCirruCode(coreNs)
   coreFile.defs["unless"] = interpret(codeUnless, rootScope)
 
-  let codeNotEqual = (%* ["defmacro", "!=", ["x"], ["not", ["~", "x"]]] ).toCirruCode(coreNs)
-
-  let codeLessEqual = (%*
-    ["defmacro", "<=", ["a", "b"],
-      ["&or", ["<", ["~", "a"], ["~", "b"]], ["=", ["~", "a"], ["~", "b"]]]]
+  let codeNativeNotEqual = (%*
+    ["defn", "&!=", ["x", "y"], ["not", ["&=", "x", "y"]]]
   ).toCirruCode(coreNs)
 
-  let codeGreaterEqual = (%*
-    ["defmacro", "<=", ["a", "b"],
-      ["&or", [">", ["~", "a"], ["~", "b"]], ["=", ["~", "a"], ["~", "b"]]]]
+  let codeNativeLittlerEqual = (%*
+    ["defn", "&<=", ["a", "b"],
+      ["&or", ["&<", "a", "b"], ["&=", "a", "b"]]]
+  ).toCirruCode(coreNs)
+
+  let codeNativeLargerEqual = (%*
+    ["defn", "&>=", ["a", "b"],
+      ["&or", ["&>", "a", "b"], ["&=", "a", "b"]]]
   ).toCirruCode(coreNs)
 
   let codeEmpty = (%*
     ["defmacro", "empty?", ["x"],
-      ["quote-replace", ["=", "0", ["count", ["~", "x"]]]]]
+      ["quote-replace", ["&=", "0", ["count", ["~", "x"]]]]]
   ).toCirruCode(coreNs)
 
   let codeFirst = (%*
@@ -262,12 +276,75 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
              ["foldl", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
   ).toCirruCode(coreNs)
 
-  coreFile.defs["!="] = interpret(codeNotEqual, rootScope)
-  coreFile.defs["<="] = interpret(codeLessEqual, rootScope)
-  coreFile.defs[">="] = interpret(codeGreaterEqual, rootScope)
+  let codeAdd = (%*
+    ["defn", "+", ["x", "&", "ys"],
+      ["foldl", "&+", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeMinus = (%*
+    ["defn", "-", ["x", "&", "ys"],
+      ["foldl", "&-", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeMultiply = (%*
+    ["defn", "*", ["x", "&", "ys"],
+      ["foldl", "&*", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeDivide = (%*
+    ["defn", "/", ["x", "&", "ys"],
+      ["foldl", "&/", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeFoldlCompare = (%*
+    ["defn", "foldl-compare", ["f", "xs", "acc"],
+      ["if", ["empty?", "xs"], "true",
+             ["if", ["f", "acc", ["first", "xs"]],
+                    ["foldl-compare", "f", ["rest", "xs"], ["first", "xs"]],
+                    "false"]]]
+  ).toCirruCode(coreNs)
+
+  let codeLittlerThan = (%*
+    ["defn", "<", ["x", "&", "ys"], ["foldl-compare", "&<", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeLargerThan = (%*
+    ["defn", ">", ["x", "&", "ys"], ["foldl-compare", "&>", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeEqual = (%*
+    ["defn", "=", ["x", "&", "ys"], ["foldl-compare", "&=", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeNotEqual = (%*
+    ["defn", "!=", ["x", "&", "ys"], ["foldl-compare", "&!=", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeLargerEqual = (%*
+    ["defn", ">=", ["x", "&", "ys"], ["foldl-compare", "&>=", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  let codeLittlerEqual = (%*
+    ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
+  ).toCirruCode(coreNs)
+
+  coreFile.defs["&!="] = interpret(codeNativeNotEqual, rootScope)
+  coreFile.defs["&<="] = interpret(codeNativeLittlerEqual, rootScope)
+  coreFile.defs["&>="] = interpret(codeNativeLargerEqual, rootScope)
   coreFile.defs["empty?"] = interpret(codeEmpty, rootScope)
   coreFile.defs["first"] = interpret(codeFirst, rootScope)
   coreFile.defs["when"] = interpret(codeWhen, rootScope)
   coreFile.defs["foldl"] = interpret(codeFoldl, rootScope)
+  coreFile.defs["+"] = interpret(codeAdd, rootScope)
+  coreFile.defs["-"] = interpret(codeMinus, rootScope)
+  coreFile.defs["*"] = interpret(codeMultiply, rootScope)
+  coreFile.defs["/"] = interpret(codeDivide, rootScope)
+  coreFile.defs["foldl-compare"] = interpret(codeFoldlCompare, rootScope)
+  coreFile.defs["<"] = interpret(codeLittlerThan, rootScope)
+  coreFile.defs[">"] = interpret(codeLargerThan, rootScope)
+  coreFile.defs["="] = interpret(codeEqual, rootScope)
+  coreFile.defs["!="] = interpret(codeNotEqual, rootScope)
+  coreFile.defs[">="] = interpret(codeLargerEqual, rootScope)
+  coreFile.defs["<="] = interpret(codeLittlerEqual, rootScope)
 
   programData[coreNs] = coreFile

@@ -10,82 +10,6 @@ import ./types
 import ./helpers
 import ./format
 
-proc evalAdd*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  var ret = 0.0
-  for node in exprList[1..^1]:
-    let v = interpret(node, scope)
-    if v.kind == crDataNumber:
-      ret += v.numberVal
-    else:
-      raiseEvalError(fmt"Not a number {v.kind}", node)
-  return CirruData(kind: crDataNumber, numberVal: ret)
-
-proc evalCompare*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len < 3:
-    raiseEvalError("Too few arguments to compare", exprList)
-  let opNode = exprList[0]
-  if opNode.kind != crDataSymbol:
-    raiseEvalError("Expected compare symbol", exprList)
-  var comparator = proc(a, b: float): bool = a == b
-  case opNode.symbolVal:
-  of "<":
-    comparator = proc(a, b: float): bool = a < b
-  of ">":
-    comparator = proc(a, b: float): bool = a > b
-  of "=":
-    comparator = proc(a, b: float): bool = a == b
-  of "!=":
-    comparator = proc(a, b: float): bool = a != b
-  else:
-    raiseEvalError("Unknown compare symbol", opNode)
-
-  let body = exprList[1..^1]
-  for idx, node in body:
-    if idx >= (exprList.len - 2):
-      break
-    let v = interpret(node, scope)
-    if v.kind != crDataNumber:
-      raiseEvalError(fmt"Not a number {v.kind}", node)
-    let vNext = interpret(body[idx + 1], scope)
-    if vNext.kind != crDataNumber:
-      raiseEvalError(fmt"Not a number {v.kind}", body[idx + 1])
-    if not comparator(v.numberVal, vNext.numberVal):
-      return CirruData(kind: crDataBool, boolVal: false)
-
-  return CirruData(kind: crDataBool, boolVal: true)
-
-proc evalMinus*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if (exprList.len == 1):
-    return CirruData(kind: crDataNumber, numberVal: 0)
-  elif (exprList.len == 2):
-    let node = exprList[1]
-    let ret = interpret(node, scope)
-    if ret.kind == crDataNumber:
-      return ret
-    else:
-      raiseEvalError(fmt"Not a number {ret.kind}", node)
-  else:
-    let node = exprList[1]
-    let x0 = interpret(node, scope)
-    var ret: float = 0
-    if x0.kind == crDataNumber:
-      ret = x0.numberVal
-    else:
-      raiseEvalError(fmt"Not a number {x0.kind}", node)
-    for node in exprList[2..^1]:
-      let v = interpret(node, scope)
-      if v.kind == crDataNumber:
-        ret -= v.numberVal
-      else:
-        raiseEvalError(fmt"Not a number {v.kind}", node)
-    return CirruData(kind: crDataNumber, numberVal: ret)
-
 proc evalArray*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
     raiseEvalError("Expected cirru expr", exprList)
@@ -280,7 +204,6 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
   if variadic:
     if passedArgs.len < splitPosition:
       raiseEvalError("No enough arguments", definedArgs)
-    echo splitPosition, definedArgs.len
     if splitPosition != (definedArgs.len - 2):
       raiseEvalError("& should appear before last argument", definedArgs)
     for idx in 0..<splitPosition:
@@ -353,19 +276,6 @@ proc evalDo*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): 
   result = CirruData(kind: crDataNil)
   for child in body:
     result = interpret(child, scope)
-
-# TODO, currently only symbols and lists/vectors are allowed.
-# Clojure allows literals too, but I'm not sure. Not for now.
-proc checkExprStructure(exprList: CirruData): bool =
-  if exprList.kind == crDataSymbol:
-    return true
-  elif isListData(exprList):
-    for item in exprList:
-      if not checkExprStructure(item):
-        return false
-    return true
-  else:
-    return false
 
 proc evalEval*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):

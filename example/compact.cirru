@@ -51,7 +51,6 @@
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
-            echo $ &+2 44
         |gen-num $ quote
           defmacro gen-num (a b c) (echo a b c) (quote $ + 1 2 3)
         |reload! $ quote
@@ -63,7 +62,15 @@
         |try-foldl $ quote
           defn try-foldl ()
             ; echo $ get ([] 1 2 3) (, 0)
-            echo $ foldl &+ ([] 1 2 3) (, 0)
+            ; echo "\"foldl:" $ foldl &+ ([] 1 2 3) (, 0)
+            ; echo $ + 1 2 3 4 (+ 5 6 7)
+            ; echo $ + 1 2 3 4 5
+            ; echo "\"minus" (- 1 2) (- 4 5 6) (- 100 $ - 10 1)
+            ; echo "\"compare" $ foldl-compare &< ([] 1 2) (, 2)
+            ; echo "\"compare" (< 1 2 3 4) (< 3 2)
+            echo (* 2 3) (* 2 3 4)
+            echo (/ 2 3) (/ 2 3 4)
+            ; assert "\"asserting value" false
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
       :proc $ quote ()

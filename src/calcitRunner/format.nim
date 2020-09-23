@@ -31,6 +31,12 @@ proc fromTableToString(children: Table[CirruData, CirruData]): string =
   tableStr = tableStr & "}"
   return tableStr
 
+proc escapeString(x: string): string =
+  if x.contains("\"") or x.contains(' '):
+    escape(x)
+  else:
+    x
+
 proc toString*(val: CirruData): string =
   case val.kind:
     of crDataBool:
@@ -50,9 +56,9 @@ proc toString*(val: CirruData): string =
     of crDataMacro: "::macro"
     of crDataSymbol:
       if val.scope.isSome:
-        "scoped::" & val.ns & "/" & val.symbolVal
+        "scoped::" & val.ns & "/" & escapeString(val.symbolVal)
       else:
-        val.ns & "/" & val.symbolVal
+        val.ns & "/" & escapeString(val.symbolVal)
 
 proc `$`*(v: CirruData): string =
   v.toString

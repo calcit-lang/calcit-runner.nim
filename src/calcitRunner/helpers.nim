@@ -28,3 +28,11 @@ proc dimEcho*(text: varargs[string]): void =
   setStyle({styleDim})
   echo buffer
   resetAttributes()
+
+proc coreFnError*(msg: string, x: CirruData = CirruData(kind: crDataNil)) =
+  var e: CirruCoreError
+  new e
+  e.msg = msg
+  e.data = x
+
+  raise e
