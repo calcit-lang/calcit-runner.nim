@@ -6,7 +6,7 @@ import options
 
 import ./types
 
-proc toString*(val: CirruData): string
+proc toString*(val: CirruData, details: bool = false): string
 
 proc fromArrayToString(children: seq[CirruData]): string =
   return "[" & children.mapIt(toString(it)).join(" ") & "]"
@@ -37,7 +37,7 @@ proc escapeString(x: string): string =
   else:
     x
 
-proc toString*(val: CirruData): string =
+proc toString*(val: CirruData, details: bool = false): string =
   case val.kind:
     of crDataBool:
       if val.boolVal:
@@ -55,10 +55,19 @@ proc toString*(val: CirruData): string =
     of crDataFn: "::fn"
     of crDataMacro: "::macro"
     of crDataSymbol:
-      if val.scope.isSome:
-        "scoped::" & val.ns & "/" & escapeString(val.symbolVal)
+      if details:
+        if val.scope.isSome:
+          "scoped::" & val.ns & "/" & escapeString(val.symbolVal)
+        else:
+          val.ns & "/" & escapeString(val.symbolVal)
       else:
-        val.ns & "/" & escapeString(val.symbolVal)
+        val.symbolVal
 
 proc `$`*(v: CirruData): string =
-  v.toString
+  v.toString(false)
+
+proc shortenCode*(code: string, n: int): string =
+  if code.len > n:
+    code[0..<n] & "..."
+  else:
+    code

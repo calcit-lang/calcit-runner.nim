@@ -15,6 +15,10 @@ type ImportInfo* = object
   of importDef:
     def*: string
 
+type StackInfo* = object
+  ns*: string
+  def*: string
+
 type
 
   CirruDataScope* = ref object

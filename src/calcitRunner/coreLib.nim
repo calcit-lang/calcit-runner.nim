@@ -224,8 +224,9 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
 # TODO reduce-find
 
 # injecting functions to calcit.core directly
-proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
+proc loadCoreDefs*(programData: var Table[string, ProgramFile], programCode: var Table[string, FileSource], interpret: EdnEvalFn): void =
   var coreFile: ProgramFile
+  var coreSource: FileSource
   let rootScope = CirruDataScope()
 
   coreFile.defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd)
@@ -254,7 +255,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
                                ["~", "false-branch"],
                                ["~", "true-branch"]]]
   ]).toCirruCode(coreNs)
-  coreFile.defs["unless"] = interpret(codeUnless, rootScope)
 
   let codeNativeNotEqual = (%*
     ["defn", "&!=", ["x", "y"], ["not", ["&=", "x", "y"]]]
@@ -343,6 +343,27 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
     ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
   ).toCirruCode(coreNs)
 
+  coreSource.defs["unless"] = codeUnless
+  coreSource.defs["&!="] = codeNativeNotEqual
+  coreSource.defs["&<="] = codeNativeLittlerEqual
+  coreSource.defs["&>="] = codeNativeLargerEqual
+  coreSource.defs["empty?"] = codeEmpty
+  coreSource.defs["first"] = codeFirst
+  coreSource.defs["when"] = codeWhen
+  coreSource.defs["foldl"] = codeFoldl
+  coreSource.defs["+"] = codeAdd
+  coreSource.defs["-"] = codeMinus
+  coreSource.defs["*"] = codeMultiply
+  coreSource.defs["/"] = codeDivide
+  coreSource.defs["foldl-compare"] = codeFoldlCompare
+  coreSource.defs["<"] = codeLittlerThan
+  coreSource.defs[">"] = codeLargerThan
+  coreSource.defs["="] = codeEqual
+  coreSource.defs["!="] = codeNotEqual
+  coreSource.defs[">="] = codeLargerEqual
+  coreSource.defs["<="] = codeLittlerEqual
+
+  coreFile.defs["unless"] = interpret(codeUnless, rootScope)
   coreFile.defs["&!="] = interpret(codeNativeNotEqual, rootScope)
   coreFile.defs["&<="] = interpret(codeNativeLittlerEqual, rootScope)
   coreFile.defs["&>="] = interpret(codeNativeLargerEqual, rootScope)
@@ -362,4 +383,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs[">="] = interpret(codeLargerEqual, rootScope)
   coreFile.defs["<="] = interpret(codeLittlerEqual, rootScope)
 
+  programCode[coreNs] = coreSource
   programData[coreNs] = coreFile

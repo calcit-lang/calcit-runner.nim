@@ -36,3 +36,7 @@ proc coreFnError*(msg: string, x: CirruData = CirruData(kind: crDataNil)) =
   e.data = x
 
   raise e
+
+proc reversed*[T](s: seq[T]): seq[T] =
+  result = newSeq[T](s.len)
+  for i in 0 .. s.high: result[s.high - i] = s[i]

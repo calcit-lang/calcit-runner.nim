@@ -7,6 +7,8 @@ import ./types
 import ./data
 import ./helpers
 
+var defStack*: seq[StackInfo] = @[]
+
 proc get*(scope: CirruDataScope, name: string): Option[CirruData] =
   if scope.dict.hasKey(name):
     return some(scope.dict[name])
@@ -78,3 +80,9 @@ proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
     if not ns.startsWith("calcit."):
       file.ns = none(Table[string, ImportInfo])
       file.defs.clear
+
+proc pushDefStack*(x: StackInfo): void =
+  defStack.add x
+
+proc popDefStack*(): void =
+  discard defStack.pop

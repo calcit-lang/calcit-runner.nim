@@ -164,11 +164,17 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             let argsCode = expr[1..^1]
             for x in argsCode:
               args.add interpret(x, scope)
-            return f(args, interpret, scope)
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal))
+            let ret = f(args, interpret, scope)
+            popDefStack()
+            return ret
           of crDataMacro:
             let f = value.macroVal
             let quoted = f(expr[1..^1], interpret, scope)
-            return interpret(quoted, scope)
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal))
+            let ret = interpret(quoted, scope)
+            popDefStack()
+            return ret
 
           else:
             raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
@@ -214,10 +220,22 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
     programData[ns].ns = some(v)
     return v
 
+proc showStack(): void =
+  let errorStack = reversed(defStack)
+  for item in errorStack:
+    if hasNsAndDef(item.ns, item.def):
+      echo item.ns, "/", item.def
+      dimEcho shortenCode($programCode[item.ns].defs[item.def], 400)
+    elif hasNsAndDef(coreNs, item.def):
+      echo coreNs, "/", item.def
+      dimEcho shortenCode($programCode[coreNs].defs[item.def], 400)
+    else:
+      echo item.ns, "/", item.def, " (local binding)"
+
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
-  loadCoreDefs(programData, interpret)
+  loadCoreDefs(programData, programCode, interpret)
 
   let scope = CirruDataScope()
 
@@ -235,6 +253,8 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1])]
+
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
   try:
@@ -243,16 +263,19 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   except CirruEvalError as e:
     echo ""
     coloredEcho fgRed, e.msg, " ", $e.code
+    showStack()
     echo ""
     raise e
 
   except CirruCoreError as e:
     echo ""
     coloredEcho fgRed, e.msg, " ", $e.data
+    showStack()
     echo ""
     raise e
 
 proc reloadProgram(snapshotFile: string): void =
+  defStack = @[]
   programCode = loadSnapshot(snapshotFile)
   clearProgramDefs(programData)
   var scope = CirruDataScope(parent: none(CirruDataScope))
@@ -268,9 +291,27 @@ proc reloadProgram(snapshotFile: string): void =
   if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1])]
+
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
-  discard f(args, interpret, scope)
+
+  try:
+    discard f(args, interpret, scope)
+
+  except CirruEvalError as e:
+    echo ""
+    coloredEcho fgRed, e.msg, " ", $e.code
+    showStack()
+    echo ""
+    raise e
+
+  except CirruCoreError as e:
+    echo ""
+    coloredEcho fgRed, e.msg, " ", $e.data
+    showStack()
+    echo ""
+    raise e
 
 proc watchFile(snapshotFile: string, incrementFile: string): void =
   if not existsFile(incrementFile):
