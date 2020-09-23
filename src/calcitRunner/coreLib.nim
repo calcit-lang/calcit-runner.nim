@@ -200,14 +200,28 @@ proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
     echo "Failed to parse"
     raiseEvalError("Failed to parse file", args[0])
 
+proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: args))
+
+  let code = args[0]
+  if notListData(code) or not checkExprStructure(code) or code.len == 0:
+    raiseEvalError("Unexpected structure from macroexpand", code)
+
+  let value = interpret(code[0], scope)
+  if value.kind != crDataMacro:
+    raiseEvalError("Expected a macro in the expression", code)
+  let f = value.macroVal
+  let quoted = f(code[1..^1], interpret, scope)
+  return quoted
+
+
 # TODO keyword
 # TODO symbol
 
 # TODO load edn
 
-# TODO reduce-to-false
 # TODO reduce-find
-# TODO reduce-acc
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
@@ -232,6 +246,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   coreFile.defs["read-file"] = CirruData(kind: crDataFn, fnVal: nativeReadFile)
   coreFile.defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile)
   coreFile.defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson)
+  coreFile.defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand)
 
   let codeUnless = (%*
     ["defmacro", "unless", ["cond", "true-branch", "false-branch"],

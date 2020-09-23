@@ -361,7 +361,7 @@ proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataSc
       ret = interpret(child, innerScope)
     if notListData(ret):
       raiseEvalError("Expected cirru expr from defmacro", ret)
-    return interpret(ret, callingScope)
+    return ret
 
   return CirruData(kind: crDataMacro, macroVal: f)
 

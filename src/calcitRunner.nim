@@ -167,7 +167,8 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             return f(args, interpret, scope)
           of crDataMacro:
             let f = value.macroVal
-            return f(expr[1..^1], interpret, scope)
+            let quoted = f(expr[1..^1], interpret, scope)
+            return interpret(quoted, scope)
 
           else:
             raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
