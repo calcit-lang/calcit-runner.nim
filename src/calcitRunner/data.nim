@@ -155,13 +155,21 @@ iterator items*(x: CirruData): CirruData =
     raise newException(EdnOpError, "data is not iterable as a sequence")
 
 iterator pairs*(x: CirruData): tuple[k: CirruData, v: CirruData] =
-  if x.kind != crDataMap:
-    raise newException(EdnOpError, "data is not iterable as map")
+  case x.kind:
+  of crDataList:
+    for i, child in x.listVal:
+      yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
 
-  for k, v in x.mapVal:
-    yield (k, v)
+  of crDataVector:
+    for i, child in x.vectorVal:
+      yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
 
+  of crDataMap:
+    for k, v in x.mapVal:
+      yield (k, v)
 
+  else:
+    raise newException(EdnOpError, "data is not iterable as a sequence by pair")
 
 proc map*[T](xs: CirruData, f: proc (x: CirruData): T): seq[T] =
   case xs.kind:

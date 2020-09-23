@@ -186,7 +186,6 @@
               |yyT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600749279051)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600749282366) (:text |try-var-args) (:id |cMv3bJEI8hleaf)
-                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600757781113) (:text |;) (:id |Z4du_TznXn)
                 :id |cMv3bJEI8h
               |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598199469694) (:data $ {}) (:id |_AlBVa6VvM)
               |yvT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585355117)
@@ -207,6 +206,7 @@
               |yyr $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600772928216)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600772931025) (:text |try-foldl) (:id |GIrwE445Rleaf)
+                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600875905024) (:text |;) (:id |KeBFkMVrO)
                 :id |GIrwE445R
             :id |-67uVWVTDb
           |try-hygienic $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600661170630)

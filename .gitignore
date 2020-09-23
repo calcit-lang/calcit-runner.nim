@@ -7,11 +7,7 @@ calcitRunner_*.nims
 
 
 # Ignore all
-src/*
-tests/*
-
-# Unignore all with extensions
-!src/*.*
-!tests/*.*
+src/cr
+tests/testExpr
 
 src/*.out

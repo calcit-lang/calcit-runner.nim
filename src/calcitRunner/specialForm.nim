@@ -194,12 +194,13 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
   var variadic = false
   var splitPosition = -1
   var counter = 0
-  for item in definedArgs:
+  for idx, item in definedArgs:
     if item.kind == crDataSymbol and item.symbolVal == "&":
       variadic = true
-      splitPosition = counter
+      if idx.kind != crDataNumber:
+        raiseEvalError("Expected a number from for/pairs", idx)
+      splitPosition = idx.numberVal.int
       break
-    counter = counter + 1
 
   if variadic:
     if passedArgs.len < splitPosition:
