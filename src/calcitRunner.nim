@@ -17,13 +17,13 @@ import libfswatch/fswatch
 
 import calcitRunner/types
 import calcitRunner/data
-import calcitRunner/operations
+import calcitRunner/specialForm
+import calcitRunner/coreLib
 import calcitRunner/helpers
 import calcitRunner/loader
 import calcitRunner/scope
 import calcitRunner/format
 import calcitRunner/genData
-import calcitRunner/coreLib
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
@@ -52,6 +52,8 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
       return CirruData(kind: crDataBool, boolVal: true)
     elif expr.symbolVal == "false":
       return CirruData(kind: crDataBool, boolVal: false)
+    elif expr.symbolVal == "nil":
+      return CirruData(kind: crDataNil)
     elif (expr.symbolVal.len > 0) and (expr.symbolVal[0] == '|' or expr.symbolVal[0] == '"'):
       return CirruData(kind: crDataString, stringVal: expr.symbolVal[1..^1])
     else:
@@ -100,6 +102,14 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
       return
     else:
       let head = expr[0]
+      if head.symbolVal == "":
+        raiseEvalError("Unknown empty symbol", expr)
+
+      if head.symbolVal[0] == '|':
+        return CirruData(kind: crDataString, stringVal: head.symbolVal[1..^1])
+      elif head.symbolVal[0] == ':':
+        return CirruData(kind: crDataKeyword, keywordVal: head.symbolVal[1..^1])
+
       case head.kind
       of crDataSymbol:
         case head.symbolVal
@@ -126,16 +136,8 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
           return evalArray(expr, interpret, scope)
         of "{}":
           return evalTable(expr, interpret, scope)
-        of "read-file":
-          return evalReadFile(expr, interpret, scope)
-        of "write-file":
-          return evalWriteFile(expr, interpret, scope)
         of ";":
           return evalComment()
-        of "load-json":
-          return evalLoadJson(expr, interpret, scope)
-        of "type-of":
-          return evalType(expr, interpret, scope)
         of "defn":
           return evalDefn(expr, interpret, scope)
         of "defmacro":
@@ -152,6 +154,8 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
           return evalDo(expr, interpret, scope)
         of ">", "<", "=", "!=":
           return evalCompare(expr, interpret, scope)
+        of "assert":
+          return evalAssert(expr, interpret, scope)
         else:
           let value = interpret(head, scope)
           case value.kind
