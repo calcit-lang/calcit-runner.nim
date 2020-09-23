@@ -363,25 +363,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], programCode: var
   coreSource.defs[">="] = codeLargerEqual
   coreSource.defs["<="] = codeLittlerEqual
 
-  coreFile.defs["unless"] = interpret(codeUnless, rootScope)
-  coreFile.defs["&!="] = interpret(codeNativeNotEqual, rootScope)
-  coreFile.defs["&<="] = interpret(codeNativeLittlerEqual, rootScope)
-  coreFile.defs["&>="] = interpret(codeNativeLargerEqual, rootScope)
-  coreFile.defs["empty?"] = interpret(codeEmpty, rootScope)
-  coreFile.defs["first"] = interpret(codeFirst, rootScope)
-  coreFile.defs["when"] = interpret(codeWhen, rootScope)
-  coreFile.defs["foldl"] = interpret(codeFoldl, rootScope)
-  coreFile.defs["+"] = interpret(codeAdd, rootScope)
-  coreFile.defs["-"] = interpret(codeMinus, rootScope)
-  coreFile.defs["*"] = interpret(codeMultiply, rootScope)
-  coreFile.defs["/"] = interpret(codeDivide, rootScope)
-  coreFile.defs["foldl-compare"] = interpret(codeFoldlCompare, rootScope)
-  coreFile.defs["<"] = interpret(codeLittlerThan, rootScope)
-  coreFile.defs[">"] = interpret(codeLargerThan, rootScope)
-  coreFile.defs["="] = interpret(codeEqual, rootScope)
-  coreFile.defs["!="] = interpret(codeNotEqual, rootScope)
-  coreFile.defs[">="] = interpret(codeLargerEqual, rootScope)
-  coreFile.defs["<="] = interpret(codeLittlerEqual, rootScope)
-
   programCode[coreNs] = coreSource
   programData[coreNs] = coreFile

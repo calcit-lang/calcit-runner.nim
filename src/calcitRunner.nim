@@ -77,6 +77,9 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
       if coreDefs.contains(expr.symbolVal):
         return coreDefs[expr.symbolVal]
 
+      if hasNsAndDef(coreNs, expr.symbolVal):
+        return getEvaluatedByPath(coreNs, expr.symbolVal, scope)
+
       if hasNsAndDef(expr.ns, expr.symbolVal):
         return getEvaluatedByPath(expr.ns, expr.symbolVal, scope)
       elif expr.ns.startsWith("calcit."):
