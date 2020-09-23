@@ -1,8 +1,17 @@
 
 out/*
-tests/testExpr
-src/cr
 
 example/.compact-inc.cirru
 
 calcitRunner_*.nims
+
+
+# Ignore all
+src/*
+tests/*
+
+# Unignore all with extensions
+!src/*.*
+!tests/*.*
+
+src/*.out

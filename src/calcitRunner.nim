@@ -378,3 +378,6 @@ proc main*(): void =
   if not runOnce:
     setControlCHook(handleControl)
     watchFile(snapshotFile, incrementFile)
+
+if isMainModule:
+  main()
