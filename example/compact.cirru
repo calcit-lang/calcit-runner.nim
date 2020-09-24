@@ -16,9 +16,11 @@
             eval $ quote (println $ + 1 2)
             println $ quote (+ 1 2)
             println $ gen-num 3 4 c
+            raise
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
+            echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (try-foldl)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (try-var-args) (; try-unless) (; try-foldl)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -51,9 +53,8 @@
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
-            echo $ &+2 44
         |gen-num $ quote
-          defmacro gen-num (a b c) (echo a b c) (quote $ + 1 2 3)
+          defmacro gen-num (a b c) (echo "\"expanding..." a b c) (quote $ + 1 2 3)
         |reload! $ quote
           defn reload! () (println "\"Reloaded...") (main!)
         |var-fn $ quote
@@ -63,7 +64,15 @@
         |try-foldl $ quote
           defn try-foldl ()
             ; echo $ get ([] 1 2 3) (, 0)
-            echo $ foldl &+ ([] 1 2 3) (, 0)
+            ; echo "\"foldl:" $ foldl &+ ([] 1 2 3) (, 0)
+            echo $ + 1 2 3 4 (+ 5 6 7)
+            ; echo $ + 1 2 3 4 5
+            ; echo "\"minus" (- 1 2) (- 4 5 6) (- 100 $ - 10 1)
+            ; echo "\"compare" $ foldl-compare &< ([] 1 2) (, 2)
+            ; echo "\"compare" (< 1 2 3 4) (< 3 2)
+            echo (* 2 3) (* 2 3 4)
+            echo (/ 2 3) (/ 2 3 4)
+            ; assert "\"asserting value" false
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
       :proc $ quote ()

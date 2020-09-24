@@ -15,6 +15,10 @@ type ImportInfo* = object
   of importDef:
     def*: string
 
+type StackInfo* = object
+  ns*: string
+  def*: string
+
 type
 
   CirruDataScope* = ref object
@@ -77,6 +81,9 @@ type CodeConfigs* = object
 
 type CirruEvalError* = ref object of ValueError
   code*: CirruData
+
+type CirruCoreError* = ref object of ValueError
+  data*: CirruData
 
 type FileSource* = object
   ns*: CirruData

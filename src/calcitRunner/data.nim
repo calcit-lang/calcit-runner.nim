@@ -155,13 +155,21 @@ iterator items*(x: CirruData): CirruData =
     raise newException(EdnOpError, "data is not iterable as a sequence")
 
 iterator pairs*(x: CirruData): tuple[k: CirruData, v: CirruData] =
-  if x.kind != crDataMap:
-    raise newException(EdnOpError, "data is not iterable as map")
+  case x.kind:
+  of crDataList:
+    for i, child in x.listVal:
+      yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
 
-  for k, v in x.mapVal:
-    yield (k, v)
+  of crDataVector:
+    for i, child in x.vectorVal:
+      yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
 
+  of crDataMap:
+    for k, v in x.mapVal:
+      yield (k, v)
 
+  else:
+    raise newException(EdnOpError, "data is not iterable as a sequence by pair")
 
 proc map*[T](xs: CirruData, f: proc (x: CirruData): T): seq[T] =
   case xs.kind:
@@ -356,3 +364,16 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
     for x in xs:
       list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: list)
+
+# TODO, currently only symbols and lists/vectors are allowed.
+# Clojure allows literals too, but I'm not sure. Not for now.
+proc checkExprStructure*(exprList: CirruData): bool =
+  if exprList.kind == crDataSymbol:
+    return true
+  elif isListData(exprList):
+    for item in exprList:
+      if not checkExprStructure(item):
+        return false
+    return true
+  else:
+    return false
