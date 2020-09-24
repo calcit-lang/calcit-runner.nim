@@ -63,7 +63,37 @@ proc toString*(val: CirruData, details: bool = false): string =
       else:
         val.symbolVal
 
+# TODO, better to be generated from toString
+proc toString*(val: RefCirruData, details: bool = false): string =
+  case val.kind:
+    of crDataBool:
+      if val.boolVal:
+        "true"
+      else:
+        "false"
+    of crDataNumber: $(val.numberVal)
+    of crDataString: val.stringVal
+    of crDataVector: fromArrayToString(val.vectorVal)
+    of crDataList: fromSeqToString(val.listVal)
+    of crDataSet: fromSetToString(val.setVal)
+    of crDataMap: fromTableToString(val.mapVal)
+    of crDataNil: "nil"
+    of crDataKeyword: ":" & val.keywordVal
+    of crDataFn: "<Function>"
+    of crDataMacro: "<Macro>"
+    of crDataSymbol:
+      if details:
+        if val.scope.isSome:
+          "scoped::" & val.ns & "/" & escapeString(val.symbolVal)
+        else:
+          val.ns & "/" & escapeString(val.symbolVal)
+      else:
+        val.symbolVal
+
 proc `$`*(v: CirruData): string =
+  v.toString(false)
+
+proc `$`*(v: RefCirruData): string =
   v.toString(false)
 
 proc shortenCode*(code: string, n: int): string =

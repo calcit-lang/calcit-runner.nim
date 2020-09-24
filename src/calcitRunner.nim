@@ -168,8 +168,7 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             for x in argsCode:
               args.add interpret(x, scope)
 
-            let code = CirruData(kind: crDataList, listVal: getListDataSeq(value.fnCode))
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code, args: args))
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode, args: args))
             let ret = f(args, interpret, scope)
             popDefStack()
             return ret
@@ -177,8 +176,7 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             let f = value.macroVal
             let quoted = f(expr[1..^1], interpret, scope)
 
-            let code = CirruData(kind: crDataList, listVal: getListDataSeq(value.macroCode))
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code, args: expr[1..^1]))
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode, args: expr[1..^1]))
             let ret = interpret(quoted, scope)
             popDefStack()
             return ret
@@ -256,7 +254,8 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let mainCode = programCode[pieces[0]].defs[pieces[1]]
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)]
+  let refCode = RefCirruData(kind: crDataList, listVal: getListDataSeq(mainCode))
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: refCode)]
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
@@ -295,7 +294,8 @@ proc reloadProgram(snapshotFile: string): void =
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let mainCode = programCode[pieces[0]].defs[pieces[1]]
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)]
+  let refCode = RefCirruData(kind: crDataList, listVal: getListDataSeq(mainCode))
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: refCode)]
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]

@@ -91,7 +91,7 @@ type FileSource* = object
 type StackInfo* = object
   ns*: string
   def*: string
-  code*: CirruData
+  code*: ref CirruData
   args*: seq[CirruData]
 
 type RefCirruData* = ref CirruData
