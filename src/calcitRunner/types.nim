@@ -92,5 +92,6 @@ type StackInfo* = object
   ns*: string
   def*: string
   code*: CirruData
+  args*: seq[CirruData]
 
 type RefCirruData* = ref CirruData

@@ -52,8 +52,8 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataMap: fromTableToString(val.mapVal)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
-    of crDataFn: "::fn"
-    of crDataMacro: "::macro"
+    of crDataFn: "<Function>"
+    of crDataMacro: "<Macro>"
     of crDataSymbol:
       if details:
         if val.scope.isSome:

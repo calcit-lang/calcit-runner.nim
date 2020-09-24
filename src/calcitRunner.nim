@@ -169,7 +169,7 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
               args.add interpret(x, scope)
 
             let code = CirruData(kind: crDataList, listVal: getListDataSeq(value.fnCode))
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code))
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code, args: args))
             let ret = f(args, interpret, scope)
             popDefStack()
             return ret
@@ -178,7 +178,7 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             let quoted = f(expr[1..^1], interpret, scope)
 
             let code = CirruData(kind: crDataList, listVal: getListDataSeq(value.macroCode))
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code))
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: code, args: expr[1..^1]))
             let ret = interpret(quoted, scope)
             popDefStack()
             return ret
@@ -232,6 +232,7 @@ proc showStack(): void =
   for item in errorStack:
     echo item.ns, "/", item.def
     dimEcho $item.code
+    dimEcho "args: ", $CirruData(kind: crDataList, listVal: item.args)
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
