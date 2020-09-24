@@ -15,10 +15,6 @@ type ImportInfo* = object
   of importDef:
     def*: string
 
-type StackInfo* = object
-  ns*: string
-  def*: string
-
 type
 
   CirruDataScope* = ref object
@@ -54,8 +50,10 @@ type
     of crDataKeyword: keywordVal*: string
     of crDataFn:
       fnVal*: FnInData
+      fnCode*: ref CirruData
     of crDataMacro:
       macroVal*: FnInData
+      macroCode*: ref CirruData
     of crDataVector: vectorVal*: seq[CirruData]
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
@@ -89,3 +87,10 @@ type FileSource* = object
   ns*: CirruData
   run*: CirruData
   defs*: Table[string, CirruData]
+
+type StackInfo* = object
+  ns*: string
+  def*: string
+  code*: CirruData
+
+type RefCirruData* = ref CirruData
