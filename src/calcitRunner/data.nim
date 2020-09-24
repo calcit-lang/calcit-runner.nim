@@ -337,6 +337,24 @@ proc isListData*(xs: CirruData): bool =
 proc notListData*(xs: CirruData): bool =
   not isListData(xs)
 
+proc getListDataSeq*(xs: RefCirruData): seq[CirruData] =
+  case xs.kind
+  of crDataVector:
+    return xs.vectorVal
+  of crDataList:
+    return xs.listVal
+  else:
+    raise newException(ValueError, "Cannot get seq code from data")
+
+proc getListDataSeq*(xs: CirruData): seq[CirruData] =
+  case xs.kind
+  of crDataVector:
+    return xs.vectorVal
+  of crDataList:
+    return xs.listVal
+  else:
+    raise newException(ValueError, "Cannot get seq code from data")
+
 proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
   if notListData(xs):
     raise newException(ValueError, "Cannot create iterator on a cirru string")

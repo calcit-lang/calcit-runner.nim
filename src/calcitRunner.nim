@@ -167,14 +167,16 @@ proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
             let argsCode = expr[1..^1]
             for x in argsCode:
               args.add interpret(x, scope)
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal))
+
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode, args: args))
             let ret = f(args, interpret, scope)
             popDefStack()
             return ret
           of crDataMacro:
             let f = value.macroVal
             let quoted = f(expr[1..^1], interpret, scope)
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal))
+
+            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode, args: expr[1..^1]))
             let ret = interpret(quoted, scope)
             popDefStack()
             return ret
@@ -226,14 +228,9 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
 proc showStack(): void =
   let errorStack = reversed(defStack)
   for item in errorStack:
-    if hasNsAndDef(item.ns, item.def):
-      echo item.ns, "/", item.def
-      dimEcho shortenCode($programCode[item.ns].defs[item.def], 400)
-    elif hasNsAndDef(coreNs, item.def):
-      echo coreNs, "/", item.def
-      dimEcho shortenCode($programCode[coreNs].defs[item.def], 400)
-    else:
-      echo item.ns, "/", item.def, " (local binding)"
+    echo item.ns, "/", item.def
+    dimEcho $item.code
+    dimEcho "args: ", $CirruData(kind: crDataList, listVal: item.args)
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
@@ -256,7 +253,9 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1])]
+  let mainCode = programCode[pieces[0]].defs[pieces[1]]
+  let refCode = RefCirruData(kind: crDataList, listVal: getListDataSeq(mainCode))
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: refCode)]
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
@@ -294,7 +293,9 @@ proc reloadProgram(snapshotFile: string): void =
   if entry.kind != crDataFn:
     raise newException(ValueError, "expects a function at app.main/main!")
 
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1])]
+  let mainCode = programCode[pieces[0]].defs[pieces[1]]
+  let refCode = RefCirruData(kind: crDataList, listVal: getListDataSeq(mainCode))
+  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: refCode)]
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]

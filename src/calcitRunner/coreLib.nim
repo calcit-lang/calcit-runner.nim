@@ -223,31 +223,39 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
 
 # TODO reduce-find
 
+
+proc fakeNativeCode(info: string): RefCirruData =
+  RefCirruData(kind: crDataList, listVal: @[
+    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
+  ])
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], programCode: var Table[string, FileSource], interpret: EdnEvalFn): void =
   var coreFile: ProgramFile
   var coreSource: FileSource
   let rootScope = CirruDataScope()
 
-  coreFile.defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd)
-  coreFile.defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus)
-  coreFile.defs["&*"] = CirruData(kind: crDataFn, fnVal: nativeMultiply)
-  coreFile.defs["&/"] = CirruData(kind: crDataFn, fnVal: nativeDivide)
-  coreFile.defs["&<"] = CirruData(kind: crDataFn, fnVal: nativeLessThan)
-  coreFile.defs["&>"] = CirruData(kind: crDataFn, fnVal: nativeGreaterThan)
-  coreFile.defs["&="] = CirruData(kind: crDataFn, fnVal: nativeEqual)
-  coreFile.defs["&and"] = CirruData(kind: crDataFn, fnVal: nativeAnd)
-  coreFile.defs["&or"] = CirruData(kind: crDataFn, fnVal: nativeOr)
-  coreFile.defs["not"] = CirruData(kind: crDataFn, fnVal: nativeNot)
-  coreFile.defs["count"] = CirruData(kind: crDataFn, fnVal: nativeCount)
-  coreFile.defs["get"] = CirruData(kind: crDataFn, fnVal: nativeGet)
-  coreFile.defs["rest"] = CirruData(kind: crDataFn, fnVal: nativeRest)
-  coreFile.defs["raise-at"] = CirruData(kind: crDataFn, fnVal: nativeRaiseAt)
-  coreFile.defs["type-of"] = CirruData(kind: crDataFn, fnVal: nativeTypeOf)
-  coreFile.defs["read-file"] = CirruData(kind: crDataFn, fnVal: nativeReadFile)
-  coreFile.defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile)
-  coreFile.defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson)
-  coreFile.defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand)
+  coreFile.defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
+  coreFile.defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus, fnCode: fakeNativeCode("&-"))
+  coreFile.defs["&*"] = CirruData(kind: crDataFn, fnVal: nativeMultiply, fnCode: fakeNativeCode("&*"))
+  coreFile.defs["&/"] = CirruData(kind: crDataFn, fnVal: nativeDivide, fnCode: fakeNativeCode("&/"))
+  coreFile.defs["&<"] = CirruData(kind: crDataFn, fnVal: nativeLessThan, fnCode: fakeNativeCode("&<"))
+  coreFile.defs["&>"] = CirruData(kind: crDataFn, fnVal: nativeGreaterThan, fnCode: fakeNativeCode("&>"))
+  coreFile.defs["&="] = CirruData(kind: crDataFn, fnVal: nativeEqual, fnCode: fakeNativeCode("&="))
+  coreFile.defs["&and"] = CirruData(kind: crDataFn, fnVal: nativeAnd, fnCode: fakeNativeCode("&and"))
+  coreFile.defs["&or"] = CirruData(kind: crDataFn, fnVal: nativeOr, fnCode: fakeNativeCode("&or"))
+  coreFile.defs["not"] = CirruData(kind: crDataFn, fnVal: nativeNot, fnCode: fakeNativeCode("not"))
+  coreFile.defs["count"] = CirruData(kind: crDataFn, fnVal: nativeCount, fnCode: fakeNativeCode("count"))
+  coreFile.defs["get"] = CirruData(kind: crDataFn, fnVal: nativeGet, fnCode: fakeNativeCode("get"))
+  coreFile.defs["rest"] = CirruData(kind: crDataFn, fnVal: nativeRest, fnCode: fakeNativeCode("rest"))
+  coreFile.defs["raise-at"] = CirruData(kind: crDataFn, fnVal: nativeRaiseAt, fnCode: fakeNativeCode("raise-at"))
+  coreFile.defs["type-of"] = CirruData(kind: crDataFn, fnVal: nativeTypeOf, fnCode: fakeNativeCode("type-of"))
+  coreFile.defs["read-file"] = CirruData(kind: crDataFn, fnVal: nativeReadFile, fnCode: fakeNativeCode("read-file"))
+  coreFile.defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile, fnCode: fakeNativeCode("write-file"))
+  coreFile.defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson, fnCode: fakeNativeCode("load-json"))
+  coreFile.defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand, fnCode: fakeNativeCode("macroexpand"))
 
   let codeUnless = (%*
     ["defmacro", "unless", ["cond", "true-branch", "false-branch"],
