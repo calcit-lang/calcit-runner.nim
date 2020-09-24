@@ -175,20 +175,6 @@ proc callTableMethod*(value: var Table[CirruData, CirruData], exprList: CirruDat
   else:
     raiseEvalError("Unknown method " & exprList[1].symbolVal, exprList[1])
 
-proc callStringMethod*(value: string, exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len < 2:
-    raiseEvalError("No enough arguments for calling methods", exprList[1])
-  if exprList[1].kind != crDataSymbol:
-    raiseEvalError("Expression not supported for methods", exprList[1])
-
-  case exprList[1].symbolVal
-  of "len":
-    return CirruData(kind: crDataNumber, numberVal: value.len().float)
-  else:
-    raiseEvalError("Unknown method " & exprList[1].symbolVal , exprList[1])
-
 proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope: CirruDataScope): void =
 
   var variadic = false

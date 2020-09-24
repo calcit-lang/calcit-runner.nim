@@ -1,7 +1,6 @@
 
 import os
 import re
-import sequtils
 import strutils
 import json
 import strformat
@@ -44,163 +43,147 @@ proc hasNsAndDef(ns: string, def: string): bool =
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 
-proc interpret(expr: CirruData, scope: CirruDataScope): CirruData =
-  if expr.kind == crDataSymbol:
-    if expr.symbolVal == "":
-        raiseEvalError("Unknown empty symbol", expr)
-    if expr.symbolVal[0] == '|' or expr.symbolVal[0] == '"':
-      return CirruData(kind: crDataString, stringVal: expr.symbolVal[1..^1])
-    elif expr.symbolVal[0] == ':':
-      return CirruData(kind: crDataKeyword, keywordVal: expr.symbolVal[1..^1])
+proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
+  if sym.kind != crDataSymbol:
+    raiseEvalError("Expects a symbol", sym)
 
-    if match(expr.symbolVal, re"\d+(\.\d+)?"):
-      return CirruData(kind: crDataNumber, numberVal: parseFloat(expr.symbolVal))
-    elif expr.symbolVal == "true":
-      return CirruData(kind: crDataBool, boolVal: true)
-    elif expr.symbolVal == "false":
-      return CirruData(kind: crDataBool, boolVal: false)
-    elif expr.symbolVal == "nil":
-      return CirruData(kind: crDataNil)
-    elif (expr.symbolVal.len > 0) and (expr.symbolVal[0] == '|' or expr.symbolVal[0] == '"'):
-      return CirruData(kind: crDataString, stringVal: expr.symbolVal[1..^1])
-    else:
-      if expr.scope.isSome:
-        let fromOriginalScope = expr.scope.get.get(expr.symbolVal)
-        if fromOriginalScope.isSome:
-          return fromOriginalScope.get
-      else:
-        let fromScope = scope.get(expr.symbolVal)
-        if fromScope.isSome:
-          return fromScope.get
+  if sym.symbolVal == "":
+      raiseEvalError("Unknown empty symbol", sym)
+  if sym.symbolVal[0] == '|' or sym.symbolVal[0] == '"':
+    return CirruData(kind: crDataString, stringVal: sym.symbolVal[1..^1])
+  elif sym.symbolVal[0] == ':':
+    return CirruData(kind: crDataKeyword, keywordVal: sym.symbolVal[1..^1])
 
-      let coreDefs = programData[coreNs].defs
-      if coreDefs.contains(expr.symbolVal):
-        return coreDefs[expr.symbolVal]
-
-      if hasNsAndDef(coreNs, expr.symbolVal):
-        return getEvaluatedByPath(coreNs, expr.symbolVal, scope)
-
-      if hasNsAndDef(expr.ns, expr.symbolVal):
-        return getEvaluatedByPath(expr.ns, expr.symbolVal, scope)
-      elif expr.ns.startsWith("calcit."):
-        raiseEvalError("Cannot find symbol in core lib", expr)
-      else:
-        let importDict = loadImportDictByNs(expr.ns)
-        if expr.symbolVal[0] != '/' and expr.symbolVal.contains("/"):
-          let pieces = expr.symbolVal.split('/')
-          if pieces.len != 2:
-            raiseEvalError("Expects token in ns/def", expr)
-          let nsPart = pieces[0]
-          let defPart = pieces[1]
-          if importDict.hasKey(nsPart):
-            let importTarget = importDict[nsPart]
-            case importTarget.kind:
-            of importNs:
-              return getEvaluatedByPath(importTarget.ns, defPart, scope)
-            of importDef:
-              raiseEvalError(fmt"Unknown ns ${expr.symbolVal}", expr)
-        else:
-          if importDict.hasKey(expr.symbolVal):
-            let importTarget = importDict[expr.symbolVal]
-            case importTarget.kind:
-            of importDef:
-              return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
-            of importNs:
-              raiseEvalError(fmt"Unknown def ${expr.symbolVal}", expr)
-
-          raiseEvalError(fmt"Unknown token {expr.symbolVal}", expr)
+  if match(sym.symbolVal, re"\d+(\.\d+)?"):
+    return CirruData(kind: crDataNumber, numberVal: parseFloat(sym.symbolVal))
+  elif sym.symbolVal == "true":
+    return CirruData(kind: crDataBool, boolVal: true)
+  elif sym.symbolVal == "false":
+    return CirruData(kind: crDataBool, boolVal: false)
+  elif sym.symbolVal == "nil":
+    return CirruData(kind: crDataNil)
+  elif (sym.symbolVal.len > 0) and (sym.symbolVal[0] == '|' or sym.symbolVal[0] == '"'):
+    return CirruData(kind: crDataString, stringVal: sym.symbolVal[1..^1])
   else:
-    if expr.len == 0:
-      return
+    if sym.scope.isSome:
+      let fromOriginalScope = sym.scope.get.get(sym.symbolVal)
+      if fromOriginalScope.isSome:
+        return fromOriginalScope.get
     else:
-      let head = expr[0]
+      let fromScope = scope.get(sym.symbolVal)
+      if fromScope.isSome:
+        return fromScope.get
 
-      case head.kind
-      of crDataSymbol:
-        case head.symbolVal
-        of "println", "echo":
-          echo expr[1..^1].map(proc(x: CirruData): CirruData =
-            interpret(x, scope)
-          ).map(`$`).join(" ")
-        of "pr-str":
-          echo expr[1..^1].map(proc(x: CirruData): CirruData =
-            interpret(x, scope)
-          ).map(proc (x: CirruData): string =
-            if x.kind == crDataSymbol:
-              return escape(x.symbolVal)
-            else:
-              return $x
-          ).join(" ")
-        of "if":
-          return evalIf(expr, interpret, scope)
-        of "[]":
-          return evalArray(expr, interpret, scope)
-        of "{}":
-          return evalTable(expr, interpret, scope)
-        of ";":
-          return evalComment()
-        of "defn":
-          return evalDefn(expr, interpret, scope)
-        of "defmacro":
-          return evalDefmacro(expr, interpret, scope)
-        of "eval":
-          return evalEval(expr, interpret, scope)
-        of "quote":
-          return evalQuote(expr, interpret, scope)
-        of "quote-replace":
-          return evalQuoteReplace(expr, interpret, scope)
-        of "let":
-          return evalLet(expr, interpret, scope)
-        of "do":
-          return evalDo(expr, interpret, scope)
-        of "assert":
-          return evalAssert(expr, interpret, scope)
-        else:
-          let value = interpret(head, scope)
-          case value.kind
-          of crDataString:
-            var value = value.symbolVal
-            return callStringMethod(value, expr, interpret, scope)
-          of crDataFn:
-            let f = value.fnVal
-            var args: seq[CirruData] = @[]
-            let argsCode = expr[1..^1]
-            for x in argsCode:
-              args.add interpret(x, scope)
+    let coreDefs = programData[coreNs].defs
+    if coreDefs.contains(sym.symbolVal):
+      return coreDefs[sym.symbolVal]
 
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode[], args: args))
-            let ret = f(args, interpret, scope)
-            popDefStack()
-            return ret
-          of crDataMacro:
-            let f = value.macroVal
-            let quoted = f(expr[1..^1], interpret, scope)
+    if hasNsAndDef(coreNs, sym.symbolVal):
+      return getEvaluatedByPath(coreNs, sym.symbolVal, scope)
 
-            pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: expr[1..^1]))
-            let ret = interpret(quoted, scope)
-            popDefStack()
-            return ret
-
-          else:
-            raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
+    if hasNsAndDef(sym.ns, sym.symbolVal):
+      return getEvaluatedByPath(sym.ns, sym.symbolVal, scope)
+    elif sym.ns.startsWith("calcit."):
+      raiseEvalError("Cannot find symbol in core lib", sym)
+    else:
+      let importDict = loadImportDictByNs(sym.ns)
+      if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
+        let pieces = sym.symbolVal.split('/')
+        if pieces.len != 2:
+          raiseEvalError("Expects token in ns/def", sym)
+        let nsPart = pieces[0]
+        let defPart = pieces[1]
+        if importDict.hasKey(nsPart):
+          let importTarget = importDict[nsPart]
+          case importTarget.kind:
+          of importNs:
+            return getEvaluatedByPath(importTarget.ns, defPart, scope)
+          of importDef:
+            raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
       else:
-        let headValue = interpret(expr[0], scope)
-        case headValue.kind:
-        of crDataFn:
-          echo "NOT implemented fn"
-          quit 1
-        of crDataMacro:
-          echo "TODO macro"
-          quit 1
-        of crDataVector:
-          var value = headValue.vectorVal
-          return callArrayMethod(value, expr, interpret, scope)
-        of crDataMap:
-          var value = headValue.mapVal
-          return callTableMethod(value, expr, interpret, scope)
-        else:
-          echo "TODO"
-          quit 1
+        if importDict.hasKey(sym.symbolVal):
+          let importTarget = importDict[sym.symbolVal]
+          case importTarget.kind:
+          of importDef:
+            return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
+          of importNs:
+            raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
+
+        raiseEvalError(fmt"Unknown token {sym.symbolVal}", sym)
+
+proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
+  if xs.kind == crDataSymbol:
+    return interpretSymbol(xs, scope)
+
+  if xs.len == 0:
+    raiseEvalError("Cannot interpret empty expression", xs)
+
+  let head = xs[0]
+
+  if head.kind == crDataSymbol:
+    case head.symbolVal
+    of "if":
+      return evalIf(xs, interpret, scope)
+    of "[]":
+      return evalArray(xs, interpret, scope)
+    of "{}":
+      return evalTable(xs, interpret, scope)
+    of ";":
+      return evalComment()
+    of "defn":
+      return evalDefn(xs, interpret, scope)
+    of "defmacro":
+      return evalDefmacro(xs, interpret, scope)
+    of "eval":
+      return evalEval(xs, interpret, scope)
+    of "quote":
+      return evalQuote(xs, interpret, scope)
+    of "quote-replace":
+      return evalQuoteReplace(xs, interpret, scope)
+    of "let":
+      return evalLet(xs, interpret, scope)
+    of "do":
+      return evalDo(xs, interpret, scope)
+    of "assert":
+      return evalAssert(xs, interpret, scope)
+    else:
+      discard
+
+  let value = interpret(head, scope)
+  case value.kind
+  of crDataString:
+    raiseEvalError("String is not a function", xs)
+
+  of crDataFn:
+    let f = value.fnVal
+    var args: seq[CirruData] = @[]
+    let argsCode = xs[1..^1]
+    for x in argsCode:
+      args.add interpret(x, scope)
+
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode[], args: args))
+    let ret = f(args, interpret, scope)
+    popDefStack()
+    return ret
+
+  of crDataMacro:
+    let f = value.macroVal
+    let quoted = f(xs[1..^1], interpret, scope)
+
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: xs[1..^1]))
+    let ret = interpret(quoted, scope)
+    popDefStack()
+    return ret
+
+  of crDataVector:
+    var v = value.vectorVal
+    return callArrayMethod(v, xs, interpret, scope)
+  of crDataMap:
+    var v = value.mapVal
+    return callTableMethod(v, xs, interpret, scope)
+
+  else:
+    raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
 
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData =
   if not programData.hasKey(ns):
