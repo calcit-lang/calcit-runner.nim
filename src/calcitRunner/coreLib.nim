@@ -3,9 +3,12 @@ import tables
 import json
 import math
 import strformat
+import sequtils
+import strutils
 
 import ./types
 import ./data
+import ./format
 import ./helpers
 
 let coreNs* = "calcit.core"
@@ -215,6 +218,19 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   let quoted = f(code[1..^1], interpret, scope)
   return quoted
 
+proc nativePrintln*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  echo args.map(`$`).join(" ")
+  return CirruData(kind: crDataNil)
+
+proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  echo args.map(proc (x: CirruData): string =
+    if x.kind == crDataSymbol:
+      return escape(x.symbolVal)
+    else:
+      return $x
+  ).join(" ")
+  return CirruData(kind: crDataNil)
+
 # TODO keyword
 # TODO symbol
 
@@ -254,6 +270,9 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], programCode: var
   coreFile.defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile, fnCode: fakeNativeCode("write-file"))
   coreFile.defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson, fnCode: fakeNativeCode("load-json"))
   coreFile.defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand, fnCode: fakeNativeCode("macroexpand"))
+  coreFile.defs["println"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("println"))
+  coreFile.defs["echo"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("echo"))
+  coreFile.defs["pr-str"] = CirruData(kind: crDataFn, fnVal: nativePrStr, fnCode: fakeNativeCode("pr-str"))
 
   let codeUnless = (%*
     ["defmacro", "unless", ["cond", "true-branch", "false-branch"],
