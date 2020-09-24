@@ -215,14 +215,12 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   let quoted = f(code[1..^1], interpret, scope)
   return quoted
 
-
 # TODO keyword
 # TODO symbol
 
 # TODO load edn
 
 # TODO reduce-find
-
 
 proc fakeNativeCode(info: string): RefCirruData =
   RefCirruData(kind: crDataList, listVal: @[

@@ -244,12 +244,8 @@ proc evalDefn*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope)
       ret = interpret(child, innerScope)
     return ret
 
-  if exprList.kind == crDataVector:
-    let code = RefCirruData(kind: crDataList, listVal: exprList.vectorVal)
-    return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
-  else:
-    let code = RefCirruData(kind: crDataList, listVal: exprList.listVal)
-    return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
+  let code = RefCirruData(kind: crDataList, listVal: getListDataSeq(exprList))
+  return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
 
 proc evalLet*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
@@ -369,12 +365,8 @@ proc evalDefmacro*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataSc
       raiseEvalError("Expected cirru expr from defmacro", ret)
     return ret
 
-  if exprList.kind == crDataVector:
-    let code = RefCirruData(kind: crDataList, listVal: exprList.vectorVal)
-    return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
-  else:
-    let code = RefCirruData(kind: crDataList, listVal: exprList.listVal)
-    return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
+  let code = RefCirruData(kind: crDataList, listVal: getListDataSeq(exprList))
+  return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
 
 proc evalAssert*(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
