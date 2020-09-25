@@ -53,6 +53,8 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
     return CirruData(kind: crDataString, stringVal: sym.symbolVal[1..^1])
   elif sym.symbolVal[0] == ':':
     return CirruData(kind: crDataKeyword, keywordVal: sym.symbolVal[1..^1])
+  elif sym.symbolVal[0] == '\'':
+    return CirruData(kind: crDataSymbol, symbolVal: sym.symbolVal[1..^1])
 
   if match(sym.symbolVal, re"\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(sym.symbolVal))
@@ -119,36 +121,6 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     raiseEvalError("Cannot interpret empty expression", xs)
 
   let head = xs[0]
-
-  if head.kind == crDataSymbol:
-    case head.symbolVal
-    of "if":
-      return evalIf(xs, interpret, scope)
-    of "[]":
-      return evalArray(xs, interpret, scope)
-    of "{}":
-      return evalTable(xs, interpret, scope)
-    of ";":
-      return evalComment()
-    of "defn":
-      return evalDefn(xs, interpret, scope)
-    of "defmacro":
-      return evalDefmacro(xs, interpret, scope)
-    of "eval":
-      return evalEval(xs, interpret, scope)
-    of "quote":
-      return evalQuote(xs, interpret, scope)
-    of "quote-replace":
-      return evalQuoteReplace(xs, interpret, scope)
-    of "let":
-      return evalLet(xs, interpret, scope)
-    of "do":
-      return evalDo(xs, interpret, scope)
-    of "assert":
-      return evalAssert(xs, interpret, scope)
-    else:
-      discard
-
   let value = interpret(head, scope)
   case value.kind
   of crDataString:
@@ -168,12 +140,20 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
 
   of crDataMacro:
     let f = value.macroVal
-    let quoted = f(xs[1..^1], interpret, scope)
 
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: xs[1..^1]))
+    let quoted = f(xs[1..^1], interpret, scope)
     let ret = interpret(quoted, scope)
     popDefStack()
     return ret
+
+  of crDataSyntax:
+    let f = value.syntaxVal
+
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.syntaxCode[], args: xs[1..^1]))
+    let quoted = f(xs[1..^1], interpret, scope)
+    popDefStack()
+    return quoted
 
   of crDataVector:
     var v = value.vectorVal
@@ -219,6 +199,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
   loadCoreDefs(programData, programCode, interpret)
+  loadCoreSyntax(programData, programCode, interpret)
 
   let scope = CirruDataScope()
 
@@ -259,8 +240,10 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     raise e
 
 proc reloadProgram(snapshotFile: string): void =
+  let previousCoreSource = programCode[coreNs]
   programCode = loadSnapshot(snapshotFile)
   clearProgramDefs(programData)
+  programCode[coreNs] = previousCoreSource
   var scope = CirruDataScope(parent: none(CirruDataScope))
 
   let pieces = codeConfigs.reloadFn.split('/')
