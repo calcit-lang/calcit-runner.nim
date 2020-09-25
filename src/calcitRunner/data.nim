@@ -42,6 +42,10 @@ proc hash*(value: CirruData): Hash =
       result = hash("fn:")
       result = result !& hash(value.fnVal)
       result = !$ result
+    of crDataSyntax:
+      result = hash("syntax:")
+      result = result !& hash(value.syntaxVal)
+      result = !$ result
     of crDataMacro:
       result = hash("macro:")
       result = result !& hash(value.macroVal)
@@ -93,6 +97,8 @@ proc `==`*(x, y: CirruData): bool =
       return x.fnVal == y.fnVal
     of crDataMacro:
       return x.macroVal == y.macroVal
+    of crDataSyntax:
+      return x.syntaxVal == y.syntaxVal
 
     of crDataVector:
       if x.vectorVal.len != y.vectorVal.len:
@@ -256,6 +262,9 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataMacro:
     return JsonNode(kind: JNull)
 
+  of crDataSyntax:
+    return JsonNode(kind: JNull)
+
   of crDataSymbol:
     return JsonNode(kind: JString, str: x.symbolVal)
 
@@ -386,3 +395,10 @@ proc checkExprStructure*(exprList: CirruData): bool =
     return true
   else:
     return false
+
+proc fakeNativeCode*(info: string): RefCirruData =
+  RefCirruData(kind: crDataList, listVal: @[
+    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
+  ])

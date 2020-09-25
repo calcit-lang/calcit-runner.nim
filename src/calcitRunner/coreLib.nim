@@ -11,8 +11,6 @@ import ./data
 import ./format
 import ./helpers
 
-let coreNs* = "calcit.core"
-
 proc nativeAdd(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
   let a = args[0]
@@ -237,13 +235,6 @@ proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
 # TODO load edn
 
 # TODO reduce-find
-
-proc fakeNativeCode(info: string): RefCirruData =
-  RefCirruData(kind: crDataList, listVal: @[
-    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
-  ])
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], programCode: var Table[string, FileSource], interpret: EdnEvalFn): void =

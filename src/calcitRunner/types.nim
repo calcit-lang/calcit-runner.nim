@@ -34,6 +34,7 @@ type
     crDataFn,
     crDataMacro,
     crDataSymbol,
+    crDataSyntax,
 
   EdnEvalFn* = proc(expr: CirruData, scope: CirruDataScope): CirruData
 
@@ -50,10 +51,13 @@ type
     of crDataKeyword: keywordVal*: string
     of crDataFn:
       fnVal*: FnInData
-      fnCode*: ref CirruData
+      fnCode*: RefCirruData
     of crDataMacro:
       macroVal*: FnInData
-      macroCode*: ref CirruData
+      macroCode*: RefCirruData
+    of crDataSyntax:
+      syntaxVal*: FnInData
+      syntaxCode*: RefCirruData
     of crDataVector: vectorVal*: seq[CirruData]
     of crDataList: listVal*: seq[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
@@ -62,6 +66,8 @@ type
       symbolVal*: string
       ns*: string
       scope*: Option[CirruDataScope]
+
+  RefCirruData* = ref CirruData
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError
@@ -94,4 +100,4 @@ type StackInfo* = object
   code*: CirruData
   args*: seq[CirruData]
 
-type RefCirruData* = ref CirruData
+let coreNs* = "calcit.core"
