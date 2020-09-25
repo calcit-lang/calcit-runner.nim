@@ -12,3 +12,6 @@ test "Basic gynienic":
 
 test "Cirru tests":
   check (runProgram("tests/snapshots/test.cirru") == crData(true))
+
+test "Basic syntax":
+  check (runProgram("tests/snapshots/defsyntax.cirru") == crData(6))

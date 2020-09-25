@@ -324,6 +324,21 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   let code = RefCirruData(kind: crDataList, listVal: exprList)
   return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
 
+proc nativeDefSyntax(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
+    let innerScope = CirruDataScope(parent: some(scope))
+    let argsList = exprList[1]
+
+    processArguments(argsList, xs, innerScope)
+
+    var ret = CirruData(kind: crDataNil)
+    for child in exprList[2..^1]:
+      ret = interpret(child, innerScope)
+    return ret
+
+  let code = RefCirruData(kind: crDataList, listVal: exprList)
+  return CirruData(kind: crDataSyntax, syntaxVal: f, syntaxCode: code)
+
 proc nativeAssert(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if exprList.len != 2:
     raiseEvalError("eval expects 1 argument", exprList)
@@ -341,6 +356,7 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], programCode: v
   programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert, syntaxCode: fakeNativeCode("assert"))
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace, syntaxCode: fakeNativeCode("quote-replace"))
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro, syntaxCode: fakeNativeCode("defmacro"))
+  programData[coreNs].defs["defsyntax"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefSyntax, syntaxCode: fakeNativeCode("defsyntax"))
   programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment, syntaxCode: fakeNativeCode(";"))
   programData[coreNs].defs["eval"] = CirruData(kind: crDataSyntax, syntaxVal: nativeEval, syntaxCode: fakeNativeCode("eval"))
   programData[coreNs].defs["do"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDo, syntaxCode: fakeNativeCode("do"))
