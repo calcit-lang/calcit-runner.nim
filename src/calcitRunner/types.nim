@@ -3,6 +3,8 @@ import tables
 import options
 import sets
 
+import ternary_tree
+
 type CirruCommandError* = ValueError
 
 type ImportKind* = enum
@@ -27,7 +29,6 @@ type
     crDataNumber,
     crDataString,
     crDataKeyword,
-    crDataVector,
     crDataList,
     crDataSet,
     crDataMap,
@@ -58,8 +59,7 @@ type
     of crDataSyntax:
       syntaxVal*: FnInData
       syntaxCode*: RefCirruData
-    of crDataVector: vectorVal*: seq[CirruData]
-    of crDataList: listVal*: seq[CirruData]
+    of crDataList: listVal*: TernaryTreeList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: Table[CirruData, CirruData]
     of crDataSymbol:

@@ -3,6 +3,8 @@ import tables
 import sets
 import options
 
+import ternary_tree
+
 import ./types
 
 proc crData*(x: int): CirruData =
@@ -30,10 +32,7 @@ proc crData*(): CirruData =
   CirruData(kind: crDataNil)
 
 proc crData*(xs: seq[CirruData], asList: bool = false): CirruData =
-  if asList:
-    CirruData(kind: crDataList, listVal: xs)
-  else:
-    CirruData(kind: crDataVector, vectorVal: xs)
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
 proc crData*(xs: HashSet[CirruData]): CirruData =
   CirruData(kind: crDataSet, setVal: xs)

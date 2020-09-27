@@ -2,6 +2,8 @@
 import cirruParser
 import terminal
 
+import ternary_tree
+
 import ./types
 
 proc raiseEvalError*(msg: string, code: CirruData): void =
@@ -13,7 +15,7 @@ proc raiseEvalError*(msg: string, code: CirruData): void =
   raise e
 
 proc raiseEvalError*(msg: string, xs: seq[CirruData]): void =
-  let code = CirruData(kind: crDataList, listVal: xs)
+  let code = CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
   raiseEvalError(msg, code)
 
 proc coloredEcho*(color: ForegroundColor, text: varargs[string]): void =

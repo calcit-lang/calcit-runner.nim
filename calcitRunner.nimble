@@ -16,6 +16,7 @@ binDir        = "out/"
 requires "nim >= 0.20.0"
 requires "libfswatch"
 requires "https://github.com/Cirru/cirru-edn.nim#v0.2.0"
+requires "https://github.com/Cirru/ternary-tree#v0.1.3"
 
 
 task watch, "run and watch":

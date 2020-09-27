@@ -6,6 +6,8 @@ import strformat
 import sequtils
 import strutils
 
+import ternary_tree
+
 import ./types
 import ./data
 import ./format
@@ -41,7 +43,7 @@ proc nativeDivide(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   let b = args[1]
   if a.kind != crDataNumber: coreFnError("Required number for divide", a)
   if b.kind != crDataNumber: coreFnError("Required number for divide", b)
-  if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: args))
+  if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
   return CirruData(kind: crDataNumber, numberVal: a.numberVal / b.numberVal)
 
 proc nativeLessThan(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
@@ -97,8 +99,6 @@ proc nativeCount(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
     return CirruData(kind: crDataNumber, numberVal: 0.0)
   of crDataList:
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
-  of crDataVector:
-    return CirruData(kind: crDataNumber, numberVal: a.len.float)
   of crDataMap:
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
   else:
@@ -109,7 +109,7 @@ proc nativeGet(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope
   let a = args[0]
   let b = args[1]
   case a.kind
-  of crDataList, crDataVector:
+  of crDataList:
     if b.kind != crDataNumber:
       raiseEvalError("Required number index for list", b)
     if b.numberVal.round.float != b.numberVal:
@@ -130,10 +130,10 @@ proc nativeRest(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScop
   case a.kind
   of crDataNil:
     return CirruData(kind: crDataNil)
-  of crDataList, crDataVector:
+  of crDataList:
     if a.len == 0:
-      return CirruData(kind: crDataList, listVal: @[])
-    return CirruData(kind: crDataList, listVal: a[1..^1])
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[]))
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(a[1..^1]))
   else:
     raiseEvalError("Cannot rest from data of this type", a)
 
@@ -153,14 +153,13 @@ proc nativeTypeOf*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "int")
     of crDataString: CirruData(kind: crDataKeyword, keywordVal: "string")
     of crDataBool: CirruData(kind: crDataKeyword, keywordVal: "bool")
-    of crDataVector: CirruData(kind: crDataKeyword, keywordVal: "array")
     of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "table")
     of crDataFn: CirruData(kind: crDataKeyword, keywordVal: "fn")
     else: CirruData(kind: crDataKeyword, keywordVal: "unknown")
 
 proc nativeReadFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: args))
+    raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
   let node = args[1]
   let fileName = interpret(node, scope)
@@ -171,7 +170,7 @@ proc nativeReadFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
 
 proc nativeWriteFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
-    raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: args))
+    raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
   let node = args[0]
   let fileName = interpret(node, scope)
@@ -188,7 +187,7 @@ proc nativeWriteFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
 
 proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: args))
+    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
   let filePath = interpret(args[0], scope)
   if filePath.kind != crDataString:
@@ -203,7 +202,7 @@ proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
 
 proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: args))
+    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
   let code = args[0]
   if notListData(code) or not checkExprStructure(code) or code.len == 0:
