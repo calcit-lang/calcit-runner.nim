@@ -38,4 +38,4 @@ proc crData*(xs: HashSet[CirruData]): CirruData =
   CirruData(kind: crDataSet, setVal: xs)
 
 proc crData*(xs: Table[CirruData, CirruData]): CirruData =
-  CirruData(kind: crDataMap, mapVal: xs)
+  CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(xs))

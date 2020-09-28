@@ -5,6 +5,7 @@ import math
 import strformat
 import sequtils
 import strutils
+import options
 
 import ternary_tree
 
@@ -120,7 +121,11 @@ proc nativeGet(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope
       return a[b.numberVal.int]
 
   of crDataMap:
-    return b.mapVal[a]
+    let ret = b.mapVal[a]
+    if ret.isNone:
+      return CirruData(kind: crDataNil)
+    else:
+      return ret.get
   else:
     raiseEvalError("Cannot get from data of this type", a)
 

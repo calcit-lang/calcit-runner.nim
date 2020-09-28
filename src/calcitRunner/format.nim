@@ -19,7 +19,7 @@ proc fromSeqToString(children: seq[CirruData]): string =
 proc fromSetToString(children: HashSet[CirruData]): string =
   return "#{" & children.mapIt(toString(it)).join(" ") & "}"
 
-proc fromTableToString(children: Table[CirruData, CirruData]): string =
+proc fromTableToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   let size = children.len()
   if size > 20:
     return "{...(20)...}"
