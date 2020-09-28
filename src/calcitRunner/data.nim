@@ -115,7 +115,7 @@ proc `==`*(x, y: CirruData): bool =
         return false
 
       for k, v in x.mapVal.pairs:
-        if not (y.mapVal.hasKey(k) and y.mapVal[k] == v):
+        if not (y.mapVal.contains(k) and y.mapVal[k].get == v):
           return false
 
       return true
@@ -179,13 +179,13 @@ proc mapPairs*[T](xs: CirruData, f: proc (p: tuple[k: CirruData, v: CirruData]):
 proc contains*(x: CirruData, k: CirruData): bool =
   if x.kind != crDataMap:
     raise newException(EdnOpError, "hasKey only works for a map")
-  return x.mapVal.hasKey(k)
+  return x.mapVal.contains(k)
 
 proc get*(x: CirruData, k: CirruData): CirruData =
   case x.kind:
   of crDataMap:
     if x.contains(k):
-      return x.mapVal[k]
+      return x.mapVal[k].get
     else:
       return CirruData(kind: crDataNil)
   else:
@@ -261,7 +261,7 @@ proc toCirruData*(v: JsonNode): CirruData =
       let keyContent = CirruData(kind: crDataString, stringVal: key)
       let value = toCirruData(value)
       table.add(keyContent, value)
-    return CirruData(kind: crDataMap, mapVal: table)
+    return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
 
 proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   case v.kind

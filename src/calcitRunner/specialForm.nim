@@ -123,7 +123,7 @@ proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     let v = interpret(pair[1], scope)
     # TODO, not finished...
     value.add(k, v)
-  return CirruData(kind: crDataMap, mapVal: value)
+  return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
 proc callTableMethod*(value: var Table[CirruData, CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
@@ -145,14 +145,14 @@ proc callTableMethod*(value: var Table[CirruData, CirruData], exprList: CirruDat
     let k = interpret(exprList[2], scope)
     let v = interpret(exprList[3], scope)
     # value.add(k, v)
-    return CirruData(kind: crDataMap, mapVal: value)
+    return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
   of "del":
     if exprList.len != 3:
       raiseEvalError("Del method expects 1 argument", exprList[1])
     let k = interpret(exprList[2], scope)
     value.del(k)
-    return CirruData(kind: crDataMap, mapVal: value)
+    return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
   of "len":
     if exprList.len != 2:

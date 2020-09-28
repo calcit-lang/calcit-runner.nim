@@ -61,7 +61,7 @@ type
       syntaxCode*: RefCirruData
     of crDataList: listVal*: TernaryTreeList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
-    of crDataMap: mapVal*: Table[CirruData, CirruData]
+    of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
     of crDataSymbol:
       symbolVal*: string
       ns*: string
