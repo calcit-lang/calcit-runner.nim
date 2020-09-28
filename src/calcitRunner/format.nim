@@ -4,6 +4,8 @@ import sequtils
 import sets
 import options
 
+import ternary_tree
+
 import ./types
 
 proc toString*(val: CirruData, details: bool = false): string
@@ -46,8 +48,7 @@ proc toString*(val: CirruData, details: bool = false): string =
         "false"
     of crDataNumber: $(val.numberVal)
     of crDataString: val.stringVal
-    of crDataVector: fromArrayToString(val.vectorVal)
-    of crDataList: fromSeqToString(val.listVal)
+    of crDataList: fromSeqToString(val.listVal.toSeq)
     of crDataSet: fromSetToString(val.setVal)
     of crDataMap: fromTableToString(val.mapVal)
     of crDataNil: "nil"

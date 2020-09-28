@@ -4,15 +4,12 @@ import sets
 import options
 import system
 import terminal
-
-import cirruParser
-
 import sequtils
-import sets
-import tables
 import json
 
 import cirruParser
+import ternary_tree
+
 import ./types
 import ./helpers
 
@@ -50,14 +47,9 @@ proc hash*(value: CirruData): Hash =
       result = hash("macro:")
       result = result !& hash(value.macroVal)
       result = !$ result
-    of crDataVector:
-      result = hash("vector:")
-      for idx, x in value.vectorVal:
-        result = result !& hash(x)
-      result = !$ result
     of crDataList:
       result = hash("list:")
-      for idx, x in value.listVal:
+      for x in value.listVal:
         result = result !& hash(x)
       result = !$ result
     of crDataSet:
@@ -100,20 +92,12 @@ proc `==`*(x, y: CirruData): bool =
     of crDataSyntax:
       return x.syntaxVal == y.syntaxVal
 
-    of crDataVector:
-      if x.vectorVal.len != y.vectorVal.len:
-        return false
-      for idx, xi in x.vectorVal:
-        if xi != y.vectorVal[idx]:
-          return false
-      return true
-
     of crDataList:
       if x.listVal.len != y.listVal.len:
         return false
 
       for idx, xi in x.listVal:
-        if xi != y.listVal[idx]:
+        if xi != y.listVal.get(idx):
           return false
       return true
 
@@ -149,10 +133,6 @@ iterator items*(x: CirruData): CirruData =
     for i, child in x.listVal:
       yield child
 
-  of crDataVector:
-    for i, child in x.vectorVal:
-      yield child
-
   of crDataSet:
     for child in x.setVal.items:
       yield child
@@ -166,10 +146,6 @@ iterator pairs*(x: CirruData): tuple[k: CirruData, v: CirruData] =
     for i, child in x.listVal:
       yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
 
-  of crDataVector:
-    for i, child in x.vectorVal:
-      yield (CirruData(kind: crDataNumber, numberVal: i.float), child)
-
   of crDataMap:
     for k, v in x.mapVal:
       yield (k, v)
@@ -181,8 +157,6 @@ proc map*[T](xs: CirruData, f: proc (x: CirruData): T): seq[T] =
   case xs.kind:
   of crDataList:
     return xs.listVal.map(f)
-  of crDataVector:
-    return xs.vectorVal.map(f)
   of crDataSet:
     var list = newSeq[CirruData]()
     for x in xs.setVal.items:
@@ -234,11 +208,6 @@ proc toJson*(x: CirruData): JsonNode =
     for i, child in x.listVal:
       elems.add toJson(child)
     return JsonNode(kind: JArray, elems: elems)
-  of crDataVector:
-    var elems: seq[JsonNode] = @[]
-    for i, child in x.vectorVal:
-      elems.add toJson(child)
-    return JsonNode(kind: JArray, elems: elems)
   of crDataSet:
     var elems: seq[JsonNode] = @[]
     for child in x.setVal.items:
@@ -285,7 +254,7 @@ proc toCirruData*(v: JsonNode): CirruData =
     var arr: seq[CirruData]
     for v in v.elems:
       arr.add toCirruData(v)
-    return CirruData(kind: crDataVector, vectorVal: arr)
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
   of JObject:
     var table = initTable[CirruData, CirruData]()
     for key, value in v:
@@ -302,7 +271,7 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
     var arr: seq[CirruData]
     for v in v.elems:
       arr.add toCirruCode(v, ns)
-    return CirruData(kind: crDataVector, vectorVal: arr)
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
   else:
     echo "Unexpected type: ", v
     raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
@@ -310,9 +279,7 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
 proc `[]`*(xs: CirruData, idx: int): CirruData =
   case xs.kind:
   of crDataList:
-    xs.listVal[idx]
-  of crDataVector:
-    xs.vectorVal[idx]
+    xs.listVal.get(idx)
   else:
     raise newException(ValueError, "Cannot index on cirru string")
 
@@ -320,8 +287,6 @@ proc len*(xs: CirruData): int =
   case xs.kind:
   of crDataList:
     return xs.listVal.len
-  of crDataVector:
-    return xs.vectorVal.len
   of crDataString:
     return xs.stringVal.len
   of crDataMap:
@@ -340,7 +305,6 @@ proc isSymbol*(xs: CirruData): bool =
 proc isListData*(xs: CirruData): bool =
   case xs.kind
     of crDataList: true
-    of crDataVector: true
     else: false
 
 proc notListData*(xs: CirruData): bool =
@@ -348,10 +312,8 @@ proc notListData*(xs: CirruData): bool =
 
 proc getListDataSeq*(xs: CirruData): seq[CirruData] =
   case xs.kind
-  of crDataVector:
-    return xs.vectorVal
   of crDataList:
-    return xs.listVal
+    return xs.listVal.toSeq
   else:
     raise newException(ValueError, "Cannot get seq code from data")
 
@@ -381,7 +343,7 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
     var list: seq[CirruData] = @[]
     for x in xs:
       list.add x.toCirruData(ns, scope)
-    CirruData(kind: crDataList, listVal: list)
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
 
 # TODO, currently only symbols and lists/vectors are allowed.
 # Clojure allows literals too, but I'm not sure. Not for now.
@@ -397,8 +359,8 @@ proc checkExprStructure*(exprList: CirruData): bool =
     return false
 
 proc fakeNativeCode*(info: string): RefCirruData =
-  RefCirruData(kind: crDataList, listVal: @[
-    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
-  ])
+  RefCirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+      CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
+      CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
+      CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
+    ]))

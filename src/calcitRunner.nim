@@ -11,6 +11,7 @@ import parseopt
 
 import cirruParser
 import cirruEdn
+import ternary_tree
 import libfswatch
 import libfswatch/fswatch
 
@@ -155,13 +156,6 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     popDefStack()
     return quoted
 
-  of crDataVector:
-    var v = value.vectorVal
-    return callArrayMethod(v, xs, interpret, scope)
-  of crDataMap:
-    var v = value.mapVal
-    return callTableMethod(v, xs, interpret, scope)
-
   else:
     raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
 
@@ -193,7 +187,7 @@ proc showStack(): void =
   for item in errorStack:
     echo item.ns, "/", item.def
     dimEcho $item.code
-    dimEcho "args: ", $CirruData(kind: crDataList, listVal: item.args)
+    dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)

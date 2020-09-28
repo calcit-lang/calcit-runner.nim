@@ -5,13 +5,15 @@ import tables
 import hashes
 import options
 
+import ternary_tree
+
 import ./data
 import ./types
 import ./helpers
 import ./format
 
 proc nativeVector(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  return CirruData(kind: crDataVector, vectorVal: exprList)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
 
 proc nativeIf*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if (exprList.len < 2):
@@ -61,7 +63,7 @@ proc evalArraySlice(value: seq[CirruData], exprList: CirruData, interpret: EdnEv
     raiseEvalError(fmt"From index out of index {fromIdx.numberVal} > {value.len-1}", exprList[2])
 
   if exprList.len == 3:
-    return CirruData(kind: crDataVector, vectorVal: value[fromIdx.numberVal..^1])
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(value[fromIdx.numberVal..^1]))
 
   let toIdx = interpret(exprList[3], scope)
   if toIdx.kind != crDataNumber:
@@ -71,7 +73,7 @@ proc evalArraySlice(value: seq[CirruData], exprList: CirruData, interpret: EdnEv
   if toIdx.numberVal > (value.len - 1).float:
     raiseEvalError(fmt"To index out of index {toIdx.numberVal} > {value.len-1}", exprList[3])
 
-  return CirruData(kind: crDataVector, vectorVal: value[fromIdx.numberVal..toIdx.numberVal])
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(value[fromIdx.numberVal..toIdx.numberVal]))
 
 proc evalArrayConcat(value: seq[CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
@@ -81,12 +83,12 @@ proc evalArrayConcat(value: seq[CirruData], exprList: CirruData, interpret: EdnE
   var arr: seq[CirruData]
   for idx, child in exprList[2..^1]:
     let item = interpret(child, scope)
-    if item.kind != crDataVector:
+    if item.kind != crDataList:
       raiseEvalError("Not an array in concat", exprList[idx + 2])
-    for valueItem in item.vectorVal:
+    for valueItem in item.listVal:
       arr.add valueItem
 
-  return CirruData(kind: crDataVector, vectorVal: arr)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
 
 proc callArrayMethod*(value: var seq[CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if notListData(exprList):
@@ -100,7 +102,7 @@ proc callArrayMethod*(value: var seq[CirruData], exprList: CirruData, interpret:
     for child in exprList[2..^1]:
       let item = interpret(child, scope)
       value.add item
-    return CirruData(kind: crDataVector, vectorVal: value)
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(value))
   of "slice":
     return evalArraySlice(value, exprList, interpret, scope)
   of "concat":
@@ -113,7 +115,7 @@ proc callArrayMethod*(value: var seq[CirruData], exprList: CirruData, interpret:
 proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   var value = initTable[CirruData, CirruData]()
   for pair in exprList:
-    if pair.kind != crDataList and pair.kind != crDataVector:
+    if pair.kind != crDataList:
       raiseEvalError("Table requires nested children pairs", pair)
     if pair.len() != 2:
       raiseEvalError("Each pair of table contains 2 elements", pair)
@@ -189,7 +191,7 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
     let varArgName = definedArgs[definedArgs.len - 1]
     if varArgName.kind != crDataSymbol:
       raiseEvalError("Expected var arg in symbol", varArgName)
-    scope.dict[varArgName.symbolVal] = CirruData(kind: crDataList, listVal: varList)
+    scope.dict[varArgName.symbolVal] = CirruData(kind: crDataList, listVal: initTernaryTreeList(varList))
 
   else:
     var counter = 0
@@ -213,7 +215,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
       ret = interpret(child, innerScope)
     return ret
 
-  let code = RefCirruData(kind: crDataList, listVal: exprList)
+  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
   return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
 
 proc nativeLet(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
@@ -222,11 +224,11 @@ proc nativeLet(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     raiseEvalError("No enough code for let, too short", exprList)
   let pairs = exprList[0]
   let body = exprList[1..^1]
-  if pairs.kind != crDataList and pairs.kind != crDataVector:
-    raiseEvalError("Expect bindings in a vector", pairs)
+  if pairs.kind != crDataList:
+    raiseEvalError("Expect bindings in a list", pairs)
   for pair in pairs:
-    if pair.kind != crDataList and pair.kind != crDataVector:
-      raiseEvalError("Expect binding in a vector", pair)
+    if pair.kind != crDataList:
+      raiseEvalError("Expect binding in a list", pair)
     if pair.len != 2:
       raiseEvalError("Expect binding in length 2", pair)
     let name = pair[0]
@@ -260,7 +262,7 @@ proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
     var list: seq[CirruData] = @[]
     for item in exprList:
       list.add attachScope(item, scope)
-    return CirruData(kind: crDataList, listVal: list)
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
   else:
     raiseEvalError("Unexpected data for attaching", exprList)
 
@@ -294,7 +296,7 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
           list.add replaceExpr(item, interpret, scope)
       else:
         list.add replaceExpr(item, interpret, scope)
-    return CirruData(kind: crDataList, listVal: list)
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
   else:
     raiseEvalError("Unknown data in expr", exprList)
 
@@ -321,7 +323,7 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
       raiseEvalError("Expected cirru expr from defmacro", ret)
     return ret
 
-  let code = RefCirruData(kind: crDataList, listVal: exprList)
+  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
   return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
 
 proc nativeDefSyntax(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
@@ -336,7 +338,7 @@ proc nativeDefSyntax(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirr
       ret = interpret(child, innerScope)
     return ret
 
-  let code = RefCirruData(kind: crDataList, listVal: exprList)
+  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
   return CirruData(kind: crDataSyntax, syntaxVal: f, syntaxCode: code)
 
 proc nativeAssert(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
