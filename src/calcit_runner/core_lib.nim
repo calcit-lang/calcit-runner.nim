@@ -137,8 +137,8 @@ proc nativeRest(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScop
     return CirruData(kind: crDataNil)
   of crDataList:
     if a.len == 0:
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[]))
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(a[1..^1]))
+      return CirruData(kind: crDataNil)
+    return CirruData(kind: crDataList, listVal: a.listVal.rest)
   else:
     raiseEvalError("Cannot rest from data of this type", a)
 
@@ -207,7 +207,7 @@ proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
 
 proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("load-json requires relative path to json file", (args))
 
   let code = args[0]
   if notListData(code) or not checkExprStructure(code) or code.len == 0:
@@ -232,6 +232,71 @@ proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
       return $x
   ).join(" ")
   return CirruData(kind: crDataNil)
+
+proc nativePrepend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2:
+    raiseEvalError("prepend requires 2 args", (args))
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataList:
+    raiseEvalError("prepend requires a list", (args))
+  return CirruData(kind: crDataList, listVal: base.listVal.prepend(item))
+
+proc nativeAppend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2:
+    raiseEvalError("append requires 2 args", (args))
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataList:
+    raiseEvalError("append requires a list", (args))
+  return CirruData(kind: crDataList, listVal: base.listVal.append(item))
+
+proc nativeFirst*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("first requires 1 args", (args))
+  let base = args[0]
+  case base.kind
+  of crDataNil:
+    return base
+  of crDataList:
+    if base.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return base.listVal.first
+  else:
+    raiseEvalError("first requires a list", (args))
+
+proc nativeLast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("last requires 1 args", (args))
+  let base = args[0]
+
+  case base.kind
+  of crDataNil:
+    return base
+  of crDataList:
+    if base.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return base.listVal.last
+  else:
+    raiseEvalError("last requires a list", (args))
+
+proc nativeButlast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("butlast requires 1 args", (args))
+  let base = args[0]
+  case base.kind
+  of crDataNil:
+    return base
+  of crDataList:
+    if base.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataList, listVal: base.listVal.butlast)
+  else:
+    raiseEvalError("butlast requires a list", (args))
+
 
 # TODO keyword
 # TODO symbol
@@ -265,3 +330,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["println"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("println"))
   programData[coreNs].defs["echo"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("echo"))
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataFn, fnVal: nativePrStr, fnCode: fakeNativeCode("pr-str"))
+  programData[coreNs].defs["prepend"] = CirruData(kind: crDataFn, fnVal: nativePrepend, fnCode: fakeNativeCode("prepend"))
+  programData[coreNs].defs["append"] = CirruData(kind: crDataFn, fnVal: nativeAppend, fnCode: fakeNativeCode("append"))
+  programData[coreNs].defs["first"] = CirruData(kind: crDataFn, fnVal: nativeFirst, fnCode: fakeNativeCode("first"))
+  programData[coreNs].defs["last"] = CirruData(kind: crDataFn, fnVal: nativeLast, fnCode: fakeNativeCode("last"))
+  programData[coreNs].defs["butlast"] = CirruData(kind: crDataFn, fnVal: nativeButlast, fnCode: fakeNativeCode("butlast"))

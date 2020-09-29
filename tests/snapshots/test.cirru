@@ -25,6 +25,7 @@
             test-numbers
 
             echo "|Finished running test"
+            do true
 
       :proc $ quote ()
       :configs $ {} (:extension nil)

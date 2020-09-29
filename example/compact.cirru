@@ -20,7 +20,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (try-syntax)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (try-list)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -48,6 +48,14 @@
             quote-replace $ do
               echo $ + (~ a) (~ b)
               echo $ ~@ c
+        |try-list $ quote
+          defn try-list ()
+            let
+                a $ [] 1 2 3
+              echo a
+              echo (prepend a 4) (append a 4)
+              echo (first a) (first $ []) (last a) (last $ [])
+              echo (rest a) (rest $ []) (butlast a) (butlast $ [])
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
         |try-syntax $ quote
