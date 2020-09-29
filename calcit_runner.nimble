@@ -23,4 +23,4 @@ task once, "run once":
   exec "nim compile --verbosity:0 --hints:off -r src/cr --once example/compact.cirru"
 
 task t, "Runs the test suite":
-  exec "nim c -r --hints:off tests/testExpr.nim"
+  exec "nim c -r --hints:off tests/test_expr.nim"

@@ -15,15 +15,15 @@ import ternary_tree
 import libfswatch
 import libfswatch/fswatch
 
-import calcitRunner/types
-import calcitRunner/data
-import calcitRunner/specialForm
-import calcitRunner/coreLib
-import calcitRunner/helpers
-import calcitRunner/loader
-import calcitRunner/scope
-import calcitRunner/format
-import calcitRunner/genData
+import calcit_runner/types
+import calcit_runner/data
+import calcit_runner/special_form
+import calcit_runner/core_lib
+import calcit_runner/helpers
+import calcit_runner/loader
+import calcit_runner/scope
+import calcit_runner/format
+import calcit_runner/gen_data
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
