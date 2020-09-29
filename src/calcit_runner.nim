@@ -17,8 +17,9 @@ import libfswatch/fswatch
 
 import calcit_runner/types
 import calcit_runner/data
-import calcit_runner/special_form
+import calcit_runner/core_syntax
 import calcit_runner/core_lib
+import calcit_runner/core_func
 import calcit_runner/helpers
 import calcit_runner/loader
 import calcit_runner/scope
@@ -192,8 +193,13 @@ proc showStack(): void =
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
-  loadCoreDefs(programData, programCode, interpret)
-  loadCoreSyntax(programData, programCode, interpret)
+
+  programCode[coreNs] = FileSource()
+  programData[coreNs] = ProgramFile()
+
+  loadCoreDefs(programData, interpret)
+  loadCoreSyntax(programData, interpret)
+  loadCoreFuncs(programCode)
 
   let scope = CirruDataScope()
 

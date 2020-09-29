@@ -353,7 +353,7 @@ proc nativeAssert(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
   if not target.boolVal:
     raiseEvalError(message.stringVal, exprList)
 
-proc loadCoreSyntax*(programData: var Table[string, ProgramFile], programCode: var Table[string, FileSource], interpret: EdnEvalFn) =
+proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn) =
   programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeVector, syntaxCode: fakeNativeCode("[]]"))
   programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert, syntaxCode: fakeNativeCode("assert"))
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace, syntaxCode: fakeNativeCode("quote-replace"))
