@@ -1,5 +1,5 @@
 
-import cirruParser
+import cirru_parser
 import terminal
 
 import ternary_tree

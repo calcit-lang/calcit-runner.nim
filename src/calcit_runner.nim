@@ -9,8 +9,8 @@ import tables
 import options
 import parseopt
 
-import cirruParser
-import cirruEdn
+import cirru_parser
+import cirru_edn
 import ternary_tree
 import libfswatch
 import libfswatch/fswatch
