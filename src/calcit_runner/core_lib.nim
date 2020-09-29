@@ -235,8 +235,9 @@ proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
 
 # TODO keyword
 # TODO symbol
+# TODO type-of
 
-# TODO load edn
+# TODO load-cirru-edn
 
 # TODO reduce-find
 

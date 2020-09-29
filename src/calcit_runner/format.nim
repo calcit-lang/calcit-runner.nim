@@ -1,4 +1,3 @@
-import tables
 import strutils
 import sequtils
 import sets

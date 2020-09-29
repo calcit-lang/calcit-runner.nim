@@ -99,6 +99,19 @@ let codeLittlerEqual = (%*
   ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
 ).toCirruCode(coreNs)
 
+let codeApply = (%*
+  ["defmacro", "apply", ["f", "args"],
+    ["quote-replace", ["~", ["prepend", "args", "f"]]]]
+).toCirruCode(coreNs)
+
+# todo list?
+# todo map?
+# todo number?
+# todo string?
+# todo symbol?
+# todo keyword?
+# todo bool?
+
 proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&!="] = codeNativeNotEqual
@@ -119,3 +132,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["!="] = codeNotEqual
   programCode[coreNs].defs[">="] = codeLargerEqual
   programCode[coreNs].defs["<="] = codeLittlerEqual
+  programCode[coreNs].defs["apply"] = codeApply

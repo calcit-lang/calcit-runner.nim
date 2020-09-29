@@ -58,7 +58,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
   elif sym.symbolVal[0] == '\'':
     return CirruData(kind: crDataSymbol, symbolVal: sym.symbolVal[1..^1])
 
-  if match(sym.symbolVal, re"\d+(\.\d+)?"):
+  if match(sym.symbolVal, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(sym.symbolVal))
   elif sym.symbolVal == "true":
     return CirruData(kind: crDataBool, boolVal: true)

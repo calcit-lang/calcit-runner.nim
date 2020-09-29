@@ -24,3 +24,6 @@ task once, "run once":
 
 task t, "Runs the test suite":
   exec "nim c -r --hints:off tests/test_expr.nim"
+
+task ct, "Runs calcit tests":
+  exec "nim c -r --hints:off tests/run_calcit.nim"

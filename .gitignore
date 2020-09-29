@@ -9,5 +9,6 @@ calcitRunner_*.nims
 # Ignore all
 src/cr
 tests/test_expr
+tests/run_calcit
 
 src/*.out

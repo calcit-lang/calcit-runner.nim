@@ -6,9 +6,10 @@
       :ns $ quote
         ns app.main $ :require
       :defs $ {}
-        |main! $ quote
-          defn main! () (+ 1 2)
+        |test-numbers $ quote
+          defn test-numbers ()
 
+            assert "|simple add" $ = 3 (+ 1 2)
             assert |add $ = 10 (+ 1 2 3 4)
             assert |minus $ = 4 (- 10 1 2 3)
             assert |mutiply $ = 24 (* 1 2 3 4)
@@ -19,6 +20,11 @@
             assert "|empty vector" $ empty? ([])
 
             do true
+        |main! $ quote
+          defn main! ()
+            test-numbers
+
+            echo "|Finished running test"
 
       :proc $ quote ()
       :configs $ {} (:extension nil)

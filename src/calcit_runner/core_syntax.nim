@@ -12,12 +12,12 @@ import ./types
 import ./helpers
 import ./format
 
-proc nativeVector(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeList(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
 
 proc nativeIf*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if (exprList.len < 2):
-    raiseEvalError("No arguments for if", exprList)
+    raiseEvalError(fmt"No arguments for if", exprList)
   elif (exprList.len == 2):
     let node = exprList[0]
     let cond = interpret(node, scope)
@@ -44,74 +44,6 @@ proc nativeIf*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
 proc nativeComment(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   return CirruData(kind: crDataNil)
 
-proc evalArraySlice(value: seq[CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len == 2:
-    let node = exprList[1]
-    raiseEvalError("Expression not supported for methods", node)
-  if exprList.len > 4:
-    let node = exprList[4]
-    raiseEvalError("Too many arguments for Array slice", node)
-  let fromIdx = interpret(exprList[2], scope)
-  if fromIdx.kind != crDataNumber:
-    raiseEvalError("Not a number of from index", exprList[2])
-
-  if fromIdx.numberVal < 0:
-    raiseEvalError(fmt"From index out of index {fromIdx.numberVal}", exprList[2])
-  if fromIdx.numberVal > (value.len - 1).float:
-    raiseEvalError(fmt"From index out of index {fromIdx.numberVal} > {value.len-1}", exprList[2])
-
-  if exprList.len == 3:
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(value[fromIdx.numberVal..^1]))
-
-  let toIdx = interpret(exprList[3], scope)
-  if toIdx.kind != crDataNumber:
-    raiseEvalError("Not a number of to index", exprList[3])
-  if toIdx.numberVal < fromIdx.numberVal:
-    raiseEvalError(fmt"To index out of index {toIdx.numberVal} < {fromIdx.numberVal}", exprList[3])
-  if toIdx.numberVal > (value.len - 1).float:
-    raiseEvalError(fmt"To index out of index {toIdx.numberVal} > {value.len-1}", exprList[3])
-
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(value[fromIdx.numberVal..toIdx.numberVal]))
-
-proc evalArrayConcat(value: seq[CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len < 2:
-    raiseEvalError("Too few arguments", exprList[1])
-  var arr: seq[CirruData]
-  for idx, child in exprList[2..^1]:
-    let item = interpret(child, scope)
-    if item.kind != crDataList:
-      raiseEvalError("Not an array in concat", exprList[idx + 2])
-    for valueItem in item.listVal:
-      arr.add valueItem
-
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
-
-proc callArrayMethod*(value: var seq[CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len < 2:
-    raiseEvalError("No enough arguments for calling methods", exprList[1])
-  if exprList[1].kind != crDataSymbol:
-    raiseEvalError("Expression not supported for methods", exprList[1])
-  case exprList[1].symbolVal
-  of "add":
-    for child in exprList[2..^1]:
-      let item = interpret(child, scope)
-      value.add item
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(value))
-  of "slice":
-    return evalArraySlice(value, exprList, interpret, scope)
-  of "concat":
-    return evalArrayConcat(value, exprList, interpret, scope)
-  of "len":
-    return CirruData(kind: crDataNumber, numberVal: value.len().float)
-  else:
-    raiseEvalError("Unknown method" & exprList[1].symbolVal, exprList[1])
-
 proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   var value = initTable[CirruData, CirruData]()
   for pair in exprList:
@@ -121,46 +53,8 @@ proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
       raiseEvalError("Each pair of table contains 2 elements", pair)
     let k = interpret(pair[0], scope)
     let v = interpret(pair[1], scope)
-    # TODO, not finished...
     value.add(k, v)
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
-
-proc callTableMethod*(value: var Table[CirruData, CirruData], exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if notListData(exprList):
-    raiseEvalError("Expected cirru expr", exprList)
-  if exprList.len < 2:
-    raiseEvalError("No enough arguments for calling methods", exprList[1])
-  if exprList[1].kind != crDataSymbol:
-    raiseEvalError("Expression not supported for methods", exprList[1])
-  case exprList[1].symbolVal
-  of "get":
-    if exprList.len != 3:
-      raiseEvalError("Get method expects 1 argument", exprList[1])
-    let k = interpret(exprList[2], scope)
-    return value[k]
-
-  of "add":
-    if exprList.len != 4:
-      raiseEvalError("Add method expects 2 arguments", exprList[1])
-    let k = interpret(exprList[2], scope)
-    let v = interpret(exprList[3], scope)
-    # value.add(k, v)
-    return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
-
-  of "del":
-    if exprList.len != 3:
-      raiseEvalError("Del method expects 1 argument", exprList[1])
-    let k = interpret(exprList[2], scope)
-    value.del(k)
-    return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
-
-  of "len":
-    if exprList.len != 2:
-      raiseEvalError("Count method expects 0 argument", exprList[1])
-    return CirruData(kind: crDataNumber, numberVal: value.len().float)
-
-  else:
-    raiseEvalError("Unknown method " & exprList[1].symbolVal, exprList[1])
 
 proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope: CirruDataScope): void =
 
@@ -196,7 +90,7 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
   else:
     var counter = 0
     if definedArgs.len != passedArgs.len:
-      raiseEvalError("Args length mismatch", definedArgs)
+      raiseEvalError(fmt"Args length mismatch: {definedArgs.len} {passedArgs.len}", definedArgs)
     for arg in definedArgs:
       if arg.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", arg)
@@ -353,8 +247,11 @@ proc nativeAssert(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
   if not target.boolVal:
     raiseEvalError(message.stringVal, exprList)
 
+# proc nativePrepend(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+
+
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn) =
-  programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeVector, syntaxCode: fakeNativeCode("[]]"))
+  programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeList, syntaxCode: fakeNativeCode("[]"))
   programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert, syntaxCode: fakeNativeCode("assert"))
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace, syntaxCode: fakeNativeCode("quote-replace"))
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro, syntaxCode: fakeNativeCode("defmacro"))
