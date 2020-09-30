@@ -13,6 +13,7 @@ import ./types
 import ./data
 import ./format
 import ./helpers
+import ./scope
 
 proc nativeAdd(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
@@ -154,9 +155,9 @@ proc nativeRaiseAt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   if args.len != 2: coreFnError("Expected 2 arguments in native raise-at")
   let a = args[0]
   let b = args[1]
-  if b.kind != crDataString:
-    raiseEvalError("Expect message in string", b)
-  raiseEvalError(b.stringVal, a)
+  if a.kind != crDataString:
+    raiseEvalError("Expect message in string", a)
+  raiseEvalError(a.stringVal, b)
 
 proc nativeTypeOf*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1: coreFnError("type gets 1 argument")
@@ -305,6 +306,48 @@ proc nativeButlast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   else:
     raiseEvalError("butlast requires a list", (args))
 
+proc nativeIdentical*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2:
+    raiseEvalError("identical expects 2 args", (args))
+  let a = args[0]
+  let b = args[1]
+  if a.kind != b.kind:
+    return CirruData(kind: crDataBool, boolVal: false)
+
+  case a.kind
+  of crDataList:
+    return CirruData(kind: crDataBool, boolVal: a.listVal.identical(b.listVal))
+  of crDataMap:
+    return CirruData(kind: crDataBool, boolVal: a.mapVal.identical(b.mapVal))
+  of crDataKeyword:
+    # keyword are designed to be reused
+    return CirruData(kind: crDataBool, boolVal: a.keywordVal == b.keywordVal)
+  of crDataNil:
+    return CirruData(kind: crDataBool, boolVal: true)
+  of crDataString:
+    return CirruData(kind: crDataBool, boolVal: cast[pointer](a.stringVal) == cast[pointer](b.stringVal))
+  of crDataSymbol:
+    return CirruData(kind: crDataBool, boolVal: cast[pointer](a.symbolVal) == cast[pointer](b.symbolVal))
+  of crDataBool:
+    return CirruData(kind: crDataBool, boolVal: a.boolVal == b.boolVal)
+  else:
+    # TODO hard to detect
+    return CirruData(kind: crDataBool, boolVal: false)
+
+# TODO slice
+# TODO dissoc
+# TODO assoc
+# TODO assoc-before
+# TODO assoc-after
+# TODO assoc-concat
+
+# TODO contains
+# TODO keys
+# TODO keys
+# TODO assoc(map)
+# TODO dissoc(map)
+# TODO merge
+
 proc nativeTurnKeyword*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("turn-keyword requires 1 arg", (args))
@@ -349,8 +392,38 @@ proc nativeTurnString*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
   else:
     raiseEvalError("Cannot turn into string", (args))
 
-# TODO range
-# TODO map
+proc nativeRange*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len == 1:
+    let x = args[0]
+    if not x.isNumber:
+      raiseEvalError("Expects a number for range", args)
+    if x.numberVal <= 0:
+      let empty: seq[CirruData] = @[]
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList(empty))
+    else:
+      var ys: seq[CirruData] = @[]
+      var i: float = 0
+      while i < x.numberVal:
+        ys.add CirruData(kind: crDataNumber, numberVal: i)
+        i = i + 1
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  elif args.len == 2:
+    let base = args[0]
+    if not base.isNumber:
+      raiseEvalError("Expects a base number for range", args)
+    let maxValue = args[1]
+    if not maxValue.isNumber:
+      raiseEvalError("Expects a max number for range", args)
+    if base.numberVal >= maxValue.numberVal:
+      let empty: seq[CirruData] = @[]
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList(empty))
+    else:
+      var ys: seq[CirruData] = @[]
+      var i = base.numberVal
+      while i < maxValue.numberVal:
+        ys.add CirruData(kind: crDataNumber, numberVal: i)
+        i = i + 1
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
 
 # TODO &str
 
@@ -393,3 +466,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["turn-string"] = CirruData(kind: crDataFn, fnVal: nativeTurnString, fnCode: fakeNativeCode("turn-string"))
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataFn, fnVal: nativeTurnSymbol, fnCode: fakeNativeCode("turn-symbol"))
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataFn, fnVal: nativeTurnKeyword, fnCode: fakeNativeCode("turn-keyword"))
+  programData[coreNs].defs["identical"] = CirruData(kind: crDataFn, fnVal: nativeIdentical, fnCode: fakeNativeCode("identical"))
+  programData[coreNs].defs["range"] = CirruData(kind: crDataFn, fnVal: nativeRange, fnCode: fakeNativeCode("range"))

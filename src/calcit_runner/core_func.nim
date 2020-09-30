@@ -137,9 +137,26 @@ let codeNilQuestion = (%*
   ["defn", "nil?", ["x"], ["=", ["type-of", "x"], ":nil"]]
 ).toCirruCode(coreNs)
 
+let codeEach = (%*
+  ["defn", "each", ["f", "xs"],
+    ["if", ["not", ["empty?", "xs"]],
+      ["do",
+        ["f", ["first", "xs"]],
+        ["each", "f", ["rest", "xs"]]]]]
+).toCirruCode(coreNs)
+
+let codeMap = (%*
+  ["defn", "map", ["f", "xs"],
+    ["foldl",
+      ["fn", ["acc", "x"],
+        ["append", "acc", ["f", "x"]]],
+      "xs", ["[]"]]]
+).toCirruCode(coreNs)
+
 # TODO take
 # TODO drop
 # TODO str
+# TODO cond
 
 # TODO get-in
 # TODO assoc-in
@@ -175,3 +192,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["symbol?"] = codeSymbolQuestion
   programCode[coreNs].defs["bool?"] = codeBoolQuestion
   programCode[coreNs].defs["nil?"] = codeNilQuestion
+  programCode[coreNs].defs["each"] = codeEach
+  programCode[coreNs].defs["map"] = codeMap

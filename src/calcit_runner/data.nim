@@ -114,6 +114,19 @@ proc `==`*(x, y: CirruData): bool =
       # TODO, ns not compared, not decided
       return x.symbolVal == y.symbolVal
 
+proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
+proc isList*(x: CirruData): bool = x.kind == crDataList
+proc isSymbol*(x: CirruData): bool =  x.kind == crDataSymbol
+proc isMap*(x: CirruData): bool =  x.kind == crDataMap
+proc isString*(x: CirruData): bool = x.kind == crDataString
+proc isKeyword*(x: CirruData): bool = x.kind == crDataKeyword
+proc isNil*(x: CirruData): bool = x.kind == crDataNil
+proc isSet*(x: CirruData): bool = x.kind == crDataSet
+proc isFn*(x: CirruData): bool = x.kind == crDataFn
+proc isBool*(x: CirruData): bool = x.kind == crDataBool
+proc isMacro*(x: CirruData): bool = x.kind == crDataMacro
+proc isSyntax*(x: CirruData): bool = x.kind == crDataSyntax
+
 proc `!=`*(x, y: CirruData): bool =
   not (x == y)
 
