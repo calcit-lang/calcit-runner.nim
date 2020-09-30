@@ -1,4 +1,3 @@
-import tables
 import strutils
 import sequtils
 import sets
@@ -10,16 +9,13 @@ import ./types
 
 proc toString*(val: CirruData, details: bool = false): string
 
-proc fromArrayToString(children: seq[CirruData]): string =
-  return "[" & children.mapIt(toString(it)).join(" ") & "]"
-
-proc fromSeqToString(children: seq[CirruData]): string =
+proc fromListToString(children: seq[CirruData]): string =
   return "(" & children.mapIt(toString(it)).join(" ") & ")"
 
 proc fromSetToString(children: HashSet[CirruData]): string =
   return "#{" & children.mapIt(toString(it)).join(" ") & "}"
 
-proc fromTableToString(children: TernaryTreeMap[CirruData, CirruData]): string =
+proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   let size = children.len()
   if size > 20:
     return "{...(20)...}"
@@ -48,9 +44,9 @@ proc toString*(val: CirruData, details: bool = false): string =
         "false"
     of crDataNumber: $(val.numberVal)
     of crDataString: val.stringVal
-    of crDataList: fromSeqToString(val.listVal.toSeq)
+    of crDataList: fromListToString(val.listVal.toSeq)
     of crDataSet: fromSetToString(val.setVal)
-    of crDataMap: fromTableToString(val.mapVal)
+    of crDataMap: fromMapToString(val.mapVal)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
     of crDataFn: "<Function>"

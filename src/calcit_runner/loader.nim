@@ -4,8 +4,8 @@ import json
 import terminal
 import options
 
-import cirruEdn
-import cirruParser
+import cirru_edn
+import cirru_parser
 
 import ./types
 import ./data

@@ -2,7 +2,7 @@
 import options
 import unittest
 
-import calcitRunner
+import calcit_runner
 
 test "Basic add":
   check (runProgram("tests/snapshots/add.cirru") == crData(3))

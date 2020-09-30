@@ -7,7 +7,7 @@ import terminal
 import sequtils
 import json
 
-import cirruParser
+import cirru_parser
 import ternary_tree
 
 import ./types

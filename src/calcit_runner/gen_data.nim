@@ -2,6 +2,7 @@
 import tables
 import sets
 import options
+import strformat
 
 import ternary_tree
 
@@ -25,13 +26,13 @@ proc crData*(x: string, target: string = "string"): CirruData =
   of "string":
     CirruData(kind: crDataString, stringVal: x)
   else:
-    echo "[crData warn] Unknown kind target passed to crData"
+    echo fmt"[crData warn] Unknown kind target passed to crData: {target}"
     CirruData(kind: crDataString, stringVal: x)
 
 proc crData*(): CirruData =
   CirruData(kind: crDataNil)
 
-proc crData*(xs: seq[CirruData], asList: bool = false): CirruData =
+proc crData*(xs: seq[CirruData]): CirruData =
   CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
 proc crData*(xs: HashSet[CirruData]): CirruData =

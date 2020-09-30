@@ -9,21 +9,22 @@ import tables
 import options
 import parseopt
 
-import cirruParser
-import cirruEdn
+import cirru_parser
+import cirru_edn
 import ternary_tree
 import libfswatch
 import libfswatch/fswatch
 
-import calcitRunner/types
-import calcitRunner/data
-import calcitRunner/specialForm
-import calcitRunner/coreLib
-import calcitRunner/helpers
-import calcitRunner/loader
-import calcitRunner/scope
-import calcitRunner/format
-import calcitRunner/genData
+import calcit_runner/types
+import calcit_runner/data
+import calcit_runner/core_syntax
+import calcit_runner/core_lib
+import calcit_runner/core_func
+import calcit_runner/helpers
+import calcit_runner/loader
+import calcit_runner/scope
+import calcit_runner/format
+import calcit_runner/gen_data
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
@@ -57,7 +58,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
   elif sym.symbolVal[0] == '\'':
     return CirruData(kind: crDataSymbol, symbolVal: sym.symbolVal[1..^1])
 
-  if match(sym.symbolVal, re"\d+(\.\d+)?"):
+  if match(sym.symbolVal, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(sym.symbolVal))
   elif sym.symbolVal == "true":
     return CirruData(kind: crDataBool, boolVal: true)
@@ -192,8 +193,13 @@ proc showStack(): void =
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   programCode = loadSnapshot(snapshotFile)
   codeConfigs = loadCodeConfigs(snapshotFile)
-  loadCoreDefs(programData, programCode, interpret)
-  loadCoreSyntax(programData, programCode, interpret)
+
+  programCode[coreNs] = FileSource()
+  programData[coreNs] = ProgramFile()
+
+  loadCoreDefs(programData, interpret)
+  loadCoreSyntax(programData, interpret)
+  loadCoreFuncs(programCode)
 
   let scope = CirruDataScope()
 

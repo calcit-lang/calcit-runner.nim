@@ -8,6 +8,7 @@ calcitRunner_*.nims
 
 # Ignore all
 src/cr
-tests/testExpr
+tests/test_expr
+tests/run_calcit
 
 src/*.out
