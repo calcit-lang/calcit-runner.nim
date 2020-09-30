@@ -152,7 +152,7 @@ proc nativeEval(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   if exprList.kind == crDataSymbol:
     return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
-  elif isListData(exprList):
+  elif exprList.kind == crDataList:
     var list: seq[CirruData] = @[]
     for item in exprList:
       list.add attachScope(item, scope)
@@ -182,7 +182,7 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~@ of quote-replace", item
           let xs = interpret(item[1], scope)
-          if notListData(xs):
+          if xs.kind != crDataList:
             raiseEvalError "Expected list for ~@ of quote-replace", xs
           for x in xs:
             list.add x
@@ -213,7 +213,7 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
       ret = interpret(child, innerScope)
-    if notListData(ret):
+    if ret.kind != crDataList:
       raiseEvalError("Expected cirru expr from defmacro", ret)
     return ret
 

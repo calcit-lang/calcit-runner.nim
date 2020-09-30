@@ -47,6 +47,14 @@ proc nativeDivide(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
   return CirruData(kind: crDataNumber, numberVal: a.numberVal / b.numberVal)
 
+proc nativeMod(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: coreFnError("Expected 2 arguments in native mod")
+  let a = args[0]
+  let b = args[1]
+  if a.kind != crDataNumber: coreFnError("Required number for mod", a)
+  if b.kind != crDataNumber: coreFnError("Required number for mod", b)
+  return CirruData(kind: crDataNumber, numberVal: a.numberVal.mod(b.numberVal))
+
 proc nativeLessThan(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native <")
   let a = args[0]
@@ -210,7 +218,7 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
     raiseEvalError("load-json requires relative path to json file", (args))
 
   let code = args[0]
-  if notListData(code) or not checkExprStructure(code) or code.len == 0:
+  if code.kind != crDataList or not checkExprStructure(code) or code.len == 0:
     raiseEvalError("Unexpected structure from macroexpand", code)
 
   let value = interpret(code[0], scope)
@@ -297,14 +305,60 @@ proc nativeButlast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   else:
     raiseEvalError("butlast requires a list", (args))
 
+proc nativeTurnKeyword*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("turn-keyword requires 1 arg", (args))
+  let x = args[0]
+  case x.kind
+  of crDataKeyword:
+    return x
+  of crDataString:
+    return CirruData(kind: crDataKeyword, keywordVal: x.stringVal)
+  of crDataSymbol:
+    return CirruData(kind: crDataKeyword, keywordVal: x.symbolVal)
+  else:
+    raiseEvalError("Cannot turn into keyword", (args))
 
-# TODO keyword
-# TODO symbol
-# TODO type-of
+proc nativeTurnSymbol*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("turn-symbol requires 1 arg", (args))
+  let x = args[0]
+  case x.kind
+  of crDataKeyword:
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: "", scope: some(scope))
+  of crDataString:
+    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: "", scope: some(scope))
+  of crDataSymbol:
+    return x
+  else:
+    raiseEvalError("Cannot turn into symbol", (args))
+
+proc nativeTurnString*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("turn-string requires 1 arg", (args))
+  let x = args[0]
+  case x.kind
+  of crDataKeyword:
+    return CirruData(kind: crDataString, stringVal: x.keywordVal)
+  of crDataString:
+    return x
+  of crDataSymbol:
+    return CirruData(kind: crDataString, stringVal: x.symbolVal)
+  of crDataNumber:
+    return CirruData(kind: crDataString, stringVal: $(x.numberVal))
+  else:
+    raiseEvalError("Cannot turn into string", (args))
+
+# TODO range
+# TODO map
+
+# TODO &str
 
 # TODO load-cirru-edn
 
 # TODO reduce-find
+
+# range
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
@@ -312,6 +366,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus, fnCode: fakeNativeCode("&-"))
   programData[coreNs].defs["&*"] = CirruData(kind: crDataFn, fnVal: nativeMultiply, fnCode: fakeNativeCode("&*"))
   programData[coreNs].defs["&/"] = CirruData(kind: crDataFn, fnVal: nativeDivide, fnCode: fakeNativeCode("&/"))
+  programData[coreNs].defs["mod"] = CirruData(kind: crDataFn, fnVal: nativeMod, fnCode: fakeNativeCode("mod"))
   programData[coreNs].defs["&<"] = CirruData(kind: crDataFn, fnVal: nativeLessThan, fnCode: fakeNativeCode("&<"))
   programData[coreNs].defs["&>"] = CirruData(kind: crDataFn, fnVal: nativeGreaterThan, fnCode: fakeNativeCode("&>"))
   programData[coreNs].defs["&="] = CirruData(kind: crDataFn, fnVal: nativeEqual, fnCode: fakeNativeCode("&="))
@@ -335,3 +390,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["first"] = CirruData(kind: crDataFn, fnVal: nativeFirst, fnCode: fakeNativeCode("first"))
   programData[coreNs].defs["last"] = CirruData(kind: crDataFn, fnVal: nativeLast, fnCode: fakeNativeCode("last"))
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataFn, fnVal: nativeButlast, fnCode: fakeNativeCode("butlast"))
+  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataFn, fnVal: nativeTurnString, fnCode: fakeNativeCode("turn-string"))
+  programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataFn, fnVal: nativeTurnSymbol, fnCode: fakeNativeCode("turn-symbol"))
+  programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataFn, fnVal: nativeTurnKeyword, fnCode: fakeNativeCode("turn-keyword"))

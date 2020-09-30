@@ -11,6 +11,26 @@
             let
                 a $ + 10 10
               echo "\"reloaded... 7" a
+        |hole-series $ quote
+          defn hole-series (x)
+            if (<= x 0) (raise-at "\"unexpected small number" x)
+              if (= x 1) (, 0)
+                if (= x 2) (, 1)
+                  let
+                      extra $ mod x 3
+                    if (= extra 0)
+                      let
+                          unit $ / x 3
+                        * 3 $ hole-series unit
+                      if (= extra 1)
+                        let
+                            unit $ / (- x 1) (, 3)
+                          + (* 2 $ hole-series unit) (hole-series $ + unit 1)
+                        let
+                            unit $ / (- x 2) (, 3)
+                          +
+                            * 2 $ hole-series (+ unit 1)
+                            hole-series unit
         |try-macro $ quote
           defn try-macro ()
             eval $ quote (println $ + 1 2)
@@ -20,7 +40,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (try-list)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (echo $ hole-series 162) (; try-list)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
