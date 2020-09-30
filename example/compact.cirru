@@ -6,14 +6,17 @@
       :ns $ quote
         ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib)
       :defs $ {}
-        |try-map $ quote
-          defn try-map ()
-            each
-              fn (x) (echo x "\"->" $ hole-series x)
-              range 1 10
-            echo $ map
-              fn (x) (hole-series x)
-              range 1 50
+        |try-maps $ quote
+          defn try-maps ()
+            echo $ {} (:a 1) (:b 2)
+            let
+                dict $ merge
+                  {} (:a 1) (:b 2)
+                  {} (:c 3) (:d 5)
+              echo dict
+              echo (contains dict :a) (contains dict :a2)
+              echo $ keys dict
+              echo (assoc dict :h 10) (dissoc dict :a) (dissoc dict :h)
         |try-let $ quote
           defn try-let ()
             let
@@ -48,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (try-map)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (try-list) (; try-map-fn) (; try-maps)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -71,6 +74,14 @@
               echo "\"internal c:" a b c
               quote-replace $ do (echo "\"c is:" c)
                 + (~ a) (~ b) (, c)
+        |try-map-fn $ quote
+          defn try-map-fn ()
+            each
+              fn (x) (echo x "\"->" $ hole-series x)
+              range 1 10
+            echo $ map
+              fn (x) (hole-series x)
+              range 1 50
         |insert-x $ quote
           defmacro insert-x (a b c)
             quote-replace $ do
@@ -85,6 +96,19 @@
               echo (first a) (first $ []) (last a) (last $ [])
               echo (rest a) (rest $ []) (butlast a) (butlast $ [])
               echo "\"range" (range 0) (range 1) (range 4) (range 4 5) (range 4 10)
+              echo "\"slice"
+                slice (range 10) (, 0 10)
+                slice (range 10) (, 5 7)
+              echo
+                concat (range 10) (range 4)
+                format-ternary-tree $ concat (range 10) (range 4)
+              echo $ format-ternary-tree
+                assoc-before (range 8) (, 4 22)
+              echo $ format-ternary-tree
+                assoc-after (range 8) (, 4 22)
+              echo
+                assoc (range 10) (, 4 55)
+                dissoc (range 10) (, 4)
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
         |try-syntax $ quote
