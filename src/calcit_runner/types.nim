@@ -69,8 +69,6 @@ type
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError
-  EdnOpError* = object of ValueError
-
 
 type ProgramFile* = object
   ns*: Option[Table[string, ImportInfo]]

@@ -8,6 +8,7 @@ import strutils
 import options
 
 import ternary_tree
+import cirru_edn
 
 import ./types
 import ./data
@@ -577,13 +578,42 @@ proc nativeRange*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
         i = i + 1
       return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
 
-# TODO &str
+proc nativeStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("&str requires 1 arg", args)
+  return CirruData(kind: crDataString, stringVal: $args[0])
 
-# TODO load-cirru-edn
+proc nativeEscape*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("escape requires 1 arg", args)
+  let item = args[0]
+  if not item.isString:
+    raiseEvalError("escape expects a string", args)
+  return CirruData(kind: crDataString, stringVal: item.stringVal.escape)
+
+proc nativeStrConcat*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2:
+    raiseEvalError("&str-concat expects 2 args", args)
+  let s1 = $args[0]
+  let s2 = $args[1]
+  return CirruData(kind: crDataString, stringVal: s1 & s2)
+
+proc nativeLoadCirruEdn*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("load-json requires relative path to json file", args)
+
+  let filePath = interpret(args[0], scope)
+  if filePath.kind != crDataString:
+    raiseEvalError("load-json requires path in string", args[0])
+  let content = readFile(filePath.stringVal)
+  try:
+    let ednData = parseEdnFromStr(content)
+    return ednData.toCirruData("", some(scope))
+  except JsonParsingError as e:
+    echo "Failed to parse"
+    raiseEvalError("Failed to parse file", args[0])
 
 # TODO reduce-find
-
-# range
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
@@ -630,3 +660,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["keys"] = CirruData(kind: crDataFn, fnVal: nativeKeys, fnCode: fakeNativeCode("keys"))
   programData[coreNs].defs["assoc"] = CirruData(kind: crDataFn, fnVal: nativeAssoc, fnCode: fakeNativeCode("assoc"))
   programData[coreNs].defs["dissoc"] = CirruData(kind: crDataFn, fnVal: nativeDissoc, fnCode: fakeNativeCode("dissoc"))
+  programData[coreNs].defs["&str"] = CirruData(kind: crDataFn, fnVal: nativeStr, fnCode: fakeNativeCode("&str"))
+  programData[coreNs].defs["escape"] = CirruData(kind: crDataFn, fnVal: nativeEscape, fnCode: fakeNativeCode("escape"))
+  programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataFn, fnVal: nativeStrConcat, fnCode: fakeNativeCode("&str-concat"))
+  programData[coreNs].defs["load-cirru-edn"] = CirruData(kind: crDataFn, fnVal: nativeLoadCirruEdn, fnCode: fakeNativeCode("load-cirru-edn"))

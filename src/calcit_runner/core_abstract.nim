@@ -155,9 +155,25 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         "xs", ["[]"]]]
   ).toCirruCode(coreNs)
 
-  # TODO take
-  # TODO drop
-  # TODO str
+  let codeTake = (%*
+    ["defn", "take", ["n", "xs"],
+      ["slice", "xs", "0", "n"]]
+  ).toCirruCode(coreNs)
+
+  let codeDrop = (%*
+    ["defn", "drop", ["n", "xs"],
+      ["slice", "xs", "n", ["count", "xs"]]]
+  ).toCirruCode(coreNs)
+
+  let codeStr = (%*
+    ["defn", "str", ["&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&str-concat", "acc", "item"]],
+        "xs", "|"]]
+  ).toCirruCode(coreNs)
+
+  # TODO find
   # TODO cond
 
   # TODO get-in
@@ -195,3 +211,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["nil?"] = codeNilQuestion
   programCode[coreNs].defs["each"] = codeEach
   programCode[coreNs].defs["map"] = codeMap
+  programCode[coreNs].defs["take"] = codeTake
+  programCode[coreNs].defs["drop"] = codeDrop
+  programCode[coreNs].defs["str"] = codeStr

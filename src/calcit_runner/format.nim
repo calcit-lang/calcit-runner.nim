@@ -1,3 +1,4 @@
+import math
 import strutils
 import sequtils
 import sets
@@ -10,15 +11,15 @@ import ./types
 proc toString*(val: CirruData, details: bool = false): string
 
 proc fromListToString(children: seq[CirruData]): string =
-  return "[" & children.mapIt(toString(it)).join(" ") & "]"
+  return "(" & children.mapIt(toString(it)).join(" ") & ")"
 
 proc fromSetToString(children: HashSet[CirruData]): string =
   return "#{" & children.mapIt(toString(it)).join(" ") & "}"
 
 proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   let size = children.len()
-  if size > 20:
-    return "{...(20)...}"
+  if size > 100:
+    return "{...(100)...}"
   var tableStr = "{"
   var counted = 0
   for k, child in pairs(children):
@@ -42,7 +43,11 @@ proc toString*(val: CirruData, details: bool = false): string =
         "true"
       else:
         "false"
-    of crDataNumber: $(val.numberVal)
+    of crDataNumber:
+      if val.numberVal.trunc == val.numberVal:
+        $val.numberVal.int
+      else:
+        $(val.numberVal)
     of crDataString: val.stringVal
     of crDataList: fromListToString(val.listVal.toSeq)
     of crDataSet: fromSetToString(val.setVal)

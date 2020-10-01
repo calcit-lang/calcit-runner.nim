@@ -10,6 +10,7 @@ import strutils
 import json
 
 import cirru_parser
+import cirru_edn
 import ternary_tree
 
 import ./types
@@ -338,6 +339,35 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
     for x in xs:
       list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+
+proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
+  case xs.kind
+  of crEdnNil: CirruData(kind: crDataNil)
+  of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
+  of crEdnNumber: CirruData(kind: crDataNumber, numberVal: xs.numberVal)
+  of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
+  of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: xs.keywordVal)
+  of crEdnVector:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  of crEdnList:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  of crEdnSet:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataSet, setVal: toHashSet(ys))
+  of crEdnMap:
+    var ys: Table[CirruData, CirruData]
+    for key, value in xs.mapVal:
+      ys[key.toCirruData(ns, scope)] = value.toCirruData(ns, scope)
+    CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
+  of crEdnQuotedCirru: xs.quotedVal.toCirruData(ns, scope)
 
 proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   case v.kind

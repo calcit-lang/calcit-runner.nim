@@ -51,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (try-map-fn) (; try-maps)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (try-edn)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -109,6 +109,7 @@
               echo
                 assoc (range 10) (, 4 55)
                 dissoc (range 10) (, 4)
+              echo (take 4 $ range 10) (drop 4 $ range 10)
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
         |try-syntax $ quote
@@ -116,8 +117,16 @@
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
+        |try-edn $ quote
+          defn try-edn ()
+            echo $ str (load-cirru-edn "\"./example/compact.cirru")
         |gen-num $ quote
           defmacro gen-num (a b c) (echo "\"expanding..." a b c) (quote $ + 1 2 3)
+        |try-str $ quote
+          defn try-str ()
+            echo (&str-concat |a |b) (&str-concat 1 2)
+            echo (str |a |b |c) (str 1 2 3)
+            echo $ type-of (&str 1)
         |reload! $ quote
           defn reload! () (println "\"Reloaded...") (main!)
         |syntax-add $ quote
