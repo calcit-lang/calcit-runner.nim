@@ -100,4 +100,4 @@ type StackInfo* = object
   code*: CirruData
   args*: seq[CirruData]
 
-let coreNs* = "calcit.core"
+const coreNs* = "calcit.core"

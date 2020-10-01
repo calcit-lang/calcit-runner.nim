@@ -10,7 +10,7 @@ import ./types
 proc toString*(val: CirruData, details: bool = false): string
 
 proc fromListToString(children: seq[CirruData]): string =
-  return "(" & children.mapIt(toString(it)).join(" ") & ")"
+  return "[" & children.mapIt(toString(it)).join(" ") & "]"
 
 proc fromSetToString(children: HashSet[CirruData]): string =
   return "#{" & children.mapIt(toString(it)).join(" ") & "}"

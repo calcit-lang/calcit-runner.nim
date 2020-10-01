@@ -271,9 +271,9 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   of JString:
     return CirruData(kind: crDataSymbol, symbolVal: v.str, ns: ns, scope: none(CirruDataScope))
   of JArray:
-    var arr: seq[CirruData]
-    for v in v.elems:
-      arr.add toCirruCode(v, ns)
+    let arr = v.elems.map(proc(item: JsonNode): CirruData =
+      item.toCirruCode(ns)
+    )
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
   else:
     echo "Unexpected type: ", v

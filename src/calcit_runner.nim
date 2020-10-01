@@ -18,8 +18,8 @@ import libfswatch/fswatch
 import calcit_runner/types
 import calcit_runner/data
 import calcit_runner/core_syntax
-import calcit_runner/core_lib
 import calcit_runner/core_func
+import calcit_runner/core_abstract
 import calcit_runner/helpers
 import calcit_runner/loader
 import calcit_runner/scope
