@@ -13,16 +13,6 @@ import ternary_tree
 import ./types
 import ./helpers
 
-proc hash*(value: CirruNode): Hash =
-  case value.kind:
-  of cirruString:
-    return hash(value.text)
-  of cirruSeq:
-    result = hash("cirruSeq:")
-    for x in value:
-      result = result !& hash(x)
-    result = !$ result
-
 proc hash*(value: CirruData): Hash =
   case value.kind
     of crDataNumber:
@@ -123,6 +113,19 @@ proc `==`*(x, y: CirruData): bool =
     of crDataSymbol:
       # TODO, ns not compared, not decided
       return x.symbolVal == y.symbolVal
+
+proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
+proc isList*(x: CirruData): bool = x.kind == crDataList
+proc isSymbol*(x: CirruData): bool =  x.kind == crDataSymbol
+proc isMap*(x: CirruData): bool =  x.kind == crDataMap
+proc isString*(x: CirruData): bool = x.kind == crDataString
+proc isKeyword*(x: CirruData): bool = x.kind == crDataKeyword
+proc isNil*(x: CirruData): bool = x.kind == crDataNil
+proc isSet*(x: CirruData): bool = x.kind == crDataSet
+proc isFn*(x: CirruData): bool = x.kind == crDataFn
+proc isBool*(x: CirruData): bool = x.kind == crDataBool
+proc isMacro*(x: CirruData): bool = x.kind == crDataMacro
+proc isSyntax*(x: CirruData): bool = x.kind == crDataSyntax
 
 proc `!=`*(x, y: CirruData): bool =
   not (x == y)
@@ -297,29 +300,9 @@ proc len*(xs: CirruData): int =
     coloredEcho(fgRed, $xs)
     raiseEvalError("Data has no len function", xs)
 
-proc isSymbol*(xs: CirruData): bool =
-  case xs.kind
-    of crDataSymbol: true
-    else: false
-
-proc isListData*(xs: CirruData): bool =
-  case xs.kind
-    of crDataList: true
-    else: false
-
-proc notListData*(xs: CirruData): bool =
-  not isListData(xs)
-
-proc getListDataSeq*(xs: CirruData): seq[CirruData] =
-  case xs.kind
-  of crDataList:
-    return xs.listVal.toSeq
-  else:
-    raise newException(ValueError, "Cannot get seq code from data")
-
 proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
-  if notListData(xs):
-    raise newException(ValueError, "Cannot create iterator on a cirru string")
+  if xs.kind != crDataList:
+    raise newException(ValueError, "Cannot create iterator, it is not a list")
 
   let fromA = fromTo.a
   let toB = fromTo.b
@@ -329,7 +312,7 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
     result[idx] = xs[fromA + idx]
 
 proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
-  if notListData(xs):
+  if xs.kind != crDataList:
     raiseEvalError("Cannot create iterator on data", xs)
 
   let fromA = fromTo.a
@@ -345,12 +328,12 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
       list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
 
-# TODO, currently only symbols and lists/vectors are allowed.
+# TODO, currently only symbols and lists are allowed.
 # Clojure allows literals too, but I'm not sure. Not for now.
 proc checkExprStructure*(exprList: CirruData): bool =
   if exprList.kind == crDataSymbol:
     return true
-  elif isListData(exprList):
+  elif exprList.kind == crDataList:
     for item in exprList:
       if not checkExprStructure(item):
         return false
@@ -360,7 +343,7 @@ proc checkExprStructure*(exprList: CirruData): bool =
 
 proc fakeNativeCode*(info: string): RefCirruData =
   RefCirruData(kind: crDataList, listVal: initTernaryTreeList(@[
-      CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
-      CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
-      CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
-    ]))
+    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
+  ]))

@@ -99,18 +99,69 @@ let codeLittlerEqual = (%*
   ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
 ).toCirruCode(coreNs)
 
+# TODO might be wrong at some cases, need research
 let codeApply = (%*
   ["defmacro", "apply", ["f", "args"],
     ["quote-replace", ["~", ["prepend", "args", "f"]]]]
 ).toCirruCode(coreNs)
 
-# todo list?
-# todo map?
-# todo number?
-# todo string?
-# todo symbol?
-# todo keyword?
-# todo bool?
+let codeListQuestion = (%*
+  ["defn", "list?", ["x"], ["=", ["type-of", "x"], ":list"]]
+).toCirruCode(coreNs)
+
+let codeMapQuestion = (%*
+  ["defn", "map?", ["x"], ["=", ["type-of", "x"], ":map"]]
+).toCirruCode(coreNs)
+
+let codeNumberQuestion = (%*
+  ["defn", "number?", ["x"], ["=", ["type-of", "x"], ":number"]]
+).toCirruCode(coreNs)
+
+let codeStringQuestion = (%*
+  ["defn", "string?", ["x"], ["=", ["type-of", "x"], ":string"]]
+).toCirruCode(coreNs)
+
+let codeSymbolQuestion = (%*
+  ["defn", "symbol?", ["x"], ["=", ["type-of", "x"], ":symbol"]]
+).toCirruCode(coreNs)
+
+let codeKeywordQuestion = (%*
+  ["defn", "keyword?", ["x"], ["=", ["type-of", "x"], ":keyword"]]
+).toCirruCode(coreNs)
+
+let codeBoolQuestion = (%*
+  ["defn", "number?", ["x"], ["=", ["type-of", "x"], ":bool"]]
+).toCirruCode(coreNs)
+
+let codeNilQuestion = (%*
+  ["defn", "nil?", ["x"], ["=", ["type-of", "x"], ":nil"]]
+).toCirruCode(coreNs)
+
+let codeEach = (%*
+  ["defn", "each", ["f", "xs"],
+    ["if", ["not", ["empty?", "xs"]],
+      ["do",
+        ["f", ["first", "xs"]],
+        ["each", "f", ["rest", "xs"]]]]]
+).toCirruCode(coreNs)
+
+let codeMap = (%*
+  ["defn", "map", ["f", "xs"],
+    ["foldl",
+      ["fn", ["acc", "x"],
+        ["append", "acc", ["f", "x"]]],
+      "xs", ["[]"]]]
+).toCirruCode(coreNs)
+
+# TODO take
+# TODO drop
+# TODO str
+# TODO cond
+
+# TODO get-in
+# TODO assoc-in
+# TODO dissoc-in
+# TODO update-in
 
 proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["unless"] = codeUnless
@@ -133,3 +184,13 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs[">="] = codeLargerEqual
   programCode[coreNs].defs["<="] = codeLittlerEqual
   programCode[coreNs].defs["apply"] = codeApply
+  programCode[coreNs].defs["list?"] = codeListQuestion
+  programCode[coreNs].defs["map?"] = codeMapQuestion
+  programCode[coreNs].defs["number?"] = codeNumberQuestion
+  programCode[coreNs].defs["string?"] = codeStringQuestion
+  programCode[coreNs].defs["keyword?"] = codeKeywordQuestion
+  programCode[coreNs].defs["symbol?"] = codeSymbolQuestion
+  programCode[coreNs].defs["bool?"] = codeBoolQuestion
+  programCode[coreNs].defs["nil?"] = codeNilQuestion
+  programCode[coreNs].defs["each"] = codeEach
+  programCode[coreNs].defs["map"] = codeMap
