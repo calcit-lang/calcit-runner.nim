@@ -165,13 +165,19 @@ proc nativeEval(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
 
 # TODO, symbols in macros refers to define scope
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
-  if exprList.kind == crDataSymbol:
+  case exprList.kind
+  of crDataSymbol:
     return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
-  elif exprList.kind == crDataList:
+  of crDataList:
     var list: seq[CirruData] = @[]
     for item in exprList:
       list.add attachScope(item, scope)
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+  of crDataNil: return exprList
+  of crDataBool: return exprList
+  of crDataNumber: return exprList
+  of crDataKeyword: return exprList
+  of crDataString: return exprList
   else:
     raiseEvalError("Unexpected data for attaching", exprList)
 
@@ -182,9 +188,13 @@ proc nativeQuote(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   return code
 
 proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if exprList.kind == crDataSymbol:
-    return exprList
-  elif exprList.kind == crDataList:
+  case exprList.kind
+  of crDataSymbol: return exprList
+  of crDataString: return exprList
+  of crDataNumber: return exprList
+  of crDataBool: return exprList
+  of crDataKeyword: return exprList
+  of crDataList:
     var list: seq[CirruData] = @[]
     for item in exprList:
       if item.kind == crDataList:

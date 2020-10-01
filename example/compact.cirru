@@ -51,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (try-list) (; try-map-fn) (; try-maps)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (try-map-fn) (; try-maps)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -78,7 +78,7 @@
           defn try-map-fn ()
             each
               fn (x) (echo x "\"->" $ hole-series x)
-              range 1 10
+              range 1 200
             echo $ map
               fn (x) (hole-series x)
               range 1 50

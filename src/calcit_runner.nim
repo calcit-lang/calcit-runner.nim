@@ -49,73 +49,59 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
   if sym.kind != crDataSymbol:
     raiseEvalError("Expects a symbol", sym)
 
-  if sym.symbolVal == "":
-      raiseEvalError("Unknown empty symbol", sym)
-  if sym.symbolVal[0] == '|' or sym.symbolVal[0] == '"':
-    return CirruData(kind: crDataString, stringVal: sym.symbolVal[1..^1])
-  elif sym.symbolVal[0] == ':':
-    return CirruData(kind: crDataKeyword, keywordVal: sym.symbolVal[1..^1])
-  elif sym.symbolVal[0] == '\'':
-    return CirruData(kind: crDataSymbol, symbolVal: sym.symbolVal[1..^1])
-
-  if match(sym.symbolVal, re"-?\d+(\.\d+)?"):
-    return CirruData(kind: crDataNumber, numberVal: parseFloat(sym.symbolVal))
-  elif sym.symbolVal == "true":
-    return CirruData(kind: crDataBool, boolVal: true)
-  elif sym.symbolVal == "false":
-    return CirruData(kind: crDataBool, boolVal: false)
-  elif sym.symbolVal == "nil":
-    return CirruData(kind: crDataNil)
-  elif (sym.symbolVal.len > 0) and (sym.symbolVal[0] == '|' or sym.symbolVal[0] == '"'):
-    return CirruData(kind: crDataString, stringVal: sym.symbolVal[1..^1])
+  if sym.scope.isSome:
+    let fromOriginalScope = sym.scope.get.get(sym.symbolVal)
+    if fromOriginalScope.isSome:
+      return fromOriginalScope.get
   else:
-    if sym.scope.isSome:
-      let fromOriginalScope = sym.scope.get.get(sym.symbolVal)
-      if fromOriginalScope.isSome:
-        return fromOriginalScope.get
+    let fromScope = scope.get(sym.symbolVal)
+    if fromScope.isSome:
+      return fromScope.get
+
+  let coreDefs = programData[coreNs].defs
+  if coreDefs.contains(sym.symbolVal):
+    return coreDefs[sym.symbolVal]
+
+  if hasNsAndDef(coreNs, sym.symbolVal):
+    return getEvaluatedByPath(coreNs, sym.symbolVal, scope)
+
+  if hasNsAndDef(sym.ns, sym.symbolVal):
+    return getEvaluatedByPath(sym.ns, sym.symbolVal, scope)
+  elif sym.ns.startsWith("calcit."):
+    raiseEvalError("Cannot find symbol in core lib", sym)
+  else:
+    let importDict = loadImportDictByNs(sym.ns)
+    if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
+      let pieces = sym.symbolVal.split('/')
+      if pieces.len != 2:
+        raiseEvalError("Expects token in ns/def", sym)
+      let nsPart = pieces[0]
+      let defPart = pieces[1]
+      if importDict.hasKey(nsPart):
+        let importTarget = importDict[nsPart]
+        case importTarget.kind:
+        of importNs:
+          return getEvaluatedByPath(importTarget.ns, defPart, scope)
+        of importDef:
+          raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
     else:
-      let fromScope = scope.get(sym.symbolVal)
-      if fromScope.isSome:
-        return fromScope.get
+      if importDict.hasKey(sym.symbolVal):
+        let importTarget = importDict[sym.symbolVal]
+        case importTarget.kind:
+        of importDef:
+          return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
+        of importNs:
+          raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
 
-    let coreDefs = programData[coreNs].defs
-    if coreDefs.contains(sym.symbolVal):
-      return coreDefs[sym.symbolVal]
-
-    if hasNsAndDef(coreNs, sym.symbolVal):
-      return getEvaluatedByPath(coreNs, sym.symbolVal, scope)
-
-    if hasNsAndDef(sym.ns, sym.symbolVal):
-      return getEvaluatedByPath(sym.ns, sym.symbolVal, scope)
-    elif sym.ns.startsWith("calcit."):
-      raiseEvalError("Cannot find symbol in core lib", sym)
-    else:
-      let importDict = loadImportDictByNs(sym.ns)
-      if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
-        let pieces = sym.symbolVal.split('/')
-        if pieces.len != 2:
-          raiseEvalError("Expects token in ns/def", sym)
-        let nsPart = pieces[0]
-        let defPart = pieces[1]
-        if importDict.hasKey(nsPart):
-          let importTarget = importDict[nsPart]
-          case importTarget.kind:
-          of importNs:
-            return getEvaluatedByPath(importTarget.ns, defPart, scope)
-          of importDef:
-            raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
-      else:
-        if importDict.hasKey(sym.symbolVal):
-          let importTarget = importDict[sym.symbolVal]
-          case importTarget.kind:
-          of importDef:
-            return getEvaluatedByPath(importTarget.ns, importTarget.def, scope)
-          of importNs:
-            raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
-
-        raiseEvalError(fmt"Unknown token {sym.symbolVal}", sym)
+      raiseEvalError(fmt"Unknown token {sym.symbolVal}", sym)
 
 proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
+  if xs.kind == crDataNil: return xs
+  if xs.kind == crDataString: return xs
+  if xs.kind == crDataKeyword: return xs
+  if xs.kind == crDataNumber: return xs
+  if xs.kind == crDataBool: return xs
+
   if xs.kind == crDataSymbol:
     return interpretSymbol(xs, scope)
 
