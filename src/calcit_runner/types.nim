@@ -19,9 +19,7 @@ type ImportInfo* = object
 
 type
 
-  CirruDataScope* = ref object
-    dict*: Table[string, CirruData]
-    parent*: Option[CirruDataScope]
+  CirruDataScope* = TernaryTreeMap[string, CirruData]
 
   CirruDataKind* = enum
     crDataNil,
@@ -71,8 +69,6 @@ type
 
   EdnEmptyError* = object of ValueError
   EdnInvalidError* = object of ValueError
-  EdnOpError* = object of ValueError
-
 
 type ProgramFile* = object
   ns*: Option[Table[string, ImportInfo]]
@@ -100,4 +96,4 @@ type StackInfo* = object
   code*: CirruData
   args*: seq[CirruData]
 
-let coreNs* = "calcit.core"
+const coreNs* = "calcit.core"

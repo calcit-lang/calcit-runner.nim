@@ -5,9 +5,12 @@ import options
 import system
 import terminal
 import sequtils
+import re
+import strutils
 import json
 
 import cirru_parser
+import cirru_edn
 import ternary_tree
 
 import ./types
@@ -266,19 +269,6 @@ proc toCirruData*(v: JsonNode): CirruData =
       table.add(keyContent, value)
     return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
 
-proc toCirruCode*(v: JsonNode, ns: string): CirruData =
-  case v.kind
-  of JString:
-    return CirruData(kind: crDataSymbol, symbolVal: v.str, ns: ns, scope: none(CirruDataScope))
-  of JArray:
-    var arr: seq[CirruData]
-    for v in v.elems:
-      arr.add toCirruCode(v, ns)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
-  else:
-    echo "Unexpected type: ", v
-    raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
-
 proc `[]`*(xs: CirruData, idx: int): CirruData =
   case xs.kind:
   of crDataList:
@@ -319,21 +309,87 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
   let toB =  xs.len - fromTo.b.int
   xs[fromA .. toB]
 
+proc parseLiteral(token: string, ns: string, scope: Option[CirruDataScope]): CirruData =
+  if token == "":
+    raise newException(ValueError, "Unknown empty symbol")
+
+  if (token.len > 0) and (token[0] == '|' or token[0] == '"'):
+    return CirruData(kind: crDataString, stringVal: token[1..^1])
+  elif token[0] == ':':
+    return CirruData(kind: crDataKeyword, keywordVal: token[1..^1])
+  elif token[0] == '\'':
+    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1])
+
+  if match(token, re"-?\d+(\.\d+)?"):
+    return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
+  elif token == "true":
+    return CirruData(kind: crDataBool, boolVal: true)
+  elif token == "false":
+    return CirruData(kind: crDataBool, boolVal: false)
+  elif token == "nil":
+    return CirruData(kind: crDataNil)
+  else:
+    CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
+
 proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:
-    CirruData(kind: crDataSymbol, symbolVal: xs.text, ns: ns, scope: scope)
+    parseLiteral(xs.text, ns, scope)
   else:
     var list: seq[CirruData] = @[]
     for x in xs:
       list.add x.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
 
-# TODO, currently only symbols and lists are allowed.
-# Clojure allows literals too, but I'm not sure. Not for now.
+proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
+  case xs.kind
+  of crEdnNil: CirruData(kind: crDataNil)
+  of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
+  of crEdnNumber: CirruData(kind: crDataNumber, numberVal: xs.numberVal)
+  of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
+  of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: xs.keywordVal)
+  of crEdnVector:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  of crEdnList:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  of crEdnSet:
+    var ys: seq[CirruData] = @[]
+    for item in xs.listVal:
+      ys.add item.toCirruData(ns, scope)
+    CirruData(kind: crDataSet, setVal: toHashSet(ys))
+  of crEdnMap:
+    var ys: Table[CirruData, CirruData]
+    for key, value in xs.mapVal:
+      ys[key.toCirruData(ns, scope)] = value.toCirruData(ns, scope)
+    CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
+  of crEdnQuotedCirru: xs.quotedVal.toCirruData(ns, scope)
+
+proc toCirruCode*(v: JsonNode, ns: string): CirruData =
+  case v.kind
+  of JString:
+    parseLiteral(v.str, ns, none(CirruDataScope))
+  of JArray:
+    let arr = v.elems.map(proc(item: JsonNode): CirruData =
+      item.toCirruCode(ns)
+    )
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
+  else:
+    echo "Unexpected type: ", v
+    raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
+
 proc checkExprStructure*(exprList: CirruData): bool =
-  if exprList.kind == crDataSymbol:
-    return true
-  elif exprList.kind == crDataList:
+  case exprList.kind
+  of crDataSymbol: return true
+  of crDataNumber: return true
+  of crDataBool: return true
+  of crDataNil: return true
+  of crDataString: return true
+  of crDataList:
     for item in exprList:
       if not checkExprStructure(item):
         return false

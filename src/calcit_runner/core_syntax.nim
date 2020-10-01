@@ -56,7 +56,8 @@ proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     value.add(k, v)
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
-proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope: CirruDataScope): void =
+proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): CirruDataScope =
+  var argsScope: CirruDataScope
 
   var variadic = false
   var splitPosition = -1
@@ -78,14 +79,15 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
       let definedArgName = definedArgs[idx]
       if definedArgName.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", definedArgName)
-      scope.dict[definedArgName.symbolVal] = passedArgs[idx]
+      argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
     var varList: seq[CirruData] = @[]
     for idx in splitPosition..<passedArgs.len:
       varList.add passedArgs[idx]
     let varArgName = definedArgs[definedArgs.len - 1]
     if varArgName.kind != crDataSymbol:
       raiseEvalError("Expected var arg in symbol", varArgName)
-    scope.dict[varArgName.symbolVal] = CirruData(kind: crDataList, listVal: initTernaryTreeList(varList))
+    argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: initTernaryTreeList(varList)))
+    return argsScope
 
   else:
     var counter = 0
@@ -94,15 +96,15 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData], scope:
     for arg in definedArgs:
       if arg.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", arg)
-      scope.dict[arg.symbolVal] = passedArgs[counter]
+      argsScope = argsScope.assoc(arg.symbolVal, passedArgs[counter])
       counter += 1
+    return argsScope
 
 proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   let f = proc(xs: seq[CirruData], interpret2: EdnEvalFn, scope2: CirruDataScope): CirruData =
-    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[1]
 
-    processArguments(argsList, xs, innerScope)
+    let innerScope = scope.merge(processArguments(argsList, xs))
 
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
@@ -114,10 +116,9 @@ proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
 
 proc nativeFn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   let f = proc(xs: seq[CirruData], interpret2: EdnEvalFn, scope2: CirruDataScope): CirruData =
-    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[0]
 
-    processArguments(argsList, xs, innerScope)
+    let innerScope = scope.merge(processArguments(argsList, xs))
 
     var ret = CirruData(kind: crDataNil)
     for child in exprList[1..^1]:
@@ -128,7 +129,7 @@ proc nativeFn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
 
 proc nativeLet(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  let letScope = CirruDataScope(parent: some(scope))
+  var letScope = scope
   if exprList.len < 1:
     raiseEvalError("No enough code for let, too short", exprList)
   let pairs = exprList[0]
@@ -144,7 +145,7 @@ proc nativeLet(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     let value = pair[1]
     if name.kind != crDataSymbol:
       raiseEvalError("Expecting binding name in string", name)
-    letScope.dict[name.symbolVal] = interpret(value, letScope)
+    letScope = letScope.assoc(name.symbolVal, interpret(value, letScope))
   result = CirruData(kind: crDataNil)
   for child in body:
     result = interpret(child, letScope)
@@ -165,13 +166,19 @@ proc nativeEval(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
 
 # TODO, symbols in macros refers to define scope
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
-  if exprList.kind == crDataSymbol:
+  case exprList.kind
+  of crDataSymbol:
     return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
-  elif exprList.kind == crDataList:
+  of crDataList:
     var list: seq[CirruData] = @[]
     for item in exprList:
       list.add attachScope(item, scope)
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+  of crDataNil: return exprList
+  of crDataBool: return exprList
+  of crDataNumber: return exprList
+  of crDataKeyword: return exprList
+  of crDataString: return exprList
   else:
     raiseEvalError("Unexpected data for attaching", exprList)
 
@@ -182,9 +189,13 @@ proc nativeQuote(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   return code
 
 proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if exprList.kind == crDataSymbol:
-    return exprList
-  elif exprList.kind == crDataList:
+  case exprList.kind
+  of crDataSymbol: return exprList
+  of crDataString: return exprList
+  of crDataNumber: return exprList
+  of crDataBool: return exprList
+  of crDataKeyword: return exprList
+  of crDataList:
     var list: seq[CirruData] = @[]
     for item in exprList:
       if item.kind == crDataList:
@@ -220,10 +231,8 @@ proc nativeQuoteReplace(exprList: seq[CirruData], interpret: EdnEvalFn, scope: C
 
 proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
-    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[1]
-
-    processArguments(argsList, xs, innerScope)
+    let innerScope = scope.merge(processArguments(argsList, xs))
 
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
@@ -237,10 +246,9 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
 
 proc nativeDefSyntax(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
-    let innerScope = CirruDataScope(parent: some(scope))
     let argsList = exprList[1]
 
-    processArguments(argsList, xs, innerScope)
+    let innerScope = scope.merge(processArguments(argsList, xs))
 
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
