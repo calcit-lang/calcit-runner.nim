@@ -53,7 +53,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
     let fromOriginalScope = sym.scope.get.get(sym.symbolVal)
     if fromOriginalScope.isSome:
       return fromOriginalScope.get
-  else:
+  elif scope.contains(sym.symbolVal):
     let fromScope = scope.get(sym.symbolVal)
     if fromScope.isSome:
       return fromScope.get
@@ -230,7 +230,7 @@ proc reloadProgram(snapshotFile: string): void =
   programCode = loadSnapshot(snapshotFile)
   clearProgramDefs(programData)
   programCode[coreNs] = previousCoreSource
-  var scope = CirruDataScope(parent: none(CirruDataScope))
+  var scope: CirruDataScope
 
   let pieces = codeConfigs.reloadFn.split('/')
 

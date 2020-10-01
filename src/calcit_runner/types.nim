@@ -19,9 +19,7 @@ type ImportInfo* = object
 
 type
 
-  CirruDataScope* = ref object
-    dict*: Table[string, CirruData]
-    parent*: Option[CirruDataScope]
+  CirruDataScope* = TernaryTreeMap[string, CirruData]
 
   CirruDataKind* = enum
     crDataNil,
