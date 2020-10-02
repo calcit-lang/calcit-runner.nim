@@ -159,7 +159,7 @@ proc nativeRaiseAt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     raiseEvalError("Expect message in string", a)
   raiseEvalError(a.stringVal, b)
 
-proc nativeTypeOf*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1: coreFnError("type gets 1 argument")
   let v = interpret(args[0], scope)
   case v.kind
@@ -171,7 +171,7 @@ proc nativeTypeOf*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     of crDataFn: CirruData(kind: crDataKeyword, keywordVal: "fn")
     else: CirruData(kind: crDataKeyword, keywordVal: "unknown")
 
-proc nativeReadFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeReadFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
@@ -182,7 +182,7 @@ proc nativeReadFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   let content = readFile(fileName.stringVal)
   return CirruData(kind: crDataString, stringVal: content)
 
-proc nativeWriteFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeWriteFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
@@ -199,7 +199,7 @@ proc nativeWriteFile*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
   dimEcho fmt"Wrote to file {fileName.stringVal}"
   return CirruData(kind: crDataNil)
 
-proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeLoadJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
@@ -214,7 +214,7 @@ proc nativeLoadJson*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
     echo "Failed to parse"
     raiseEvalError("Failed to parse file", args[0])
 
-proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeMacroexpand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("load-json requires relative path to json file", args)
 
@@ -229,11 +229,11 @@ proc nativeMacroexpand*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   let quoted = f(code[1..^1], interpret, scope)
   return quoted
 
-proc nativePrintln*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativePrintln(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   echo args.map(`$`).join(" ")
   return CirruData(kind: crDataNil)
 
-proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativePrStr(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   echo args.map(proc (x: CirruData): string =
     if x.kind == crDataSymbol:
       return escape(x.symbolVal)
@@ -242,7 +242,7 @@ proc nativePrStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   ).join(" ")
   return CirruData(kind: crDataNil)
 
-proc nativePrepend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativePrepend(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("prepend requires 2 args", args)
   let base = args[0]
@@ -251,7 +251,7 @@ proc nativePrepend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     raiseEvalError("prepend requires a list", args)
   return CirruData(kind: crDataList, listVal: base.listVal.prepend(item))
 
-proc nativeAppend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeAppend(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("append requires 2 args", args)
   let base = args[0]
@@ -260,7 +260,7 @@ proc nativeAppend*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     raiseEvalError("append requires a list", args)
   return CirruData(kind: crDataList, listVal: base.listVal.append(item))
 
-proc nativeFirst*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeFirst(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("first requires 1 args", args)
   let base = args[0]
@@ -275,7 +275,7 @@ proc nativeFirst*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   else:
     raiseEvalError("first requires a list", args)
 
-proc nativeLast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeLast(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("last requires 1 args", args)
   let base = args[0]
@@ -291,7 +291,7 @@ proc nativeLast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
   else:
     raiseEvalError("last requires a list", args)
 
-proc nativeButlast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeButlast(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("butlast requires 1 args", args)
   let base = args[0]
@@ -306,7 +306,7 @@ proc nativeButlast*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   else:
     raiseEvalError("butlast requires a list", args)
 
-proc nativeIdentical*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeIdentical(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("identical expects 2 args", args)
   let a = args[0]
@@ -334,7 +334,7 @@ proc nativeIdentical*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
     # TODO hard to detect
     return CirruData(kind: crDataBool, boolVal: false)
 
-proc nativeSlice*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeSlice(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("slice requires 3 args", args)
   let base = args[0]
@@ -355,7 +355,7 @@ proc nativeSlice*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   else:
     raiseEvalError("slice requires a list", (args))
 
-proc nativeConcat*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeConcat(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("concat requires 2 args", args)
   let base = args[0]
@@ -375,7 +375,7 @@ proc nativeConcat*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
 
   return CirruData(kind: crDataList, listVal: base.listVal.concat(another.listVal))
 
-proc nativeFormatTernaryTree*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeFormatTernaryTree(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("format-ternary-tree requires 1 arg", args)
   let item = args[0]
@@ -389,7 +389,7 @@ proc nativeFormatTernaryTree*(args: seq[CirruData], interpret: EdnEvalFn, scope:
   else:
     return CirruData(kind: crDataString, stringVal: $item)
 
-proc nativeMerge*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeMerge(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("merge requires 2 args", args)
   let base = args[0]
@@ -409,7 +409,7 @@ proc nativeMerge*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
 
   return CirruData(kind: crDataMap, mapVal: base.mapVal.merge(another.mapVal))
 
-proc nativeContains*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeContains(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("contains requires 2 args", args)
   let base = args[0]
@@ -429,7 +429,7 @@ proc nativeContains*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   else:
     raiseEvalError("contains requires a map", args)
 
-proc nativeAssocBefore*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeAssocBefore(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("assoc-before requires 3 args", args)
   let base = args[0]
@@ -441,7 +441,7 @@ proc nativeAssocBefore*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
     raiseEvalError("assoc-before requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocBefore(key.numberVal.int, item))
 
-proc nativeAssocAfter*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeAssocAfter(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("assoc-after requires 3 args", args)
   let base = args[0]
@@ -453,7 +453,7 @@ proc nativeAssocAfter*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
     raiseEvalError("assoc-after requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocAfter(key.numberVal.int, item))
 
-proc nativeKeys*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeKeys(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("keys requires 1 arg", args)
   let base = args[0]
@@ -463,7 +463,7 @@ proc nativeKeys*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
     raiseEvalError("keys requires a map", args)
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(base.mapVal.keys))
 
-proc nativeAssoc*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeAssoc(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("assoc requires 3 arg", args)
 
@@ -482,7 +482,7 @@ proc nativeAssoc*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   else:
     raiseEvalError("assoc expects a list or a map", args)
 
-proc nativeDissoc*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeDissoc(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("dissoc requires 2 arg", args)
 
@@ -501,7 +501,7 @@ proc nativeDissoc*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   else:
     raiseEvalError("assoc expects a list or a map", args)
 
-proc nativeTurnKeyword*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeTurnKeyword(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("turn-keyword requires 1 arg", (args))
   let x = args[0]
@@ -515,7 +515,7 @@ proc nativeTurnKeyword*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   else:
     raiseEvalError("Cannot turn into keyword", (args))
 
-proc nativeTurnSymbol*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeTurnSymbol(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("turn-symbol requires 1 arg", (args))
   let x = args[0]
@@ -529,7 +529,7 @@ proc nativeTurnSymbol*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
   else:
     raiseEvalError("Cannot turn into symbol", (args))
 
-proc nativeTurnString*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeTurnString(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("turn-string requires 1 arg", (args))
   let x = args[0]
@@ -545,7 +545,7 @@ proc nativeTurnString*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
   else:
     raiseEvalError("Cannot turn into string", (args))
 
-proc nativeRange*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeRange(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len == 1:
     let x = args[0]
     if not x.isNumber:
@@ -578,12 +578,12 @@ proc nativeRange*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
         i = i + 1
       return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
 
-proc nativeStr*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeStr(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("&str requires 1 arg", args)
   return CirruData(kind: crDataString, stringVal: $args[0])
 
-proc nativeEscape*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeEscape(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("escape requires 1 arg", args)
   let item = args[0]
@@ -591,14 +591,14 @@ proc nativeEscape*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
     raiseEvalError("escape expects a string", args)
   return CirruData(kind: crDataString, stringVal: item.stringVal.escape)
 
-proc nativeStrConcat*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeStrConcat(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("&str-concat expects 2 args", args)
   let s1 = $args[0]
   let s2 = $args[1]
   return CirruData(kind: crDataString, stringVal: s1 & s2)
 
-proc nativeLoadCirruEdn*(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeLoadCirruEdn(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("load-json requires relative path to json file", args)
 
@@ -612,6 +612,50 @@ proc nativeLoadCirruEdn*(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirr
   except JsonParsingError as e:
     echo "Failed to parse"
     raiseEvalError("Failed to parse file", args[0])
+
+proc nativeSqrt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("sqrt expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.sqrt)
+
+proc nativeSin(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("sin requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("sin expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.sin)
+
+proc nativeCos(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("cos requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("cos expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.cos)
+
+proc nativeFloor(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("floor requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("floor expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.floor)
+
+proc nativeCeil(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("ceil requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("ceil expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.ceil)
+
+proc nativeRound(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("round requires 1 arg", args)
+  let item = args[0]
+  if not item.isNumber: raiseEvalError("round expects a number", args)
+  return CirruData(kind: crDataNumber, numberVal: item.numberVal.round)
+
+proc nativePow(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("pow requires 2 arg", args)
+  let base = args[0]
+  let times = args[1]
+  if not base.isNumber: raiseEvalError("pow expects a number as base", args)
+  if not times.isNumber: raiseEvalError("pow expects a number as times", args)
+  return CirruData(kind: crDataNumber, numberVal: base.numberVal.pow(times.numberVal))
 
 # TODO reduce-find
 
@@ -664,3 +708,10 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["escape"] = CirruData(kind: crDataFn, fnVal: nativeEscape, fnCode: fakeNativeCode("escape"))
   programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataFn, fnVal: nativeStrConcat, fnCode: fakeNativeCode("&str-concat"))
   programData[coreNs].defs["load-cirru-edn"] = CirruData(kind: crDataFn, fnVal: nativeLoadCirruEdn, fnCode: fakeNativeCode("load-cirru-edn"))
+  programData[coreNs].defs["sqrt"] = CirruData(kind: crDataFn, fnVal: nativeSqrt, fnCode: fakeNativeCode("sqrt"))
+  programData[coreNs].defs["ceil"] = CirruData(kind: crDataFn, fnVal: nativeCeil, fnCode: fakeNativeCode("ceil"))
+  programData[coreNs].defs["floor"] = CirruData(kind: crDataFn, fnVal: nativeFloor, fnCode: fakeNativeCode("floor"))
+  programData[coreNs].defs["sin"] = CirruData(kind: crDataFn, fnVal: nativeSin, fnCode: fakeNativeCode("sin"))
+  programData[coreNs].defs["cos"] = CirruData(kind: crDataFn, fnVal: nativeCos, fnCode: fakeNativeCode("cos"))
+  programData[coreNs].defs["round"] = CirruData(kind: crDataFn, fnVal: nativeRound, fnCode: fakeNativeCode("round"))
+  programData[coreNs].defs["pow"] = CirruData(kind: crDataFn, fnVal: nativePow, fnCode: fakeNativeCode("pow"))

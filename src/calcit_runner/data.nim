@@ -6,6 +6,7 @@ import system
 import terminal
 import sequtils
 import re
+import math
 import strutils
 import json
 
@@ -320,7 +321,7 @@ proc parseLiteral(token: string, ns: string, scope: Option[CirruDataScope]): Cir
   elif token[0] == '\'':
     return CirruData(kind: crDataSymbol, symbolVal: token[1..^1])
 
-  if match(token, re"-?\d+(\.\d+)?"):
+  elif match(token, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
   elif token == "true":
     return CirruData(kind: crDataBool, boolVal: true)
@@ -328,6 +329,10 @@ proc parseLiteral(token: string, ns: string, scope: Option[CirruDataScope]): Cir
     return CirruData(kind: crDataBool, boolVal: false)
   elif token == "nil":
     return CirruData(kind: crDataNil)
+  elif token == "&PI":
+    return CirruData(kind: crDataNumber, numberVal: PI)
+  elif token == "&E":
+    return CirruData(kind: crDataNumber, numberVal: E)
   else:
     CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
 
