@@ -139,6 +139,22 @@
             echo
             echo title
             echo
+
+        |test-math $ quote
+          defn test-math ()
+            echo "|sin 1" $ sin 1
+            echo "|cos 1" $ cos 1
+            assert "|sin and cos" $ = 1 $ + (pow (sin 1) 2) (pow (cos 1) 2)
+            assert |floor $ = 1 $ floor 1.1
+            assert |ceil $ = 2 $ ceil 1.1
+            assert |round $ = 1 $ round 1.1
+            assert |round $ = 2 $ round 1.8
+            assert |pow $ = 81 $ pow 3 4
+            assert |mod $ = 1 $ mod 33 4
+            assert |sqrt $ = 9 $ sqrt 81
+            echo |PI &PI
+            echo |E &E
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -158,6 +174,9 @@
 
             log-title "|Testing str"
             test-str
+
+            log-title "|Testing math"
+            test-math
 
             echo "|Finished running test"
             do true

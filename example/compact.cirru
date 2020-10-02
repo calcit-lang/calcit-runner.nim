@@ -51,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (try-edn)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (try-math)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -63,6 +63,8 @@
             unless true (println "\"true") (println "\"false")
         |var-macro $ quote
           defmacro var-macro (a & xs) (echo a xs) (quote $ do)
+        |try-math $ quote
+          defn try-math () (echo $ sin 1) (echo $ cos 1) (echo $ floor 1.1) (echo $ ceil 1.1) (echo $ round 1.1) (echo $ pow 3 4) (echo $ mod 33 4) (echo $ sqrt 81) (echo &PI) (echo &E)
         |fibo $ quote
           defn fibo (x)
             if (< x 2) (, 1)
