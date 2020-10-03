@@ -32,9 +32,9 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
 
 proc escapeString(x: string): string =
   if x.contains("\"") or x.contains(' '):
-    escape(x)
+    escape("|" & x)
   else:
-    x
+    "|" & x
 
 proc toString*(val: CirruData, details: bool = false): string =
   case val.kind:
@@ -48,7 +48,8 @@ proc toString*(val: CirruData, details: bool = false): string =
         $val.numberVal.int
       else:
         $(val.numberVal)
-    of crDataString: val.stringVal
+    of crDataString:
+      val.stringVal
     of crDataList: fromListToString(val.listVal.toSeq)
     of crDataSet: fromSetToString(val.setVal)
     of crDataMap: fromMapToString(val.mapVal)

@@ -306,6 +306,21 @@ proc nativeButlast(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   else:
     raiseEvalError("butlast requires a list", args)
 
+proc nativeReverse(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("reverse requires 1 args", args)
+  let base = args[0]
+  case base.kind
+  of crDataNil:
+    return base
+  of crDataList:
+    if base.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataList, listVal: base.listVal.reverse)
+  else:
+    raiseEvalError("reverse requires a list", args)
+
 proc nativeIdentical(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("identical expects 2 args", args)
@@ -689,6 +704,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["first"] = CirruData(kind: crDataFn, fnVal: nativeFirst, fnCode: fakeNativeCode("first"))
   programData[coreNs].defs["last"] = CirruData(kind: crDataFn, fnVal: nativeLast, fnCode: fakeNativeCode("last"))
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataFn, fnVal: nativeButlast, fnCode: fakeNativeCode("butlast"))
+  programData[coreNs].defs["reverse"] = CirruData(kind: crDataFn, fnVal: nativeReverse, fnCode: fakeNativeCode("reverse"))
   programData[coreNs].defs["turn-string"] = CirruData(kind: crDataFn, fnVal: nativeTurnString, fnCode: fakeNativeCode("turn-string"))
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataFn, fnVal: nativeTurnSymbol, fnCode: fakeNativeCode("turn-symbol"))
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataFn, fnVal: nativeTurnKeyword, fnCode: fakeNativeCode("turn-keyword"))
