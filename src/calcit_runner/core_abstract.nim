@@ -173,6 +173,46 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         "xs", "|"]]
   ).toCirruCode(coreNs)
 
+  let codeInclude = (%*
+    ["defn", "include", ["base", "&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&include", "acc", "item"]],
+        "xs", "base"]]
+  ).toCirruCode(coreNs)
+
+  let codeExclude = (%*
+    ["defn", "exclude", ["base", "&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&exclude", "acc", "item"]],
+        "xs", "base"]]
+  ).toCirruCode(coreNs)
+
+  let codeDifference = (%*
+    ["defn", "difference", ["base", "&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&difference", "acc", "item"]],
+        "xs", "base"]]
+  ).toCirruCode(coreNs)
+
+  let codeUnion = (%*
+    ["defn", "union", ["base", "&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&union", "acc", "item"]],
+        "xs", "base"]]
+  ).toCirruCode(coreNs)
+
+  let codeIntersection = (%*
+    ["defn", "intersection", ["base", "&", "xs"],
+      ["foldl",
+        ["fn", ["acc", "item"],
+          ["&intersection", "acc", "item"]],
+        "xs", "base"]]
+  ).toCirruCode(coreNs)
+
   # TODO find
   # TODO cond
 
@@ -214,3 +254,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["take"] = codeTake
   programCode[coreNs].defs["drop"] = codeDrop
   programCode[coreNs].defs["str"] = codeStr
+  programCode[coreNs].defs["include"] = codeInclude
+  programCode[coreNs].defs["exclude"] = codeExclude
+  programCode[coreNs].defs["difference"] = codeDifference
+  programCode[coreNs].defs["union"] = codeUnion
+  programCode[coreNs].defs["intersection"] = codeIntersection

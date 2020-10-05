@@ -28,8 +28,8 @@
                   {} (:a 1) (:b 2)
                   {} (:c 3) (:d 5)
               assert "|check dict size" $ = 4 $ count dict
-              assert |contains (contains dict :a)
-              assert "|not contains" $ not (contains dict :a2)
+              assert |contains (contains? dict :a)
+              assert "|not contains" $ not (contains? dict :a2)
               ; echo $ keys dict
               assert "|keys" $ = (keys dict) ([] :c :a :b :d)
               assert |assoc $ = (assoc dict :h 10) $ {}
@@ -111,9 +111,6 @@
               assert |drop $ = (drop 4 $ range 10) ([] 4 5 6 7 8 9)
               echo $ format-ternary-tree $ reverse $ [] |a |b |c |d |e
               echo $ format-ternary-tree $ [] |e |d |c |b a
-              echo $ =
-                [] |e |d |c |b a
-                [] |e |d |c |b a
               assert |reverse $ =
                 reverse $ [] |a |b |c |d |e
                 [] |e |d |c |b |a
@@ -163,6 +160,27 @@
             echo |PI &PI
             echo |E &E
 
+        |test-set $ quote
+          defn test-set ()
+            assert "|init set" $ = 4 $ count $ #{} 1 2 3 4
+            assert "|contains" $ contains? (#{} 1 2 3) 2
+            assert "|not contains" $ = false $ contains? (#{} 1 2 3) 4
+            assert "|equals" $ = (#{} 1 2 3) (#{} 2 3 1)
+            assert "|include" $ = (include (#{} 1 2 3) 4) (#{} 1 2 3 4)
+            assert "|include" $ = (include (#{} 1 2) 3 4) (#{} 1 2 3 4)
+            assert "|exclude" $ = (exclude (#{} 1 2 3) 1) (#{} 2 3)
+            assert "|exclude" $ = (exclude (#{} 1 2 3) 1 2) (#{} 3)
+
+            assert "|difference" $ =
+              difference (#{} 1 2 3) (#{} 1) (#{} 2)
+              #{} 3
+            assert "|union" $ =
+              union (#{} 1) (#{} 2) (#{} 3)
+              #{} 1 2 3
+            assert "|intersection" $ =
+              intersection (#{} 1 2 3) (#{} 2 3 4) (#{} 3 4 5)
+              #{} 3
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -185,6 +203,9 @@
 
             log-title "|Testing math"
             test-math
+
+            log-title "|Testing set"
+            test-set
 
             echo "|Finished running test"
             do true

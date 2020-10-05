@@ -14,7 +14,7 @@
                   {} (:a 1) (:b 2)
                   {} (:c 3) (:d 5)
               echo dict
-              echo (contains dict :a) (contains dict :a2)
+              echo (contains? dict :a) (contains? dict :a2)
               echo $ keys dict
               echo (assoc dict :h 10) (dissoc dict :a) (dissoc dict :h)
         |try-let $ quote
@@ -51,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (try-math)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (try-set)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -152,6 +152,25 @@
             ; assert "\"asserting value" false
         |demo $ quote
           defn demo (x y) (echo "\"adding:" x y "\"result is" $ + x y)
+        |try-set $ quote
+          defn try-set ()
+            let
+                data $ #{} 1 2 3 4 5 6
+                d2 $ &include data 11
+                d3 $ &exclude data 6
+              echo data
+              echo $ contains? data 1
+              echo $ contains? data 18
+              echo $ count data
+              echo data d2 d3
+              echo $ &difference (#{} 1 2 3) (#{} 1 2)
+              echo $ &union (#{} 1 2 3) (#{} 1 2)
+              echo $ &intersection (#{} 1 2 3) (#{} 1 2)
+            echo $ include (#{} 0) (, 1 2 4)
+            echo $ exclude (#{} 1 2 3 4 5) (, 1 2 4)
+            echo $ difference (#{} 1 2) (#{} 2 3) (#{} 3 4)
+            echo $ union (#{} 1 2) (#{} 2 3) (#{} 3 4)
+            echo $ intersection (#{} 1 2 3) (#{} 2 3) (#{} 3 4)
       :proc $ quote ()
       :configs $ {} (:extension nil)
     |app.lib $ {}
