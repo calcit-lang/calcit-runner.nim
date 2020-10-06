@@ -25,8 +25,8 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   if requireArea.kind != crDataList:
     raiseEvalError("Expects require list in ns form", exprNode)
   let requireNode = requireArea[0]
-  if requireNode.kind != crDataSymbol or requireNode.symbolVal != ":require":
-    raiseEvalError("Expects :require", exprNode)
+  if not requireNode.isKeyword or requireNode.keywordVal != "require":
+    raiseEvalError("Expects :require", requireNode)
   let requireList = requireArea[1..^1]
 
   for importDec in requireList:
@@ -41,22 +41,22 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
     if nsPart.kind != crDataSymbol:
       raiseEvalError("Expects ns field in string", importDec)
     let importOp = importDec[2]
-    if importOp.kind != crDataSymbol:
-      raiseEvalError("Expects import op in string", importOp)
-    case importOp.symbolVal:
-    of ":as":
+    if not importOp.isKeyword:
+      raiseEvalError("Expects import op in keyword", importOp)
+    case importOp.keywordVal:
+    of "as":
       let aliasName = importDec[3]
       if aliasName.kind != crDataSymbol:
         raiseEvalError("Expects alias name in string", aliasName)
       dict[aliasName.symbolVal] = ImportInfo(kind: importNs, ns: nsPart.symbolVal)
-    of ":refer":
+    of "refer":
       let defsList = importDec[3]
       if defsList.kind != crDataList:
         raiseEvalError("Expects a list of defs", defsList)
       if defsList.len < 1:
         raiseEvalError("Import declaration too short", defsList)
       let vectorSymbol = defsList[0]
-      if vectorSymbol.kind != crDataSymbol:
+      if not vectorSymbol.isSymbol:
         raiseEvalError("Expects [] in import rule", defsList)
       for defName in defsList[1..^1]:
         if defName.kind != crDataSymbol:

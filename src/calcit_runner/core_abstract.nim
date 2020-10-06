@@ -30,12 +30,12 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeEmpty = (%*
     ["defmacro", "empty?", ["x"],
-      ["quote-replace", ["&=", "0", ["count", ["~", "x"]]]]]
+      ["quote-replace", ["&=", 0, ["count", ["~", "x"]]]]]
   ).toCirruCode(coreNs)
 
   let codeFirst = (%*
     ["defmacro", "first", ["xs"],
-      ["quote-replace", ["get", ["~", "xs"], "0"]]]
+      ["quote-replace", ["get", ["~", "xs"], 0]]]
   ).toCirruCode(coreNs)
 
   let codeWhen = (%*
@@ -74,7 +74,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["if", ["empty?", "xs"], "true",
              ["if", ["f", "acc", ["first", "xs"]],
                     ["foldl-compare", "f", ["rest", "xs"], ["first", "xs"]],
-                    "false"]]]
+                    false]]]
   ).toCirruCode(coreNs)
 
   let codeLittlerThan = (%*
@@ -108,35 +108,35 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   ).toCirruCode(coreNs)
 
   let codeListQuestion = (%*
-    ["defn", "list?", ["x"], ["=", ["type-of", "x"], ":list"]]
+    ["defn", "list?", ["x"], ["&=", ["type-of", "x"], ":list"]]
   ).toCirruCode(coreNs)
 
   let codeMapQuestion = (%*
-    ["defn", "map?", ["x"], ["=", ["type-of", "x"], ":map"]]
+    ["defn", "map?", ["x"], ["&=", ["type-of", "x"], ":map"]]
   ).toCirruCode(coreNs)
 
   let codeNumberQuestion = (%*
-    ["defn", "number?", ["x"], ["=", ["type-of", "x"], ":number"]]
+    ["defn", "number?", ["x"], ["&=", ["type-of", "x"], ":number"]]
   ).toCirruCode(coreNs)
 
   let codeStringQuestion = (%*
-    ["defn", "string?", ["x"], ["=", ["type-of", "x"], ":string"]]
+    ["defn", "string?", ["x"], ["&=", ["type-of", "x"], ":string"]]
   ).toCirruCode(coreNs)
 
   let codeSymbolQuestion = (%*
-    ["defn", "symbol?", ["x"], ["=", ["type-of", "x"], ":symbol"]]
+    ["defn", "symbol?", ["x"], ["&=", ["type-of", "x"], ":symbol"]]
   ).toCirruCode(coreNs)
 
   let codeKeywordQuestion = (%*
-    ["defn", "keyword?", ["x"], ["=", ["type-of", "x"], ":keyword"]]
+    ["defn", "keyword?", ["x"], ["&=", ["type-of", "x"], ":keyword"]]
   ).toCirruCode(coreNs)
 
   let codeBoolQuestion = (%*
-    ["defn", "number?", ["x"], ["=", ["type-of", "x"], ":bool"]]
+    ["defn", "number?", ["x"], ["&=", ["type-of", "x"], ":bool"]]
   ).toCirruCode(coreNs)
 
   let codeNilQuestion = (%*
-    ["defn", "nil?", ["x"], ["=", ["type-of", "x"], ":nil"]]
+    ["defn", "nil?", ["x"], ["&=", ["type-of", "x"], ":nil"]]
   ).toCirruCode(coreNs)
 
   let codeEach = (%*
@@ -157,7 +157,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeTake = (%*
     ["defn", "take", ["n", "xs"],
-      ["slice", "xs", "0", "n"]]
+      ["slice", "xs", 0, "n"]]
   ).toCirruCode(coreNs)
 
   let codeDrop = (%*
@@ -213,7 +213,39 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         "xs", "base"]]
   ).toCirruCode(coreNs)
 
-  # TODO find
+  let codeNativeIndexOf = (%*
+    ["defn", "&index-of", ["idx", "xs", "item"],
+      ["if", ["empty?", "xs"], "nil",
+        ["if", ["&=", "item", ["first", "xs"]], "idx",
+          ["&index-of", ["&+", 1, "idx"], ["rest", "xs"], "item"]]]]
+  ).toCirruCode(coreNs)
+
+  let codeIndexOf = (%*
+    ["defn", "index-of", ["xs", "item"],
+      ["&index-of", 0, "xs", "item"]]
+  ).toCirruCode(coreNs)
+
+  let codeNativeFindIndex = (%*
+    ["defn", "&find-index", ["idx", "f", "xs"],
+      ["if", ["empty?", "xs"], "nil",
+        ["if", ["f", ["first", "xs"]], "idx",
+          ["&find-index", ["&+", 1, "idx"], "f", ["rest", "xs"]]]]]
+  ).toCirruCode(coreNs)
+
+  let codeFindIndex = (%*
+    ["defn", "find-index", ["f", "xs"],
+      ["let",
+        [["idx", ["&find-index", 0, "f", "xs"]]],
+        ["if", ["nil?", "idx"], "nil", "idx"]]]
+  ).toCirruCode(coreNs)
+
+  let codeFind = (%*
+    ["defn", "find", ["f", "xs"],
+      ["let",
+        [["idx", ["&find-index", 0, "f", "xs"]]],
+        ["if", ["nil?", "idx"], "nil", ["get", "xs", "idx"]]]]
+  ).toCirruCode(coreNs)
+
   # TODO cond
 
   # TODO get-in
@@ -259,3 +291,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["difference"] = codeDifference
   programCode[coreNs].defs["union"] = codeUnion
   programCode[coreNs].defs["intersection"] = codeIntersection
+  programCode[coreNs].defs["&index-of"] = codeNativeIndexOf
+  programCode[coreNs].defs["index-of"] = codeIndexOf
+  programCode[coreNs].defs["&find-index"] = codeNativeFindIndex
+  programCode[coreNs].defs["find-index"] = codeFindIndex
+  programCode[coreNs].defs["find"] = codeFind

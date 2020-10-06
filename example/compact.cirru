@@ -51,7 +51,7 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (try-set)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (try-find)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -119,6 +119,17 @@
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
+        |try-find $ quote
+          defn try-find ()
+            let
+                a $ [] 1 2 3 4 5 6 7
+              echo $ index-of a 1
+              echo $ find-index
+                fn (x) (&> x 2)
+                , a
+              echo $ find
+                fn (x) (&> x 2)
+                , a
         |try-edn $ quote
           defn try-edn ()
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
