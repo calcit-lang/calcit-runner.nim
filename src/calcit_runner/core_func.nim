@@ -6,6 +6,7 @@ import strformat
 import sequtils
 import strutils
 import options
+import sets
 
 import ternary_tree
 import cirru_edn
@@ -111,6 +112,8 @@ proc nativeCount(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
   of crDataMap:
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
+  of crDataSet:
+    return CirruData(kind: crDataNumber, numberVal: a.setVal.len.float)
   else:
     raiseEvalError("Cannot count data", a)
 
@@ -440,7 +443,7 @@ proc nativeContains(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   of crDataMap:
     return CirruData(kind: crDataBool, boolVal: base.mapVal.contains(key))
   of crDataSet:
-    raise newException(ValueError, "TODO sets")
+    return CirruData(kind: crDataBool, boolVal: base.setVal.contains(key))
   else:
     raiseEvalError("contains requires a map", args)
 
@@ -672,6 +675,51 @@ proc nativePow(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope
   if not times.isNumber: raiseEvalError("pow expects a number as times", args)
   return CirruData(kind: crDataNumber, numberVal: base.numberVal.pow(times.numberVal))
 
+proc nativeHashSet(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  return CirruData(kind: crDataSet, setVal: args.toHashSet)
+
+proc nativeInclude(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("include requires 2 arg", args)
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataSet: raiseEvalError("include expects a set", base)
+  var newSet: HashSet[CirruData] = base.setVal
+  newSet.incl(item)
+  return CirruData(kind: crDataSet, setVal: newSet)
+
+proc nativeExclude(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("exclude requires 2 arg", args)
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataSet: raiseEvalError("exclude expects a set", base)
+  var newSet: HashSet[CirruData] = base.setVal
+  newSet.excl(item)
+  return CirruData(kind: crDataSet, setVal: newSet)
+
+proc nativeDifference(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("difference requires 2 arg", args)
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataSet: raiseEvalError("difference expects a set in first arg", base)
+  if item.kind != crDataSet: raiseEvalError("difference expects a set in second arg", item)
+  return CirruData(kind: crDataSet, setVal: base.setVal.difference(item.setVal))
+
+proc nativeUnion(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("union requires 2 arg", args)
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataSet: raiseEvalError("union expects a set in first arg", base)
+  if item.kind != crDataSet: raiseEvalError("union expects a set in second arg", item)
+  return CirruData(kind: crDataSet, setVal: base.setVal.union(item.setVal))
+
+proc nativeIntersection(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("intersection requires 2 arg", args)
+  let base = args[0]
+  let item = args[1]
+  if base.kind != crDataSet: raiseEvalError("intersection expects a set in first arg", base)
+  if item.kind != crDataSet: raiseEvalError("intersection expects a set in second arg", item)
+  return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
+
 # TODO reduce-find
 
 # injecting functions to calcit.core directly
@@ -714,7 +762,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("concat"))
   programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataFn, fnVal: nativeFormatTernaryTree, fnCode: fakeNativeCode("format-ternary-tree"))
   programData[coreNs].defs["merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("merge"))
-  programData[coreNs].defs["contains"] = CirruData(kind: crDataFn, fnVal: nativeContains, fnCode: fakeNativeCode("contains"))
+  programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContains, fnCode: fakeNativeCode("contains?"))
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataFn, fnVal: nativeAssocBefore, fnCode: fakeNativeCode("assoc-before"))
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataFn, fnVal: nativeAssocAfter, fnCode: fakeNativeCode("assoc-after"))
   programData[coreNs].defs["keys"] = CirruData(kind: crDataFn, fnVal: nativeKeys, fnCode: fakeNativeCode("keys"))
@@ -731,3 +779,9 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["cos"] = CirruData(kind: crDataFn, fnVal: nativeCos, fnCode: fakeNativeCode("cos"))
   programData[coreNs].defs["round"] = CirruData(kind: crDataFn, fnVal: nativeRound, fnCode: fakeNativeCode("round"))
   programData[coreNs].defs["pow"] = CirruData(kind: crDataFn, fnVal: nativePow, fnCode: fakeNativeCode("pow"))
+  programData[coreNs].defs["#{}"] = CirruData(kind: crDataFn, fnVal: nativeHashSet, fnCode: fakeNativeCode("#{}"))
+  programData[coreNs].defs["&include"] = CirruData(kind: crDataFn, fnVal: nativeInclude, fnCode: fakeNativeCode("#include"))
+  programData[coreNs].defs["&exclude"] = CirruData(kind: crDataFn, fnVal: nativeExclude, fnCode: fakeNativeCode("#exclude"))
+  programData[coreNs].defs["&difference"] = CirruData(kind: crDataFn, fnVal: nativeDifference, fnCode: fakeNativeCode("#difference"))
+  programData[coreNs].defs["&union"] = CirruData(kind: crDataFn, fnVal: nativeUnion, fnCode: fakeNativeCode("#union"))
+  programData[coreNs].defs["&intersection"] = CirruData(kind: crDataFn, fnVal: nativeIntersection, fnCode: fakeNativeCode("#intersection"))
