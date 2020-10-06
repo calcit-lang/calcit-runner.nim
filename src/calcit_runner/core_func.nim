@@ -720,8 +720,6 @@ proc nativeIntersection(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   if item.kind != crDataSet: raiseEvalError("intersection expects a set in second arg", item)
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
-# TODO reduce-find
-
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))

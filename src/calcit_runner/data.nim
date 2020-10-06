@@ -377,8 +377,14 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
 
 proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   case v.kind
+  of JBool:
+    return CirruData(kind: crDataBool, boolVal: v.bval)
   of JString:
-    parseLiteral(v.str, ns, none(CirruDataScope))
+    return parseLiteral(v.str, ns, none(CirruDataScope))
+  of JInt:
+    return CirruData(kind: crDataNumber, numberVal: v.num.float)
+  of JFloat:
+    return CirruData(kind: crDataNumber, numberVal: v.fnum)
   of JArray:
     let arr = v.elems.map(proc(item: JsonNode): CirruData =
       item.toCirruCode(ns)
