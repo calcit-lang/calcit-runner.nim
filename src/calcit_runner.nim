@@ -121,7 +121,9 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
       args.add interpret(x, scope)
 
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode[], args: args))
-    let ret = f(args, interpret, scope)
+    var ret = f(args, interpret, scope)
+    while ret.isRecur and ret.finished:
+      ret = f(ret.args, interpret, scope)
     popDefStack()
     return ret
 
@@ -129,7 +131,9 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     let f = value.macroVal
 
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: xs[1..^1]))
-    let quoted = f(xs[1..^1], interpret, scope)
+    var quoted = f(xs[1..^1], interpret, scope)
+    while quoted.isRecur:
+      quoted = f(quoted.args, interpret, scope)
     let ret = interpret(quoted, scope)
     popDefStack()
     return ret

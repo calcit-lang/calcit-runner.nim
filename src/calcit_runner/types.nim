@@ -34,14 +34,13 @@ type
     crDataMacro,
     crDataSymbol,
     crDataSyntax,
+    crDataRecur,
 
   EdnEvalFn* = proc(expr: CirruData, scope: CirruDataScope): CirruData
 
   FnInData* = proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
 
   CirruData* = object
-    line*: int
-    column*: int
     case kind*: CirruDataKind
     of crDataNil: discard
     of crDataBool: boolVal*: bool
@@ -64,6 +63,9 @@ type
       symbolVal*: string
       ns*: string
       scope*: Option[CirruDataScope]
+    of crDataRecur:
+      args*: seq[CirruData]
+      finished*: bool
 
   RefCirruData* = ref CirruData
 

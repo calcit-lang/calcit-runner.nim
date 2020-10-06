@@ -64,6 +64,11 @@ proc hash*(value: CirruData): Hash =
       result =  hash("symbol:")
       result = result !& hash(value.symbolVal)
       result = !$ result
+    of crDataRecur:
+      result =  hash("recur:")
+      result = result !& hash(value.args)
+      result = !$ result
+
 
 proc `==`*(x, y: CirruData): bool =
   if x.kind != y.kind:
@@ -119,6 +124,10 @@ proc `==`*(x, y: CirruData): bool =
       # TODO, ns not compared, not decided
       return x.symbolVal == y.symbolVal
 
+    of crDataRecur:
+      return x.args == y.args
+
+
 proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
 proc isList*(x: CirruData): bool = x.kind == crDataList
 proc isSymbol*(x: CirruData): bool =  x.kind == crDataSymbol
@@ -131,6 +140,7 @@ proc isFn*(x: CirruData): bool = x.kind == crDataFn
 proc isBool*(x: CirruData): bool = x.kind == crDataBool
 proc isMacro*(x: CirruData): bool = x.kind == crDataMacro
 proc isSyntax*(x: CirruData): bool = x.kind == crDataSyntax
+proc isRecur*(x: CirruData): bool = x.kind == crDataRecur
 
 proc `!=`*(x, y: CirruData): bool =
   not (x == y)
@@ -233,17 +243,13 @@ proc toJson*(x: CirruData): JsonNode =
         raise newException(EdnOpError, "required string keys in JObject")
     return JsonNode(kind: JObject, fields: fields)
 
-  of crDataFn:
-    return JsonNode(kind: JNull)
-
-  of crDataMacro:
-    return JsonNode(kind: JNull)
-
-  of crDataSyntax:
-    return JsonNode(kind: JNull)
-
   of crDataSymbol:
     return JsonNode(kind: JString, str: x.symbolVal)
+
+  of crDataFn: return JsonNode(kind: JNull)
+  of crDataMacro: return JsonNode(kind: JNull)
+  of crDataSyntax: return JsonNode(kind: JNull)
+  of crDataRecur: return JsonNode(kind: JNull)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruData*(v: JsonNode): CirruData =

@@ -720,6 +720,9 @@ proc nativeIntersection(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   if item.kind != crDataSet: raiseEvalError("intersection expects a set in second arg", item)
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
+proc nativeRecur(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  return CirruData(kind: crDataRecur, args: args, finished: false)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
@@ -783,3 +786,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&difference"] = CirruData(kind: crDataFn, fnVal: nativeDifference, fnCode: fakeNativeCode("#difference"))
   programData[coreNs].defs["&union"] = CirruData(kind: crDataFn, fnVal: nativeUnion, fnCode: fakeNativeCode("#union"))
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataFn, fnVal: nativeIntersection, fnCode: fakeNativeCode("#intersection"))
+  programData[coreNs].defs["recur"] = CirruData(kind: crDataFn, fnVal: nativeRecur, fnCode: fakeNativeCode("recur"))

@@ -58,6 +58,7 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataFn: "<Function>"
     of crDataMacro: "<Macro>"
     of crDataSyntax: "<Syntax>"
+    of crDataRecur: "<Recur>"
     of crDataSymbol:
       if details:
         if val.scope.isSome:
