@@ -120,7 +120,14 @@
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
         |try-recur $ quote
-          defn try-recur (x) (; echo "\"running" x) (; recur $ &+ x 1) (echo $ recur-inc 0 4000)
+          defn try-recur (x) (; echo "\"running" x) (; recur $ &+ x 1) (; echo $ recur-inc 0 4000)
+            echo $ loop
+                a 0
+                b 0
+              if (&< a 2000)
+                do (echo a b)
+                  recur (&+ a 1) (&+ b 2)
+                &+ a b
         |try-edn $ quote
           defn try-edn ()
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
