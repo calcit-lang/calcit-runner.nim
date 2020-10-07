@@ -109,6 +109,8 @@ proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
       ret = interpret(child, innerScope)
+    if ret.isRecur:
+      ret.finished = true
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
@@ -149,6 +151,38 @@ proc nativeLet(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   result = CirruData(kind: crDataNil)
   for child in body:
     result = interpret(child, letScope)
+
+proc nativeLoop(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  var loopScope = scope
+  if exprList.len < 1: raiseEvalError("No enough code for loop, too short", exprList)
+  let pairs = exprList[0]
+  let body = exprList[1..^1]
+  if not pairs.isList: raiseEvalError("Expect bindings in a list", pairs)
+  for pair in pairs:
+    if not pair.isList: raiseEvalError("Expect binding in a list", pair)
+    if pair.len != 2: raiseEvalError("Expect binding in length 2", pair)
+    let name = pair[0]
+    let value = pair[1]
+    if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
+    loopScope = loopScope.assoc(name.symbolVal, interpret(value, loopScope))
+  var ret = CirruData(kind: crDataNil)
+  for child in body:
+    ret = interpret(child, loopScope)
+  while ret.isRecur:
+    if ret.args.len != pairs.len:
+      raiseEvalError(fmt"recur args {ret.args.len} != {pairs.len}", exprList)
+    var idx = 0
+    for pair in pairs:
+      if not pair.isList: raiseEvalError("Expect binding in a list", pair)
+      if pair.len != 2: raiseEvalError("Expect binding in length 2", pair)
+      let name = pair[0]
+      if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
+      loopScope = loopScope.assoc(name.symbolVal, ret.args[idx])
+      idx = idx + 1
+
+    for child in body:
+      ret = interpret(child, loopScope)
+  ret
 
 proc nativeDo*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   result = CirruData(kind: crDataNil)
@@ -285,3 +319,4 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: Edn
   programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet, syntaxCode: fakeNativeCode("let"))
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote, syntaxCode: fakeNativeCode("quote"))
   programData[coreNs].defs["{}"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMap, syntaxCode: fakeNativeCode("{}"))
+  programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop, syntaxCode: fakeNativeCode("loop"))

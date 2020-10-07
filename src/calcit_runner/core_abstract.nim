@@ -46,7 +46,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeFoldl = (%*
     ["defn", "foldl", ["f", "xs", "acc"],
       ["if", ["empty?", "xs"], "acc",
-             ["foldl", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
+             ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
   ).toCirruCode(coreNs)
 
   let codeAdd = (%*
@@ -71,9 +71,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeFoldlCompare = (%*
     ["defn", "foldl-compare", ["f", "xs", "acc"],
-      ["if", ["empty?", "xs"], "true",
+      ["if", ["empty?", "xs"], true,
              ["if", ["f", "acc", ["first", "xs"]],
-                    ["foldl-compare", "f", ["rest", "xs"], ["first", "xs"]],
+                    ["recur", "f", ["rest", "xs"], ["first", "xs"]],
                     false]]]
   ).toCirruCode(coreNs)
 
@@ -144,7 +144,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["if", ["not", ["empty?", "xs"]],
         ["do",
           ["f", ["first", "xs"]],
-          ["each", "f", ["rest", "xs"]]]]]
+          ["recur", "f", ["rest", "xs"]]]]]
   ).toCirruCode(coreNs)
 
   let codeMap = (%*
@@ -217,7 +217,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     ["defn", "&index-of", ["idx", "xs", "item"],
       ["if", ["empty?", "xs"], "nil",
         ["if", ["&=", "item", ["first", "xs"]], "idx",
-          ["&index-of", ["&+", 1, "idx"], ["rest", "xs"], "item"]]]]
+          ["recur", ["&+", 1, "idx"], ["rest", "xs"], "item"]]]]
   ).toCirruCode(coreNs)
 
   let codeIndexOf = (%*
@@ -229,7 +229,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     ["defn", "&find-index", ["idx", "f", "xs"],
       ["if", ["empty?", "xs"], "nil",
         ["if", ["f", ["first", "xs"]], "idx",
-          ["&find-index", ["&+", 1, "idx"], "f", ["rest", "xs"]]]]]
+          ["recur", ["&+", 1, "idx"], "f", ["rest", "xs"]]]]]
   ).toCirruCode(coreNs)
 
   let codeFindIndex = (%*
