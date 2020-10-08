@@ -438,3 +438,20 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
     else:
       args.add x
   args
+
+proc spreadFuncArgs*(xs: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): seq[CirruData] =
+  var args: seq[CirruData] = @[]
+  var spreadMode = false
+  for x in xs:
+    if spreadMode:
+      let ys = interpret(x, scope)
+      if not ys.isList:
+        raiseEvalError("Spread mode expects a list", xs)
+      for y in ys:
+        args.add y
+      spreadMode = false
+    elif x.isSymbol and x.symbolVal == "&":
+      spreadMode = true
+    else:
+      args.add interpret(x, scope)
+  args
