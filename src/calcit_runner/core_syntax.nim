@@ -13,7 +13,10 @@ import ./helpers
 import ./format
 
 proc nativeList(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
+  var args: seq[CirruData]
+  for node in exprList:
+    args.add interpret(node, scope)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
 
 proc nativeIf*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if (exprList.len < 2):
@@ -230,6 +233,13 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
   of crDataBool: return exprList
   of crDataKeyword: return exprList
   of crDataList:
+    if exprList.len == 0:
+      return CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[]))
+    if exprList[0].isSymbol and exprList[0].symbolVal == "~":
+      if exprList.len != 2:
+        raiseEvalError "Expected 1 argument in ~ of quote-replace", exprList
+      return interpret(exprList[1], scope)
+
     var list: seq[CirruData] = @[]
     for item in exprList:
       if item.kind == crDataList:
@@ -271,8 +281,8 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
     var ret = CirruData(kind: crDataNil)
     for child in exprList[2..^1]:
       ret = interpret(child, innerScope)
-    if ret.kind != crDataList:
-      raiseEvalError("Expected cirru expr from defmacro", ret)
+    if ret.isList.not and ret.isRecur.not and ret.isSymbol.not:
+      raiseEvalError("Expected list or recur from defmacro", ret)
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))

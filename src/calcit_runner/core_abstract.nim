@@ -246,6 +246,25 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["if", ["nil?", "idx"], "nil", ["get", "xs", "idx"]]]]
   ).toCirruCode(coreNs)
 
+  let codeThreadFirst = (%*
+    ["defmacro", "->", ["base", "&", "xs"],
+      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+        ["let", [["x0", ["first", "xs"]]],
+          ["if", ["list?", "x0"],
+            ["recur", ["concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
+                      "&", ["rest", "xs"]],
+            ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
+  ).toCirruCode(coreNs)
+
+  let codeThreadLast = (%*
+    ["defmacro", "->>", ["base", "&", "xs"],
+      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+        ["let", [["x0", ["first", "xs"]]],
+          ["if", ["list?", "x0"],
+            ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
+            ["recur", ["[]", "base", "x0"], "&", ["rest", "xs"]]]]]]
+  ).toCirruCode(coreNs)
+
   # TODO cond
 
   # TODO get-in
@@ -296,3 +315,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&find-index"] = codeNativeFindIndex
   programCode[coreNs].defs["find-index"] = codeFindIndex
   programCode[coreNs].defs["find"] = codeFind
+  programCode[coreNs].defs["->"] = codeThreadFirst
+  programCode[coreNs].defs["->>"] = codeThreadLast
