@@ -225,17 +225,18 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
     raiseEvalError("load-json requires relative path to json file", args)
 
   let code = args[0]
-  if code.kind != crDataList or not checkExprStructure(code) or code.len == 0:
-    raiseEvalError("Unexpected structure from macroexpand", code)
+  if code.isList.not or checkExprStructure(code).not or code.len == 0:
+    raiseEvalError(fmt"Unexpected structure from macroexpand", code)
 
   let value = interpret(code[0], scope)
   if value.kind != crDataMacro:
     raiseEvalError("Expected a macro in the expression", code)
   let f = value.macroVal
 
-  var quoted = f(code[1..^1], interpret, scope)
+  var quoted = f(spreadArgs(code[1..^1]), interpret, scope)
+
   while quoted.isRecur:
-    quoted = f(quoted.args, interpret, scope)
+    quoted = f(quoted.args.spreadArgs, interpret, scope)
   return quoted
 
 proc nativePrintln(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =

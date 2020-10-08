@@ -266,7 +266,7 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
 
 proc nativeQuoteReplace(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if exprList.len != 1:
-    raiseEvalError("quote-replace expects 1 argument", exprList)
+    raiseEvalError(fmt"quote-replace expects 1 argument, got {exprList.len}", exprList)
 
   let ret = replaceExpr(attachScope(exprList[0], scope), interpret, scope)
   if not checkExprStructure(ret):

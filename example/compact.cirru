@@ -56,6 +56,26 @@
               quote $ -> a b (c d) (e f g)
             echo $ macroexpand
               quote $ ->> a b (c d) (e f g)
+            echo $ macroexpand
+              quote $ cond
+                  > a 10
+                  , 10
+                (> a 5)
+                  , 5
+                true 1
+            echo $ let
+                a 4
+              cond
+                  > a 10
+                  , 10
+                (> a 5)
+                  , 5
+                true 1
+            echo $ macroexpand
+              quote $ case a (1 "\"one") (2 "\"two") (a "\"else..")
+            echo $ let
+                a 3
+              case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
           defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0)
         |try-hygienic $ quote

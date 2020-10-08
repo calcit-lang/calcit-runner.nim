@@ -116,9 +116,8 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
   of crDataFn:
     let f = value.fnVal
     var args: seq[CirruData] = @[]
-    let argsCode = xs[1..^1]
     var spreadMode = false
-    for x in argsCode:
+    for x in xs[1..^1]:
       if spreadMode:
         let ys = interpret(x, scope)
         if not ys.isList:
@@ -140,11 +139,11 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
 
   of crDataMacro:
     let f = value.macroVal
-
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: xs[1..^1]))
-    var quoted = f(xs[1..^1], interpret, scope)
+
+    var quoted = f(spreadArgs(xs[1..^1]), interpret, scope)
     while quoted.isRecur:
-      quoted = f(quoted.args, interpret, scope)
+      quoted = f(quoted.args.spreadArgs, interpret, scope)
     let ret = interpret(quoted, scope)
     popDefStack()
     return ret
