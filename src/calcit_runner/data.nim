@@ -407,6 +407,7 @@ proc checkExprStructure*(exprList: CirruData): bool =
   of crDataBool: return true
   of crDataNil: return true
   of crDataString: return true
+  of crDataKeyword: return true
   of crDataList:
     for item in exprList:
       if not checkExprStructure(item):
@@ -421,3 +422,19 @@ proc fakeNativeCode*(info: string): RefCirruData =
     CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
     CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
   ]))
+
+proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
+  var args: seq[CirruData]
+  var spreadMode = false
+  for x in xs:
+    if spreadMode:
+      if x.isList.not:
+        raiseEvalError("Spread mode expects a list", xs)
+      for y in x:
+        args.add y
+      spreadMode = false
+    elif x.isSymbol and x.symbolVal == "&":
+      spreadMode = true
+    else:
+      args.add x
+  args

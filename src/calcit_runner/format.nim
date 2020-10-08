@@ -3,6 +3,7 @@ import strutils
 import sequtils
 import sets
 import options
+import strformat
 
 import ternary_tree
 
@@ -58,7 +59,9 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataFn: "<Function>"
     of crDataMacro: "<Macro>"
     of crDataSyntax: "<Syntax>"
-    of crDataRecur: "<Recur>"
+    of crDataRecur:
+      let content = val.args.mapIt(it.toString).join(" ")
+      fmt"<Recur: {content}>"
     of crDataSymbol:
       if details:
         if val.scope.isSome:

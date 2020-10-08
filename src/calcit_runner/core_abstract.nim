@@ -246,7 +246,51 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["if", ["nil?", "idx"], "nil", ["get", "xs", "idx"]]]]
   ).toCirruCode(coreNs)
 
-  # TODO cond
+  let codeThreadFirst = (%*
+    ["defmacro", "->", ["base", "&", "xs"],
+      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+        ["let", [["x0", ["first", "xs"]]],
+          ["if", ["list?", "x0"],
+            ["recur", ["concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
+                      "&", ["rest", "xs"]],
+            ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
+  ).toCirruCode(coreNs)
+
+  let codeThreadLast = (%*
+    ["defmacro", "->>", ["base", "&", "xs"],
+      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+        ["let", [["x0", ["first", "xs"]]],
+          ["if", ["list?", "x0"],
+            ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
+            ["recur", ["[]", "base", "x0"], "&", ["rest", "xs"]]]]]]
+  ).toCirruCode(coreNs)
+
+  let codeCond = (%*
+    ["defmacro", "cond", ["pair", "&", "else"],
+      ["assert", "|expects a pair",
+        ["&and", ["list?", "pair"], ["&=", 2, ["count", "pair"]]]],
+      ["let", [["expr", ["first", "pair"]],
+               ["branch", ["last", "pair"]]],
+        ["quote-replace",
+          ["if", ["~", "expr"], ["~", "branch"],
+            ["~", ["if", ["empty?", "else"], "nil",
+              ["quote-replace",
+                ["cond", ["~", ["first", "else"]],
+                  "&", ["~", ["rest", "else"]]]]]]]]]
+      ]
+  ).toCirruCode(coreNs)
+
+  let codeCase = (%*
+    ["defmacro", "case", ["item", "pattern", "&", "else"],
+      ["assert", "|pattern is a pair",
+        ["&and", ["list?", "pattern"], ["&=", "2", ["count", "pattern"]]]],
+      ["let", [["expr", ["first", "pattern"]],
+               ["branch", ["last", "pattern"]]],
+        ["quote-replace",
+          ["if", ["&=", ["~", "item"], ["~", "expr"]], ["~", "branch"],
+            ["~", ["if", ["empty?", "else"], "nil",
+                    ["quote-replace", ["case", ["~", "item"], "&", ["~", "else"]]]]]]]]]
+  ).toCirruCode(coreNs)
 
   # TODO get-in
   # TODO assoc-in
@@ -296,3 +340,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&find-index"] = codeNativeFindIndex
   programCode[coreNs].defs["find-index"] = codeFindIndex
   programCode[coreNs].defs["find"] = codeFind
+  programCode[coreNs].defs["->"] = codeThreadFirst
+  programCode[coreNs].defs["->>"] = codeThreadLast
+  programCode[coreNs].defs["cond"] = codeCond
+  programCode[coreNs].defs["case"] = codeCase

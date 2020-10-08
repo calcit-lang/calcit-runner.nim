@@ -47,11 +47,37 @@
             eval $ quote (println $ + 1 2)
             println $ quote (+ 1 2)
             println $ gen-num 3 4 c
-            raise
+            ; raise
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
+            echo $ macroexpand
+              quote $ apply + (1 2 3 4)
+            echo $ macroexpand
+              quote $ -> a b (c d) (e f g)
+            echo $ macroexpand
+              quote $ ->> a b (c d) (e f g)
+            echo $ macroexpand
+              quote $ cond
+                  > a 10
+                  , 10
+                (> a 5)
+                  , 5
+                true 1
+            echo $ let
+                a 4
+              cond
+                  > a 10
+                  , 10
+                (> a 5)
+                  , 5
+                true 1
+            echo $ macroexpand
+              quote $ case a (1 "\"one") (2 "\"two") (a "\"else..")
+            echo $ let
+                a 3
+              case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (try-recur 0)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0)
         |try-hygienic $ quote
           defn try-hygienic ()
             let

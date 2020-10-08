@@ -152,7 +152,7 @@ proc nativeRest(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScop
       return CirruData(kind: crDataNil)
     return CirruData(kind: crDataList, listVal: a.listVal.rest)
   else:
-    raiseEvalError("Cannot rest from data of this type", a)
+    raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
 proc nativeRaiseAt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native raise-at")
@@ -164,7 +164,7 @@ proc nativeRaiseAt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
 
 proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1: coreFnError("type gets 1 argument")
-  let v = interpret(args[0], scope)
+  let v = args[0]
   case v.kind
     of crDataNil: CirruData(kind: crDataKeyword, keywordVal: "nil")
     of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "int")
@@ -172,16 +172,21 @@ proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
     of crDataBool: CirruData(kind: crDataKeyword, keywordVal: "bool")
     of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "table")
     of crDataFn: CirruData(kind: crDataKeyword, keywordVal: "fn")
-    else: CirruData(kind: crDataKeyword, keywordVal: "unknown")
+    of crDataMacro: CirruData(kind: crDataKeyword, keywordVal: "macro")
+    of crDataKeyword: CirruData(kind: crDataKeyword, keywordVal: "keyword")
+    of crDataSyntax: CirruData(kind: crDataKeyword, keywordVal: "syntax")
+    of crDataList: CirruData(kind: crDataKeyword, keywordVal: "list")
+    of crDataSet: CirruData(kind: crDataKeyword, keywordVal: "set")
+    of crDataRecur: CirruData(kind: crDataKeyword, keywordVal: "recur")
+    of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: "symbol")
 
 proc nativeReadFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let node = args[1]
-  let fileName = interpret(node, scope)
+  let fileName = args[1]
   if fileName.kind != crDataString:
-    raiseEvalError("Expected path name in string", node)
+    raiseEvalError("Expected path name in string", args)
   let content = readFile(fileName.stringVal)
   return CirruData(kind: crDataString, stringVal: content)
 
@@ -189,14 +194,12 @@ proc nativeWriteFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   if args.len != 2:
     raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let node = args[0]
-  let fileName = interpret(node, scope)
+  let fileName = args[0]
   if fileName.kind != crDataString:
-    raiseEvalError("Expected path name in string", node)
-  let contentNode = args[1]
-  let content = interpret(contentNode, scope)
+    raiseEvalError("Expected path name in string", args)
+  let content = args[1]
   if content.kind != crDataSymbol:
-    raiseEvalError("Expected content in string", contentNode)
+    raiseEvalError("Expected content in string", args)
   writeFile(fileName.stringVal, content.stringVal)
 
   dimEcho fmt"Wrote to file {fileName.stringVal}"
@@ -206,7 +209,7 @@ proc nativeLoadJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   if args.len != 1:
     raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let filePath = interpret(args[0], scope)
+  let filePath = args[0]
   if filePath.kind != crDataString:
     raiseEvalError("load-json requires path in string", args[0])
   let content = readFile(filePath.stringVal)
@@ -222,14 +225,18 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
     raiseEvalError("load-json requires relative path to json file", args)
 
   let code = args[0]
-  if code.kind != crDataList or not checkExprStructure(code) or code.len == 0:
-    raiseEvalError("Unexpected structure from macroexpand", code)
+  if code.isList.not or checkExprStructure(code).not or code.len == 0:
+    raiseEvalError(fmt"Unexpected structure from macroexpand", code)
 
   let value = interpret(code[0], scope)
   if value.kind != crDataMacro:
     raiseEvalError("Expected a macro in the expression", code)
   let f = value.macroVal
-  let quoted = f(code[1..^1], interpret, scope)
+
+  var quoted = f(spreadArgs(code[1..^1]), interpret, scope)
+
+  while quoted.isRecur:
+    quoted = f(quoted.args.spreadArgs, interpret, scope)
   return quoted
 
 proc nativePrintln(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
