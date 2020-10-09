@@ -262,7 +262,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["let", [["x0", ["first", "xs"]]],
           ["if", ["list?", "x0"],
             ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
-            ["recur", ["[]", "base", "x0"], "&", ["rest", "xs"]]]]]]
+            ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
   ).toCirruCode(coreNs)
 
   let codeCond = (%*
