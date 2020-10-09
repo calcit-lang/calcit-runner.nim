@@ -181,6 +181,63 @@
               intersection (#{} 1 2 3) (#{} 2 3 4) (#{} 3 4 5)
               #{} 3
 
+        |test-cond $ quote
+          defn test-cond ()
+            let
+                compare-x $ fn (x)
+                  cond
+                    (&> x 10) "|>10"
+                    (&> x 5) "|>5"
+                    true "|<=5"
+              assert "|try cond" $ &= (compare-x 11) "|>10"
+              assert "|try cond" $ &= (compare-x 10) "|>5"
+              assert "|try cond" $ &= (compare-x 6) "|>5"
+              assert "|try cond" $ &= (compare-x 4) "|<=5"
+
+            let
+                detect-x $ fn (x)
+                  case x
+                    1 "|one"
+                    2 "|two"
+                    x "|else"
+              assert "|try case" $ &= (detect-x 1) "|one"
+              assert "|try case" $ &= (detect-x 2) "|two"
+              assert "|try case" $ &= (detect-x 3) "|else"
+
+        |test-thread-macros $ quote
+          defn test-thread-macros ()
+            assert "|try -> macro" $ &=
+              macroexpand $ quote $ -> a b c
+              quote (c (b a))
+
+            assert "|try -> macro" $ &=
+              macroexpand $ quote $ -> a (b) c
+              quote (c (b a))
+
+            assert "|try -> macro" $ &=
+              macroexpand $ quote $ -> a (b c)
+              quote (b a c)
+
+            assert "|try -> macro" $ &=
+              macroexpand $ quote $ -> a (b c) (d e f)
+              quote (d (b a c) e f)
+
+            assert "|try ->> macro" $ &=
+              macroexpand $ quote $ ->> a b c
+              quote (c (b a))
+
+            assert "|try ->> macro" $ &=
+              macroexpand $ quote $ ->> a (b) c
+              quote (c (b a))
+
+            assert "|try ->> macro" $ &=
+              macroexpand $ quote $ ->> a (b c)
+              quote (b c a)
+
+            assert "|try ->> macro" $ &=
+              macroexpand $ quote $ ->> a (b c) (d e f)
+              quote (d e f (b c a))
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -206,6 +263,12 @@
 
             log-title "|Testing set"
             test-set
+
+            log-title "|Testing cond/case"
+            test-cond
+
+            log-title "|Testing thread macros"
+            test-thread-macros
 
             echo "|Finished running test"
             do true
