@@ -77,7 +77,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (try-get-in)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -140,6 +140,15 @@
               echo (take 4 $ range 10) (drop 4 $ range 10)
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
+        |try-get-in $ quote
+          defn try-get-in ()
+            let
+                data $ {} (:a $ [] 1 2 3)
+                b $ []
+                  {} $ :a ([] 1 2 3)
+              echo $ get-in data ([] :a 2)
+              echo $ get-in b ([] 0 :a 2)
+              echo $ get-in data ([] :x :y :z)
         |try-syntax $ quote
           defn try-syntax () (echo $ syntax-add 1 2 3)
         |try-core-lib $ quote
