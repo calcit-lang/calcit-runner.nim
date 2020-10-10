@@ -132,7 +132,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   ).toCirruCode(coreNs)
 
   let codeBoolQuestion = (%*
-    ["defn", "number?", ["x"], ["&=", ["type-of", "x"], ":bool"]]
+    ["defn", "bool?", ["x"], ["&=", ["type-of", "x"], ":bool"]]
   ).toCirruCode(coreNs)
 
   let codeNilQuestion = (%*
@@ -292,7 +292,44 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                     ["quote-replace", ["case", ["~", "item"], "&", ["~", "else"]]]]]]]]]
   ).toCirruCode(coreNs)
 
-  # TODO get-in
+  let codeGetIn = (%*
+    ["defn", "get-in", ["base", "path"],
+      ["assert", "|path is a list", ["list?", "path"]],
+      ["cond",
+        [["nil?", "base"], "nil"],
+        [["empty?", "path"], "base"],
+        [true, ["recur", ["get", "base", ["first", "path"]], ["rest", "path"]]]]]
+  ).toCirruCode(coreNs)
+
+  let codeNativeMax = (%*
+    ["defn", "&max", ["a", "b"],
+      ["assert", "|find max from numbers", ["&and", ["number?", "a"], ["number?", "b"]]],
+      ["if", ["&>", "a", "b"], "a", "b"]]
+  ).toCirruCode(coreNs)
+
+  let codeNativeMin = (%*
+    ["defn", "&min", ["a", "b"],
+      ["assert", "|find min from numbers", ["&and", ["number?", "a"], ["number?", "b"]]],
+      ["if", ["&<", "a", "b"], "a", "b"]]
+  ).toCirruCode(coreNs)
+
+  let codeMax = (%*
+    ["defn", "max", ["xs"],
+      ["if", ["empty?", "xs"], "nil",
+        ["foldl",
+          ["fn", ["acc", "x"],
+            ["&max", "acc", "x"]],
+          ["rest", "xs"], ["first", "xs"]]]]
+  ).toCirruCode(coreNs)
+
+  let codeMin = (%*
+    ["defn", "min", ["xs"],
+      ["if", ["empty?", "xs"], "nil",
+        ["foldl",
+          ["fn", ["acc", "x"], ["&min", "acc", "x"]],
+          ["rest", "xs"], ["first", "xs"]]]]
+  ).toCirruCode(coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -344,3 +381,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["->>"] = codeThreadLast
   programCode[coreNs].defs["cond"] = codeCond
   programCode[coreNs].defs["case"] = codeCase
+  programCode[coreNs].defs["get-in"] = codeGetIn
+  programCode[coreNs].defs["&max"] = codeNativeMax
+  programCode[coreNs].defs["&min"] = codeNativeMin
+  programCode[coreNs].defs["max"] = codeMax
+  programCode[coreNs].defs["min"] = codeMin

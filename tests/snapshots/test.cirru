@@ -238,6 +238,11 @@
               macroexpand $ quote $ ->> a (b c) (d e f)
               quote (d e f (b c a))
 
+        |test-compare $ quote
+          defn test-compare ()
+            assert "|find max" $ = 4 $ max $ [] 1 2 3 4
+            assert "|find min" $ = 1 $ min $ [] 1 2 3 4
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -269,6 +274,9 @@
 
             log-title "|Testing thread macros"
             test-thread-macros
+
+            log-title "|Testing compare"
+            test-compare
 
             echo "|Finished running test"
             do true

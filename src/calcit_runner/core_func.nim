@@ -133,7 +133,7 @@ proc nativeGet(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope
       return a[b.numberVal.int]
 
   of crDataMap:
-    let ret = b.mapVal[a]
+    let ret = a.mapVal[b]
     if ret.isNone:
       return CirruData(kind: crDataNil)
     else:
@@ -167,7 +167,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   let v = args[0]
   case v.kind
     of crDataNil: CirruData(kind: crDataKeyword, keywordVal: "nil")
-    of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "int")
+    of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "number")
     of crDataString: CirruData(kind: crDataKeyword, keywordVal: "string")
     of crDataBool: CirruData(kind: crDataKeyword, keywordVal: "bool")
     of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "table")

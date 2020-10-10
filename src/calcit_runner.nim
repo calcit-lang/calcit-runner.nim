@@ -115,20 +115,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
 
   of crDataFn:
     let f = value.fnVal
-    var args: seq[CirruData] = @[]
-    var spreadMode = false
-    for x in xs[1..^1]:
-      if spreadMode:
-        let ys = interpret(x, scope)
-        if not ys.isList:
-          raiseEvalError("Spread mode expects a list", xs)
-        for y in ys:
-          args.add y
-        spreadMode = false
-      elif x.isSymbol and x.symbolVal == "&":
-        spreadMode = true
-      else:
-        args.add interpret(x, scope)
+    let args = spreadFuncArgs(xs[1..^1], interpret, scope)
 
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode[], args: args))
     var ret = f(args, interpret, scope)
