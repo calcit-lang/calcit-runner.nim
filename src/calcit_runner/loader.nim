@@ -57,7 +57,28 @@ proc extractFile(v: CirruEdnValue, ns: string): FileSource =
 
   return file
 
-proc loadSnapshot*(snapshotFile: string): Table[string, FileSource] =
+proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
+  var codeConfigs = CodeConfigs()
+
+  if not initialData.contains(crEdn("configs", true)):
+    raise newException(ValueError, "expects configs field")
+  let configs = initialData.get(crEdn("configs", true))
+  if configs.kind != crEdnMap:
+    raise newException(ValueError, "expects configs to be a map")
+
+  if configs.contains(crEdn("init-fn", true)):
+    let initFn = configs.get(crEdn("init-fn", true))
+    if initFn.kind == crEdnString:
+      codeConfigs.initFn = initFn.stringVal
+
+  if configs.contains(crEdn("reload-fn", true)):
+    let reloadFn = configs.get(crEdn("reload-fn", true))
+    if reloadFn.kind == crEdnString:
+      codeConfigs.reloadFn = reloadFn.stringVal
+
+  return codeConfigs
+
+proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource], configs: CodeConfigs] =
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
   var compactFiles = initTable[string, FileSource]()
@@ -79,7 +100,7 @@ proc loadSnapshot*(snapshotFile: string): Table[string, FileSource] =
       raise newException(ValueError, "expects a string")
     compactFiles[k.stringVal] = extractFile(v, k.stringVal)
 
-  return compactFiles
+  (compactFiles, getCodeConfigs(initialData))
 
 
 proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
@@ -162,27 +183,3 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
       extractFileChangeDetail(programData[k.stringVal], k.stringVal, v)
 
   coloredEcho fgMagenta, "code updated from inc files"
-
-proc loadCodeConfigs*(snapshotFile: string): CodeConfigs =
-  let content = readFile snapshotFile
-  let initialData = parseEdnFromStr content
-
-  var codeConfigs = CodeConfigs()
-
-  if not initialData.contains(crEdn("configs", true)):
-    raise newException(ValueError, "expects configs field")
-  let configs = initialData.get(crEdn("configs", true))
-  if configs.kind != crEdnMap:
-    raise newException(ValueError, "expects configs to be a map")
-
-  if configs.contains(crEdn("init-fn", true)):
-    let initFn = configs.get(crEdn("init-fn", true))
-    if initFn.kind == crEdnString:
-      codeConfigs.initFn = initFn.stringVal
-
-  if configs.contains(crEdn("reload-fn", true)):
-    let reloadFn = configs.get(crEdn("reload-fn", true))
-    if reloadFn.kind == crEdnString:
-      codeConfigs.reloadFn = reloadFn.stringVal
-
-  return codeConfigs
