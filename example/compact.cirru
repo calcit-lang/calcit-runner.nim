@@ -77,7 +77,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (try-get-in)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; try-syntax) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (try-every)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -138,6 +138,22 @@
                 assoc (range 10) (, 4 55)
                 dissoc (range 10) (, 4)
               echo (take 4 $ range 10) (drop 4 $ range 10)
+        |try-every $ quote
+          defn try-every ()
+            let
+                data $ [] 1 2 3 4
+              echo $ every?
+                fn (x) (&> x 1)
+                , data
+              echo $ every?
+                fn (x) (&> x 0)
+                , data
+              echo $ any?
+                fn (x) (&> x 3)
+                , data
+              echo $ any?
+                fn (x) (&> x 4)
+                , data
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
         |try-get-in $ quote

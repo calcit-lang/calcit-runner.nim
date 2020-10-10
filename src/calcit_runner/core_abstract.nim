@@ -4,6 +4,7 @@ import tables
 
 import ./data
 import ./types
+import ./gen_code
 
 proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
@@ -330,6 +331,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
           ["rest", "xs"], ["first", "xs"]]]]
   ).toCirruCode(coreNs)
 
+  # echo "generated Cirru: ", genCirru([a, "b?", [c, 1, true, nil]]).toJson()
+
+  let codeEveryQuestion = genCirru(
+    [defn, "every?", [f, xs],
+      ["if", ["empty?", xs], true,
+        ["if", [f, [first, xs]], [recur, f, [rest, xs]], false]]]
+  , coreNs)
+
+  let codeAnyQuestion = genCirru(
+    [defn, "any?", [f, xs],
+      ["if", ["empty?", xs], false,
+        ["if", [f, [first, xs]], true, [recur, f, [rest, xs]]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -386,3 +401,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&min"] = codeNativeMin
   programCode[coreNs].defs["max"] = codeMax
   programCode[coreNs].defs["min"] = codeMin
+  programCode[coreNs].defs["every?"] = codeEveryQuestion
+  programCode[coreNs].defs["any?"] = codeAnyQuestion
