@@ -177,14 +177,16 @@ proc showStack(): void =
     dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
-  programCode = loadSnapshot(snapshotFile)
-  codeConfigs = loadCodeConfigs(snapshotFile)
+  let snapshotInfo = loadSnapshot(snapshotFile)
+  programCode = snapshotInfo.files
+  codeConfigs = snapshotInfo.configs
 
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
   loadCoreDefs(programData, interpret)
   loadCoreSyntax(programData, interpret)
+
   loadCoreFuncs(programCode)
 
   let scope = CirruDataScope()
@@ -227,7 +229,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
-  programCode = loadSnapshot(snapshotFile)
+  programCode = loadSnapshot(snapshotFile).files
   clearProgramDefs(programData)
   programCode[coreNs] = previousCoreSource
   var scope: CirruDataScope
