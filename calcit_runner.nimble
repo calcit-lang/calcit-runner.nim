@@ -22,6 +22,10 @@ task watch, "run and watch":
 task once, "run once":
   exec "nim compile --verbosity:0 --hints:off -r src/cr --once example/compact.cirru"
 
+task perf, "run with perf":
+  exec "nim compile --verbosity:0 --profiler:on --stackTrace:on --hints:off -r src/cr --once example/compact.cirru"
+  # exec "nim compile --verbosity:0 --profiler:on --stackTrace:on --hints:off -r src/cr --once tests/snapshots/add.cirru"
+
 task t, "Runs the test suite":
   exec "nim c -r --hints:off tests/test_expr.nim"
 
