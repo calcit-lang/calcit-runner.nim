@@ -243,6 +243,23 @@
             assert "|find max" $ = 4 $ max $ [] 1 2 3 4
             assert "|find min" $ = 1 $ min $ [] 1 2 3 4
 
+        |test-every $ quote
+          defn test-every ()
+            let
+                data $ [] 1 2 3 4
+              assert "|try every?" $ not $ every?
+                fn (x) (&> x 1)
+                , data
+              assert "|try every?" $ every?
+                fn (x) (&> x 0)
+                , data
+              assert "|try any?" $ any?
+                fn (x) (&> x 3)
+                , data
+              assert "|try any?" $ not $ any?
+                fn (x) (&> x 4)
+                , data
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -277,6 +294,9 @@
 
             log-title "|Testing compare"
             test-compare
+
+            log-title "|Testing every/any"
+            test-every
 
             echo "|Finished running test"
             do true
