@@ -382,7 +382,7 @@ proc nativeSlice(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
 
 proc nativeConcat(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
-    raiseEvalError("concat requires 2 args", args)
+    raiseEvalError("&concat requires 2 args", args)
   let base = args[0]
   let another = args[1]
 
@@ -396,7 +396,7 @@ proc nativeConcat(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
     return base
 
   if not base.isList or not another.isList:
-    raiseEvalError("concat requires two lists", args)
+    raiseEvalError("&concat requires two lists", args)
 
   return CirruData(kind: crDataList, listVal: base.listVal.concat(another.listVal))
 
@@ -767,7 +767,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["identical"] = CirruData(kind: crDataFn, fnVal: nativeIdentical, fnCode: fakeNativeCode("identical"))
   programData[coreNs].defs["range"] = CirruData(kind: crDataFn, fnVal: nativeRange, fnCode: fakeNativeCode("range"))
   programData[coreNs].defs["slice"] = CirruData(kind: crDataFn, fnVal: nativeSlice, fnCode: fakeNativeCode("slice"))
-  programData[coreNs].defs["concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("concat"))
+  programData[coreNs].defs["&concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("&concat"))
   programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataFn, fnVal: nativeFormatTernaryTree, fnCode: fakeNativeCode("format-ternary-tree"))
   programData[coreNs].defs["merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("merge"))
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContains, fnCode: fakeNativeCode("contains?"))

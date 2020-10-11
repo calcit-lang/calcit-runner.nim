@@ -1,18 +1,15 @@
 
 import macros
 import strformat
+import options
 
 import ternary_tree
 
 import ./types
+import ./data
 
 proc toCirruData(x: string, ns: string): CirruData =
-  if x == "true":
-    CirruData(kind: crDataBool, boolVal: true)
-  elif x == "false":
-    CirruData(kind: crDataBool, boolVal: false)
-  else:
-    CirruData(kind: crDataSymbol, symbolVal: x, ns: ns)
+  return parseLiteral(x, ns, none(CirruDataScope))
 
 proc toCirruData(x: int): CirruData =
   CirruData(kind: crDataNumber, numberVal: x.float)

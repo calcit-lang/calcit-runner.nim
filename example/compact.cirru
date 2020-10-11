@@ -128,8 +128,8 @@
                 slice (range 10) (, 0 10)
                 slice (range 10) (, 5 7)
               echo
-                concat (range 10) (range 4)
-                format-ternary-tree $ concat (range 10) (range 4)
+                &concat (range 10) (range 4)
+                format-ternary-tree $ &concat (range 10) (range 4)
               echo $ format-ternary-tree
                 assoc-before (range 8) (, 4 22)
               echo $ format-ternary-tree

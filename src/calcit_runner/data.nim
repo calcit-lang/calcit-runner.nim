@@ -317,7 +317,7 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
   let toB =  xs.len - fromTo.b.int
   xs[fromA .. toB]
 
-proc parseLiteral(token: string, ns: string, scope: Option[CirruDataScope]): CirruData =
+proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): CirruData =
   if token == "":
     raise newException(ValueError, "Unknown empty symbol")
 
