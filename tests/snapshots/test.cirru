@@ -92,11 +92,17 @@
               assert |range $ = (range 4 10) $ [] 4 5 6 7 8 9
               assert |slice $ = (slice (range 10) 0 10) (range 10)
               assert |slice $ = (slice (range 10) 5 7) ([] 5 6)
-              assert |concat $ =
-                concat (range 10) (range 4)
+              assert |&concat $ =
+                &concat (range 10) (range 4)
                 [] 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+              assert "|concat only 1" $ =
+                concat $ [] 1 2 3
+                [] 1 2 3
+              assert "|concat lists" $ =
+                concat ([] 1 2) ([] 4 5) ([] 7 8)
+                [] 1 2 4 5 7 8
               ; echo
-                format-ternary-tree $ concat (range 10) (range 4)
+                format-ternary-tree $ &concat (range 10) (range 4)
               ; echo $ format-ternary-tree
                 assoc-before (range 8) (, 4 22)
               ; echo $ format-ternary-tree
@@ -115,12 +121,18 @@
                 reverse $ [] |a |b |c |d |e
                 [] |e |d |c |b |a
 
+              echo "|map and concat" $ =
+                mapcat
+                  fn (x) (range x)
+                  [] 1 2 3 4
+                [] 0 0 1 0 1 2 0 1 2 3
+
         |test-str $ quote
           defn test-str ()
-            assert |concat $ = (&str-concat |a |b) |ab
-            assert |concat $ = (&str-concat 1 2) |12
-            assert |concat $ = (str |a |b |c) |abc
-            assert |concat $ = (str 1 2 3) |123
+            assert "|string concat" $ = (&str-concat |a |b) |ab
+            assert "|string concat" $ = (&str-concat 1 2) |12
+            assert "|string concat" $ = (str |a |b |c) |abc
+            assert "|string concat" $ = (str 1 2 3) |123
             assert |convert $ = (type-of (&str 1)) :string
 
         |test-foldl $ quote

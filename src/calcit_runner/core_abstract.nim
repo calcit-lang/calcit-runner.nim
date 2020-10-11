@@ -250,7 +250,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
         ["let", [["x0", ["first", "xs"]]],
           ["if", ["list?", "x0"],
-            ["recur", ["concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
+            ["recur", ["&concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
                       "&", ["rest", "xs"]],
             ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
   , coreNs)
@@ -329,8 +329,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
           ["rest", "xs"], ["first", "xs"]]]]
   , coreNs)
 
-  # echo "generated Cirru: ", genCirru([a, "b?", [c, 1, true, nil]]).toJson()
-
   let codeEveryQuestion = genCirru(
     [defn, "every?", [f, xs],
       ["if", ["empty?", xs], true,
@@ -341,6 +339,17 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defn, "any?", [f, xs],
       ["if", ["empty?", xs], false,
         ["if", [f, [first, xs]], true, [recur, f, [rest, xs]]]]]
+  , coreNs)
+
+  let codeConcat = genCirru(
+    [defn, concat, [item, "&", xs],
+      ["if", ["empty?", xs], item,
+        [recur, ["&concat", item, [first, xs]], "&", [rest, xs]]]]
+  , coreNs)
+
+  let codeMapcat = genCirru(
+    [defn, mapcat, [f, xs],
+      [concat, "&", [map, f, xs]]]
   , coreNs)
 
   # TODO assoc-in
@@ -401,3 +410,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["min"] = codeMin
   programCode[coreNs].defs["every?"] = codeEveryQuestion
   programCode[coreNs].defs["any?"] = codeAnyQuestion
+  programCode[coreNs].defs["concat"] = codeConcat
+  programCode[coreNs].defs["mapcat"] = codeMapcat
