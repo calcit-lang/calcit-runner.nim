@@ -1,253 +1,251 @@
 
-import json
 import tables
 
-import ./data
 import ./types
 import ./gen_code
 
 proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
-  let codeUnless = (%*
+  let codeUnless = genCirru(
     ["defmacro", "unless", ["cond", "true-branch", "false-branch"],
       ["quote-replace", ["if", ["~", "cond"],
                                ["~", "false-branch"],
                                ["~", "true-branch"]]]
-  ]).toCirruCode(coreNs)
+  ], coreNs)
 
-  let codeNativeNotEqual = (%*
+  let codeNativeNotEqual = genCirru(
     ["defn", "&!=", ["x", "y"], ["not", ["&=", "x", "y"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeLittlerEqual = (%*
+  let codeNativeLittlerEqual = genCirru(
     ["defn", "&<=", ["a", "b"],
       ["&or", ["&<", "a", "b"], ["&=", "a", "b"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeLargerEqual = (%*
+  let codeNativeLargerEqual = genCirru(
     ["defn", "&>=", ["a", "b"],
       ["&or", ["&>", "a", "b"], ["&=", "a", "b"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeEmpty = (%*
+  let codeEmpty = genCirru(
     ["defmacro", "empty?", ["x"],
       ["quote-replace", ["&=", 0, ["count", ["~", "x"]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeFirst = (%*
+  let codeFirst = genCirru(
     ["defmacro", "first", ["xs"],
       ["quote-replace", ["get", ["~", "xs"], 0]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeWhen = (%*
+  let codeWhen = genCirru(
     ["defmacro", "when", ["cond", "&", "body"],
       ["quote-replace", ["if", ["do", ["~@", "body"]], "nil"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeFoldl = (%*
+  let codeFoldl = genCirru(
     ["defn", "foldl", ["f", "xs", "acc"],
       ["if", ["empty?", "xs"], "acc",
              ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeAdd = (%*
+  let codeAdd = genCirru(
     ["defn", "+", ["x", "&", "ys"],
       ["foldl", "&+", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMinus = (%*
+  let codeMinus = genCirru(
     ["defn", "-", ["x", "&", "ys"],
       ["foldl", "&-", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMultiply = (%*
+  let codeMultiply = genCirru(
     ["defn", "*", ["x", "&", "ys"],
       ["foldl", "&*", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeDivide = (%*
+  let codeDivide = genCirru(
     ["defn", "/", ["x", "&", "ys"],
       ["foldl", "&/", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeFoldlCompare = (%*
+  let codeFoldlCompare = genCirru(
     ["defn", "foldl-compare", ["f", "xs", "acc"],
       ["if", ["empty?", "xs"], true,
              ["if", ["f", "acc", ["first", "xs"]],
                     ["recur", "f", ["rest", "xs"], ["first", "xs"]],
                     false]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeLittlerThan = (%*
+  let codeLittlerThan = genCirru(
     ["defn", "<", ["x", "&", "ys"], ["foldl-compare", "&<", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeLargerThan = (%*
+  let codeLargerThan = genCirru(
     ["defn", ">", ["x", "&", "ys"], ["foldl-compare", "&>", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeEqual = (%*
+  let codeEqual = genCirru(
     ["defn", "=", ["x", "&", "ys"], ["foldl-compare", "&=", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNotEqual = (%*
+  let codeNotEqual = genCirru(
     ["defn", "!=", ["x", "&", "ys"], ["foldl-compare", "&!=", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeLargerEqual = (%*
+  let codeLargerEqual = genCirru(
     ["defn", ">=", ["x", "&", "ys"], ["foldl-compare", "&>=", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeLittlerEqual = (%*
+  let codeLittlerEqual = genCirru(
     ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
   # TODO might be wrong at some cases, need research
-  let codeApply = (%*
+  let codeApply = genCirru(
     ["defmacro", "apply", ["f", "args"],
       ["quote-replace", ["~", ["prepend", "args", "f"]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeListQuestion = (%*
+  let codeListQuestion = genCirru(
     ["defn", "list?", ["x"], ["&=", ["type-of", "x"], ":list"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMapQuestion = (%*
+  let codeMapQuestion = genCirru(
     ["defn", "map?", ["x"], ["&=", ["type-of", "x"], ":map"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNumberQuestion = (%*
+  let codeNumberQuestion = genCirru(
     ["defn", "number?", ["x"], ["&=", ["type-of", "x"], ":number"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeStringQuestion = (%*
+  let codeStringQuestion = genCirru(
     ["defn", "string?", ["x"], ["&=", ["type-of", "x"], ":string"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeSymbolQuestion = (%*
+  let codeSymbolQuestion = genCirru(
     ["defn", "symbol?", ["x"], ["&=", ["type-of", "x"], ":symbol"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeKeywordQuestion = (%*
+  let codeKeywordQuestion = genCirru(
     ["defn", "keyword?", ["x"], ["&=", ["type-of", "x"], ":keyword"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeBoolQuestion = (%*
+  let codeBoolQuestion = genCirru(
     ["defn", "bool?", ["x"], ["&=", ["type-of", "x"], ":bool"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNilQuestion = (%*
+  let codeNilQuestion = genCirru(
     ["defn", "nil?", ["x"], ["&=", ["type-of", "x"], ":nil"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeEach = (%*
+  let codeEach = genCirru(
     ["defn", "each", ["f", "xs"],
       ["if", ["not", ["empty?", "xs"]],
         ["do",
           ["f", ["first", "xs"]],
           ["recur", "f", ["rest", "xs"]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMap = (%*
+  let codeMap = genCirru(
     ["defn", "map", ["f", "xs"],
       ["foldl",
         ["fn", ["acc", "x"],
           ["append", "acc", ["f", "x"]]],
         "xs", ["[]"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeTake = (%*
+  let codeTake = genCirru(
     ["defn", "take", ["n", "xs"],
       ["slice", "xs", 0, "n"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeDrop = (%*
+  let codeDrop = genCirru(
     ["defn", "drop", ["n", "xs"],
       ["slice", "xs", "n", ["count", "xs"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeStr = (%*
+  let codeStr = genCirru(
     ["defn", "str", ["&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&str-concat", "acc", "item"]],
         "xs", "|"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeInclude = (%*
+  let codeInclude = genCirru(
     ["defn", "include", ["base", "&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&include", "acc", "item"]],
         "xs", "base"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeExclude = (%*
+  let codeExclude = genCirru(
     ["defn", "exclude", ["base", "&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&exclude", "acc", "item"]],
         "xs", "base"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeDifference = (%*
+  let codeDifference = genCirru(
     ["defn", "difference", ["base", "&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&difference", "acc", "item"]],
         "xs", "base"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeUnion = (%*
+  let codeUnion = genCirru(
     ["defn", "union", ["base", "&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&union", "acc", "item"]],
         "xs", "base"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeIntersection = (%*
+  let codeIntersection = genCirru(
     ["defn", "intersection", ["base", "&", "xs"],
       ["foldl",
         ["fn", ["acc", "item"],
           ["&intersection", "acc", "item"]],
         "xs", "base"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeIndexOf = (%*
+  let codeNativeIndexOf = genCirru(
     ["defn", "&index-of", ["idx", "xs", "item"],
       ["if", ["empty?", "xs"], "nil",
         ["if", ["&=", "item", ["first", "xs"]], "idx",
           ["recur", ["&+", 1, "idx"], ["rest", "xs"], "item"]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeIndexOf = (%*
+  let codeIndexOf = genCirru(
     ["defn", "index-of", ["xs", "item"],
       ["&index-of", 0, "xs", "item"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeFindIndex = (%*
+  let codeNativeFindIndex = genCirru(
     ["defn", "&find-index", ["idx", "f", "xs"],
       ["if", ["empty?", "xs"], "nil",
         ["if", ["f", ["first", "xs"]], "idx",
           ["recur", ["&+", 1, "idx"], "f", ["rest", "xs"]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeFindIndex = (%*
+  let codeFindIndex = genCirru(
     ["defn", "find-index", ["f", "xs"],
       ["let",
         [["idx", ["&find-index", 0, "f", "xs"]]],
         ["if", ["nil?", "idx"], "nil", "idx"]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeFind = (%*
+  let codeFind = genCirru(
     ["defn", "find", ["f", "xs"],
       ["let",
         [["idx", ["&find-index", 0, "f", "xs"]]],
         ["if", ["nil?", "idx"], "nil", ["get", "xs", "idx"]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeThreadFirst = (%*
+  let codeThreadFirst = genCirru(
     ["defmacro", "->", ["base", "&", "xs"],
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
         ["let", [["x0", ["first", "xs"]]],
@@ -255,18 +253,18 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
             ["recur", ["concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
                       "&", ["rest", "xs"]],
             ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeThreadLast = (%*
+  let codeThreadLast = genCirru(
     ["defmacro", "->>", ["base", "&", "xs"],
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
         ["let", [["x0", ["first", "xs"]]],
           ["if", ["list?", "x0"],
             ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
             ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeCond = (%*
+  let codeCond = genCirru(
     ["defmacro", "cond", ["pair", "&", "else"],
       ["assert", "|expects a pair",
         ["&and", ["list?", "pair"], ["&=", 2, ["count", "pair"]]]],
@@ -279,9 +277,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                 ["cond", ["~", ["first", "else"]],
                   "&", ["~", ["rest", "else"]]]]]]]]]
       ]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeCase = (%*
+  let codeCase = genCirru(
     ["defmacro", "case", ["item", "pattern", "&", "else"],
       ["assert", "|pattern is a pair",
         ["&and", ["list?", "pattern"], ["&=", "2", ["count", "pattern"]]]],
@@ -291,45 +289,45 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
           ["if", ["&=", ["~", "item"], ["~", "expr"]], ["~", "branch"],
             ["~", ["if", ["empty?", "else"], "nil",
                     ["quote-replace", ["case", ["~", "item"], "&", ["~", "else"]]]]]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeGetIn = (%*
+  let codeGetIn = genCirru(
     ["defn", "get-in", ["base", "path"],
       ["assert", "|path is a list", ["list?", "path"]],
       ["cond",
         [["nil?", "base"], "nil"],
         [["empty?", "path"], "base"],
         [true, ["recur", ["get", "base", ["first", "path"]], ["rest", "path"]]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeMax = (%*
+  let codeNativeMax = genCirru(
     ["defn", "&max", ["a", "b"],
       ["assert", "|find max from numbers", ["&and", ["number?", "a"], ["number?", "b"]]],
       ["if", ["&>", "a", "b"], "a", "b"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeNativeMin = (%*
+  let codeNativeMin = genCirru(
     ["defn", "&min", ["a", "b"],
       ["assert", "|find min from numbers", ["&and", ["number?", "a"], ["number?", "b"]]],
       ["if", ["&<", "a", "b"], "a", "b"]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMax = (%*
+  let codeMax = genCirru(
     ["defn", "max", ["xs"],
       ["if", ["empty?", "xs"], "nil",
         ["foldl",
           ["fn", ["acc", "x"],
             ["&max", "acc", "x"]],
           ["rest", "xs"], ["first", "xs"]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
-  let codeMin = (%*
+  let codeMin = genCirru(
     ["defn", "min", ["xs"],
       ["if", ["empty?", "xs"], "nil",
         ["foldl",
           ["fn", ["acc", "x"], ["&min", "acc", "x"]],
           ["rest", "xs"], ["first", "xs"]]]]
-  ).toCirruCode(coreNs)
+  , coreNs)
 
   # echo "generated Cirru: ", genCirru([a, "b?", [c, 1, true, nil]]).toJson()
 
