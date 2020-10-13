@@ -1,6 +1,7 @@
 
 import os
 import strutils
+import lists
 import json
 import strformat
 import terminal
@@ -151,14 +152,12 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruDa
     var newFile = ProgramFile()
     programData[ns] = newFile
 
-  var file = programData[ns]
-
-  if not file.defs.hasKey(def):
+  if not programData[ns].defs.hasKey(def):
     let code = programCode[ns].defs[def]
 
-    file.defs[def] = interpret(code, scope)
+    programData[ns].defs[def] = interpret(code, scope)
 
-  return file.defs[def]
+  return programData[ns].defs[def]
 
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
   let dict = programData[ns].ns
@@ -206,7 +205,8 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let mainCode = programCode[pieces[0]].defs[pieces[1]]
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)]
+  defStack = initDoublyLinkedList[StackInfo]()
+  pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]
@@ -246,7 +246,8 @@ proc reloadProgram(snapshotFile: string): void =
     raise newException(ValueError, "expects a function at app.main/main!")
 
   let mainCode = programCode[pieces[0]].defs[pieces[1]]
-  defStack = @[StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)]
+  defStack = initDoublyLinkedList[StackInfo]()
+  pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
 
   let f = entry.fnVal
   let args: seq[CirruData] = @[]

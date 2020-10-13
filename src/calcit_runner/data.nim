@@ -265,10 +265,10 @@ proc toCirruData*(v: JsonNode): CirruData =
   of JNull:
     return CirruData(kind: crDataNil)
   of JArray:
-    var arr: seq[CirruData]
+    var arr = initTernaryTreeList[CirruData](@[])
     for v in v.elems:
-      arr.add toCirruData(v)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
+      arr = arr.append toCirruData(v)
+    return CirruData(kind: crDataList, listVal: arr)
   of JObject:
     var table = initTable[CirruData, CirruData]()
     for key, value in v:
@@ -347,10 +347,10 @@ proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): Cir
   if xs.kind == cirruString:
     parseLiteral(xs.text, ns, scope)
   else:
-    var list: seq[CirruData] = @[]
+    var list = initTernaryTreeList[CirruData](@[])
     for x in xs:
-      list.add x.toCirruData(ns, scope)
-    CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+      list = list.append x.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: list)
 
 proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
   case xs.kind
@@ -360,15 +360,15 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
   of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
   of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: xs.keywordVal)
   of crEdnVector:
-    var ys: seq[CirruData] = @[]
+    var ys = initTernaryTreeList[CirruData](@[])
     for item in xs.listVal:
-      ys.add item.toCirruData(ns, scope)
-    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+      ys = ys.append item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: ys)
   of crEdnList:
-    var ys: seq[CirruData] = @[]
+    var ys = initTernaryTreeList[CirruData](@[])
     for item in xs.listVal:
-      ys.add item.toCirruData(ns, scope)
-    CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+      ys = ys.append item.toCirruData(ns, scope)
+    CirruData(kind: crDataList, listVal: ys)
   of crEdnSet:
     var ys: seq[CirruData] = @[]
     for item in xs.listVal:

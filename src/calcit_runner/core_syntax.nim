@@ -13,10 +13,10 @@ import ./helpers
 import ./format
 
 proc nativeList(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  var args: seq[CirruData]
+  var args = initTernaryTreeList[CirruData](@[])
   for node in exprList:
-    args.add interpret(node, scope)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
+    args = args.append interpret(node, scope)
+  return CirruData(kind: crDataList, listVal: args)
 
 proc nativeIf*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if (exprList.len < 2):
@@ -83,13 +83,13 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): Cirru
       if definedArgName.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", definedArgName)
       argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
-    var varList: seq[CirruData] = @[]
+    var varList = initTernaryTreeList[CirruData](@[])
     for idx in splitPosition..<passedArgs.len:
-      varList.add passedArgs[idx]
+      varList = varList.append passedArgs[idx]
     let varArgName = definedArgs[definedArgs.len - 1]
     if varArgName.kind != crDataSymbol:
       raiseEvalError("Expected var arg in symbol", varArgName)
-    argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: initTernaryTreeList(varList)))
+    argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: varList))
     return argsScope
 
   else:
@@ -207,10 +207,10 @@ proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   of crDataSymbol:
     return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
   of crDataList:
-    var list: seq[CirruData] = @[]
+    var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
-      list.add attachScope(item, scope)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+      list = list.append attachScope(item, scope)
+    return CirruData(kind: crDataList, listVal: list)
   of crDataNil: return exprList
   of crDataBool: return exprList
   of crDataNumber: return exprList
@@ -240,14 +240,14 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
         raiseEvalError "Expected 1 argument in ~ of quote-replace", exprList
       return interpret(exprList[1], scope)
 
-    var list: seq[CirruData] = @[]
+    var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
       if item.kind == crDataList:
         let head = item[0]
         if head.symbolVal == "~":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~ of quote-replace", item
-          list.add interpret(item[1], scope)
+          list = list.append interpret(item[1], scope)
         elif head.symbolVal == "~@":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~@ of quote-replace", item
@@ -255,12 +255,12 @@ proc replaceExpr(exprList: CirruData, interpret: EdnEvalFn, scope: CirruDataScop
           if xs.kind != crDataList:
             raiseEvalError "Expected list for ~@ of quote-replace", xs
           for x in xs:
-            list.add x
+            list = list.append x
         else:
-          list.add replaceExpr(item, interpret, scope)
+          list = list.append replaceExpr(item, interpret, scope)
       else:
-        list.add replaceExpr(item, interpret, scope)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(list))
+        list = list.append replaceExpr(item, interpret, scope)
+    return CirruData(kind: crDataList, listVal: list)
   else:
     raiseEvalError("Unknown data in expr", exprList)
 

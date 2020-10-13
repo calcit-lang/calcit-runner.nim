@@ -1,4 +1,5 @@
 
+import lists
 import tables
 import options
 import strutils
@@ -7,7 +8,7 @@ import ./types
 import ./data
 import ./helpers
 
-var defStack*: seq[StackInfo] = @[]
+var defStack*: DoublyLinkedList[StackInfo]
 
 # originally from clojure `(ns app.lib (:require [a.b :as a] [a.c :refer [b]]))`
 # not in Cirru vectors, a little different, but `:as` and `:refer` are copied
@@ -73,7 +74,7 @@ proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
       file.defs.clear
 
 proc pushDefStack*(x: StackInfo): void =
-  defStack.add x
+  defStack.append x
 
 proc popDefStack*(): void =
-  discard defStack.pop
+  defStack.remove defStack.tail
