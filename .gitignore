@@ -10,6 +10,7 @@ calcitRunner_*.nims
 src/cr
 tests/test_expr
 tests/run_calcit
+tests/prof
 
 src/*.out
 

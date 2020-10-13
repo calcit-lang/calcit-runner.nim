@@ -180,6 +180,8 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   programCode = snapshotInfo.files
   codeConfigs = snapshotInfo.configs
 
+  programData.clear
+
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
