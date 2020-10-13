@@ -1,7 +1,8 @@
 
-import cirru_parser
+import lists
 import terminal
 
+import cirru_parser
 import ternary_tree
 
 import ./types
@@ -46,3 +47,7 @@ proc coreFnError*(msg: string, x: CirruData = CirruData(kind: crDataNil)) =
 proc reversed*[T](s: seq[T]): seq[T] =
   result = newSeq[T](s.len)
   for i in 0 .. s.high: result[s.high - i] = s[i]
+
+proc reversed*[T](s: DoublyLinkedList[T]): DoublyLinkedList[T] =
+  for i in s:
+    result.append i
