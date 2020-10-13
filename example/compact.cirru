@@ -202,7 +202,7 @@
         |var-fn $ quote
           defn var-fn (a & xs) (echo a xs)
         |try-fibo $ quote
-          defn try-fibo () (echo "\"fibo result:" $ fibo 16)
+          defn try-fibo () (echo "\"fibo result:" $ fibo 11)
         |try-func $ quote
           defn try-func () (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true)
         |try-foldl $ quote
