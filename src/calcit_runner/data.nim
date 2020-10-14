@@ -97,7 +97,7 @@ proc `==`*(x, y: CirruData): bool =
         return false
 
       for idx, xi in x.listVal:
-        if xi != y.listVal.get(idx):
+        if xi != y.listVal[idx]:
           return false
       return true
 
@@ -280,7 +280,7 @@ proc toCirruData*(v: JsonNode): CirruData =
 proc `[]`*(xs: CirruData, idx: int): CirruData =
   case xs.kind:
   of crDataList:
-    xs.listVal.get(idx)
+    xs.listVal[idx]
   else:
     raise newException(ValueError, "Cannot index on cirru string")
 

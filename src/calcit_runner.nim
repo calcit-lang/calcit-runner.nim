@@ -50,11 +50,11 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
     raiseEvalError("Expects a symbol", sym)
 
   if sym.scope.isSome:
-    let fromOriginalScope = sym.scope.get.get(sym.symbolVal)
+    let fromOriginalScope = sym.scope.get[sym.symbolVal]
     if fromOriginalScope.isSome:
       return fromOriginalScope.get
   elif scope.contains(sym.symbolVal):
-    let fromScope = scope.get(sym.symbolVal)
+    let fromScope = scope[sym.symbolVal]
     if fromScope.isSome:
       return fromScope.get
 
