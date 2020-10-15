@@ -110,7 +110,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     for child in exprList[2..^1]:
       ret = interpret(child, innerScope)
     if ret.isRecur:
-      ret.finished = true
+      ret.fnReady = true
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))

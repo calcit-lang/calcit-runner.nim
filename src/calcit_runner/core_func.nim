@@ -744,7 +744,7 @@ proc nativeIntersection(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
 proc nativeRecur(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  return CirruData(kind: crDataRecur, args: args, finished: false)
+  return CirruData(kind: crDataRecur, args: args, fnReady: false)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =

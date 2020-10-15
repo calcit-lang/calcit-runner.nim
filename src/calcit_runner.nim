@@ -8,6 +8,7 @@ import terminal
 import tables
 import options
 import parseopt
+import sets
 
 import cirru_parser
 import cirru_edn
@@ -120,7 +121,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
 
     pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.fnCode[], args: args))
     var ret = f(args, interpret, scope)
-    while ret.isRecur and ret.finished:
+    while ret.isRecur and ret.fnReady:
       ret = f(ret.args, interpret, scope)
     popDefStack()
     return ret
@@ -147,6 +148,97 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
   else:
     raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
 
+# mutual recursion
+proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData
+
+proc preprocessSymbolByPath(ns: string, def: string): CirruData =
+  if not programData.hasKey(ns):
+    var newFile = ProgramFile()
+    programData[ns] = newFile
+
+  if not programData[ns].defs.hasKey(def):
+    var code = programCode[ns].defs[def]
+    code = preprocess(code, toHashset[string](@[]))
+    programData[ns].defs[def] = interpret(code, CirruDataScope())
+
+  return programData[ns].defs[def]
+
+proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
+  case code.kind
+  of crDataSymbol:
+    if localDefs.contains(code.symbolVal):
+      return code
+    else:
+      var sym = code
+
+      let coreDefs = programData[coreNs].defs
+      if coreDefs.contains(sym.symbolVal):
+        return coreDefs[sym.symbolVal]
+
+      if hasNsAndDef(coreNs, sym.symbolVal):
+        return preprocessSymbolByPath(coreNs, sym.symbolVal)
+
+      if hasNsAndDef(sym.ns, sym.symbolVal):
+        return preprocessSymbolByPath(sym.ns, sym.symbolVal)
+      elif sym.ns.startsWith("calcit."):
+        raiseEvalError("Cannot find symbol in core lib", sym)
+      else:
+        let importDict = loadImportDictByNs(sym.ns)
+        if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
+          let pieces = sym.symbolVal.split('/')
+          if pieces.len != 2:
+            raiseEvalError("Expects token in ns/def", sym)
+          let nsPart = pieces[0]
+          let defPart = pieces[1]
+          if importDict.hasKey(nsPart):
+            let importTarget = importDict[nsPart]
+            case importTarget.kind:
+            of importNs:
+              return preprocessSymbolByPath(importTarget.ns, defPart)
+            of importDef:
+              raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
+        else:
+          if importDict.hasKey(sym.symbolVal):
+            let importTarget = importDict[sym.symbolVal]
+            case importTarget.kind:
+            of importDef:
+              return preprocessSymbolByPath(importTarget.ns, importTarget.def)
+            of importNs:
+              raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
+
+          raiseEvalError(fmt"Unknown token {sym.symbolVal}", sym)
+
+  of crDataList:
+    if code.listVal.len == 0:
+      return code
+    else:
+      let head = code.listVal[0]
+      let value = preprocess(head, localDefs)
+      case value.kind
+      of crDataFn:
+        var xs = initTernaryTreeList[CirruData](@[value])
+        for child in code.listVal.rest:
+          xs = xs.append preprocess(child, localDefs)
+        return CirruData(kind: crDataList, listVal: xs)
+      of crDataMacro:
+        let f = value.macroVal
+        let emptyScope = CirruDataScope()
+        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: code[1..^1]))
+
+        var quoted = f(spreadArgs(code[1..^1]), interpret, emptyScope)
+        while quoted.isRecur:
+          quoted = f(quoted.args.spreadArgs, interpret, emptyScope)
+        popDefStack()
+        echo "Expanded macro", quoted
+        return preprocess(quoted, localDefs)
+      of crDataSyntax:
+        echo "Should preprocess syntax", code
+        return code
+      else:
+        return code
+  else:
+    return code
+
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData =
   if not programData.hasKey(ns):
     var newFile = ProgramFile()
@@ -154,7 +246,6 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruDa
 
   if not programData[ns].defs.hasKey(def):
     let code = programCode[ns].defs[def]
-
     programData[ns].defs[def] = interpret(code, scope)
 
   return programData[ns].defs[def]
@@ -201,6 +292,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
+  discard preprocessSymbolByPath(pieces[0], pieces[1])
   let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
   if entry.kind != crDataFn:
@@ -242,6 +334,7 @@ proc reloadProgram(snapshotFile: string): void =
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
+  discard preprocessSymbolByPath(pieces[0], pieces[1])
   let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
   if entry.kind != crDataFn:
