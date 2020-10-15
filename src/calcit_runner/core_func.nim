@@ -285,6 +285,22 @@ proc nativeFirst(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
   else:
     raiseEvalError("first requires a list", args)
 
+proc nativeEmptyQuestion(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("empty? requires 1 args", args)
+  let base = args[0]
+  case base.kind
+  of crDataNil:
+    return CirruData(kind: crDataBool, boolVal: true)
+  of crDataList:
+    return CirruData(kind: crDataBool, boolVal: base.listVal.len == 0)
+  of crDataMap:
+    return CirruData(kind: crDataBool, boolVal: base.mapVal.isEmpty)
+  of crDataSet:
+    return CirruData(kind: crDataBool, boolVal: base.setVal.len == 0)
+  else:
+    raiseEvalError("Cannot detect empty", args)
+
 proc nativeLast(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
     raiseEvalError("last requires 1 args", args)
@@ -758,6 +774,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataFn, fnVal: nativePrepend, fnCode: fakeNativeCode("prepend"))
   programData[coreNs].defs["append"] = CirruData(kind: crDataFn, fnVal: nativeAppend, fnCode: fakeNativeCode("append"))
   programData[coreNs].defs["first"] = CirruData(kind: crDataFn, fnVal: nativeFirst, fnCode: fakeNativeCode("first"))
+  programData[coreNs].defs["empty?"] = CirruData(kind: crDataFn, fnVal: nativeEmptyQuestion, fnCode: fakeNativeCode("empty?"))
   programData[coreNs].defs["last"] = CirruData(kind: crDataFn, fnVal: nativeLast, fnCode: fakeNativeCode("last"))
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataFn, fnVal: nativeButlast, fnCode: fakeNativeCode("butlast"))
   programData[coreNs].defs["reverse"] = CirruData(kind: crDataFn, fnVal: nativeReverse, fnCode: fakeNativeCode("reverse"))

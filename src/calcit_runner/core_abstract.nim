@@ -27,14 +27,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["&or", ["&>", "a", "b"], ["&=", "a", "b"]]]
   , coreNs)
 
-  let codeEmpty = genCirru(
-    ["defmacro", "empty?", ["x"],
-      ["quote-replace", ["&=", 0, ["count", ["~", "x"]]]]]
-  , coreNs)
-
   let codeFirst = genCirru(
-    ["defmacro", "first", ["xs"],
-      ["quote-replace", ["get", ["~", "xs"], 0]]]
+    ["fn", "first", ["xs"],
+      ["get", "xs", 0]]
   , coreNs)
 
   let codeWhen = genCirru(
@@ -360,7 +355,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&!="] = codeNativeNotEqual
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
   programCode[coreNs].defs["&>="] = codeNativeLargerEqual
-  programCode[coreNs].defs["empty?"] = codeEmpty
   programCode[coreNs].defs["first"] = codeFirst
   programCode[coreNs].defs["when"] = codeWhen
   programCode[coreNs].defs["foldl"] = codeFoldl

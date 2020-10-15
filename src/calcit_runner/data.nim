@@ -447,8 +447,9 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
       let ys = interpret(x, scope)
       if not ys.isList:
         raiseEvalError("Spread mode expects a list", xs)
-      for y in ys:
+      ys.listVal.each(proc(y: CirruData): void =
         args.add y
+      )
       spreadMode = false
     elif x.isSymbol and x.symbolVal == "&":
       spreadMode = true

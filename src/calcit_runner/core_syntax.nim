@@ -62,18 +62,14 @@ proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
 proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): CirruDataScope =
   var argsScope: CirruDataScope
 
-  var variadic = false
-  var splitPosition = -1
   var counter = 0
-  for idx, item in definedArgs:
-    if item.kind == crDataSymbol and item.symbolVal == "&":
-      variadic = true
-      if idx.kind != crDataNumber:
-        raiseEvalError("Expected a number from for/pairs", idx)
-      splitPosition = idx.numberVal.int
-      break
+  if definedArgs.kind != crDataList:
+    raiseEvalError("Expected a list as arguments", definedArgs)
+  let splitPosition = definedArgs.listVal.findIndex(proc(item: CirruData): bool =
+    item.kind == crDataSymbol and item.symbolVal == "&"
+  )
 
-  if variadic:
+  if splitPosition >= 0:
     if passedArgs.len < splitPosition:
       raiseEvalError("No enough arguments", definedArgs)
     if splitPosition != (definedArgs.len - 2):
@@ -96,11 +92,12 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): Cirru
     var counter = 0
     if definedArgs.len != passedArgs.len:
       raiseEvalError(fmt"Args length mismatch: {definedArgs.len} {passedArgs.len}", definedArgs)
-    for arg in definedArgs:
+    definedArgs.listVal.each(proc(arg: CirruData): void =
       if arg.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", arg)
       argsScope = argsScope.assoc(arg.symbolVal, passedArgs[counter])
       counter += 1
+    )
     return argsScope
 
 proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
