@@ -12,7 +12,7 @@
         |try-fibo $ quote
           defn try-fibo ()
             let
-                n 10
+                n 12
               echo "\"fibo result:" n $ fibo n
 
         |fibo $ quote
