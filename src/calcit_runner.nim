@@ -45,6 +45,15 @@ proc hasNsAndDef(ns: string, def: string): bool =
 # mutual recursion
 proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
+proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData
+
+proc nativeEval(item: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  var code = interpret(item, scope)
+  # code = preprocess(item, toHashset[string](@[]))
+  if not checkExprStructure(code):
+    raiseEvalError("Expected cirru expr in eval(...)", code)
+  dimEcho("eval: ", $code)
+  interpret code, scope
 
 proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
   if sym.kind != crDataSymbol:
@@ -110,6 +119,15 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     raiseEvalError("Cannot interpret empty expression", xs)
 
   let head = xs[0]
+
+  if head.kind == crDataSymbol and head.symbolVal == "eval":
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: xs, args: xs[1..^1]))
+    if xs.len < 2:
+      raiseEvalError("eval expects 1 argument", xs)
+    let ret = nativeEval(xs[1], interpret, scope)
+    popDefStack()
+    return ret
+
   let value = interpret(head, scope)
   case value.kind
   of crDataString:
@@ -147,9 +165,6 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
 
   else:
     raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
-
-# mutual recursion
-proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData
 
 proc preprocessSymbolByPath(ns: string, def: string): CirruData =
   if not programData.hasKey(ns):
