@@ -747,6 +747,23 @@ proc nativeIntersection(args: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
 proc nativeRecur(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   return CirruData(kind: crDataRecur, args: args, fnReady: false)
 
+proc nativeFoldl(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
+  let f = args[0]
+  if f.kind != crDataFn: raiseEvalError("Expects f to be a function", args)
+  let xs = args[1]
+  var acc = args[2]
+  if xs.kind == crDataNil:
+    return acc
+
+  if xs.kind != crDataList:
+    raiseEvalError("Expects xs to be a list", args)
+
+  for item in xs.listVal:
+    acc = f.fnVal(@[acc, item], interpret, scope)
+
+  return acc
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
@@ -812,3 +829,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&union"] = CirruData(kind: crDataFn, fnVal: nativeUnion, fnCode: fakeNativeCode("#union"))
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataFn, fnVal: nativeIntersection, fnCode: fakeNativeCode("#intersection"))
   programData[coreNs].defs["recur"] = CirruData(kind: crDataFn, fnVal: nativeRecur, fnCode: fakeNativeCode("recur"))
+  programData[coreNs].defs["foldl"] = CirruData(kind: crDataFn, fnVal: nativeFoldl, fnCode: fakeNativeCode("foldl"))

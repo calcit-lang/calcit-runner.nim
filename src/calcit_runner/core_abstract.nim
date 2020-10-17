@@ -37,6 +37,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["quote-replace", ["if", ["do", ["~@", "body"]], "nil"]]]
   , coreNs)
 
+  # use native foldl for performance
   let codeFoldl = genCirru(
     ["defn", "foldl", ["f", "xs", "acc"],
       ["if", ["empty?", "xs"], "acc",
@@ -357,7 +358,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&>="] = codeNativeLargerEqual
   programCode[coreNs].defs["first"] = codeFirst
   programCode[coreNs].defs["when"] = codeWhen
-  programCode[coreNs].defs["foldl"] = codeFoldl
+
+  # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["+"] = codeAdd
   programCode[coreNs].defs["-"] = codeMinus
   programCode[coreNs].defs["*"] = codeMultiply
