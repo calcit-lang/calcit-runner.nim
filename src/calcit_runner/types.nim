@@ -40,6 +40,8 @@ type
 
   FnInData* = proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
 
+  ResolvedPath* = tuple[ns: string, def: string]
+
   CirruData* = object
     case kind*: CirruDataKind
     of crDataNil: discard
@@ -62,10 +64,11 @@ type
     of crDataSymbol:
       symbolVal*: string
       ns*: string
+      resolved*: Option[ResolvedPath]
       scope*: Option[CirruDataScope]
     of crDataRecur:
       args*: seq[CirruData]
-      finished*: bool
+      fnReady*: bool
 
   RefCirruData* = ref CirruData
 

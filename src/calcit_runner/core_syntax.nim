@@ -10,7 +10,7 @@ import ternary_tree
 import ./data
 import ./types
 import ./helpers
-import ./format
+# import ./format
 
 proc nativeList(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   var args = initTernaryTreeList[CirruData](@[])
@@ -101,6 +101,9 @@ proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): Cirru
     return argsScope
 
 proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  # echo "defn: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
+  # writeStackTrace()
+
   let f = proc(xs: seq[CirruData], interpret2: EdnEvalFn, scope2: CirruDataScope): CirruData =
     let argsList = exprList[1]
 
@@ -110,7 +113,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
     for child in exprList[2..^1]:
       ret = interpret(child, innerScope)
     if ret.isRecur:
-      ret.finished = true
+      ret.fnReady = true
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
@@ -188,15 +191,6 @@ proc nativeDo*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   result = CirruData(kind: crDataNil)
   for child in exprList:
     result = interpret(child, scope)
-
-proc nativeEval(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  if exprList.len != 1:
-    raiseEvalError("eval expects 1 argument", exprList)
-  let code = interpret(exprList[0], scope)
-  if not checkExprStructure(code):
-    raiseEvalError("Expected cirru expr in eval(...)", code)
-  dimEcho("eval: ", $code)
-  interpret code, scope
 
 # TODO, symbols in macros refers to define scope
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
@@ -285,23 +279,9 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: EdnEvalFn, scope: Cirru
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
   return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
 
-proc nativeDefSyntax(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
-  let f = proc(xs: seq[CirruData], callingFn: EdnEvalFn, callingScope: CirruDataScope): CirruData =
-    let argsList = exprList[1]
-
-    let innerScope = scope.merge(processArguments(argsList, xs))
-
-    var ret = CirruData(kind: crDataNil)
-    for child in exprList[2..^1]:
-      ret = interpret(child, innerScope)
-    return ret
-
-  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataSyntax, syntaxVal: f, syntaxCode: code)
-
 proc nativeAssert(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if exprList.len != 2:
-    raiseEvalError("eval expects 1 argument", exprList)
+    raiseEvalError("assert expects 1 argument", exprList)
   let message = interpret(exprList[0], scope)
   if message.kind != crDataString:
     raiseEvalError("Expected assert message in string", exprList[0])
@@ -316,13 +296,11 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: Edn
   programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert, syntaxCode: fakeNativeCode("assert"))
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace, syntaxCode: fakeNativeCode("quote-replace"))
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro, syntaxCode: fakeNativeCode("defmacro"))
-  programData[coreNs].defs["defsyntax"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefSyntax, syntaxCode: fakeNativeCode("defsyntax"))
   programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment, syntaxCode: fakeNativeCode(";"))
-  programData[coreNs].defs["eval"] = CirruData(kind: crDataSyntax, syntaxVal: nativeEval, syntaxCode: fakeNativeCode("eval"))
   programData[coreNs].defs["do"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDo, syntaxCode: fakeNativeCode("do"))
   programData[coreNs].defs["if"] = CirruData(kind: crDataSyntax, syntaxVal: nativeIf, syntaxCode: fakeNativeCode("if"))
   programData[coreNs].defs["defn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefn, syntaxCode: fakeNativeCode("defn"))
-  programData[coreNs].defs["fn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeFn, syntaxCode: fakeNativeCode("defn"))
+  programData[coreNs].defs["fn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeFn, syntaxCode: fakeNativeCode("fn"))
   programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet, syntaxCode: fakeNativeCode("let"))
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote, syntaxCode: fakeNativeCode("quote"))
   programData[coreNs].defs["{}"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMap, syntaxCode: fakeNativeCode("{}"))
