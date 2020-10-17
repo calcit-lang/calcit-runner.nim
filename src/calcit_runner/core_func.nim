@@ -225,6 +225,7 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
     raiseEvalError("load-json requires relative path to json file", args)
 
   let code = args[0]
+  # echo "macroexpanding: ", code
   if code.isList.not or checkExprStructure(code).not or code.len == 0:
     raiseEvalError(fmt"Unexpected structure from macroexpand", code)
 
