@@ -2,6 +2,8 @@
 import macros
 import strformat
 import options
+import json
+import sequtils
 
 import ternary_tree
 
@@ -47,3 +49,51 @@ macro genCirru*(code: untyped, ns: untyped): CirruData =
     return node
   else:
     raise newException(ValueError, fmt"Unknown kind of code {code.kind}, {code.treeRepr}")
+
+proc toCirruCode*(v: JsonNode, ns: string): CirruData =
+  case v.kind
+  of JBool:
+    return CirruData(kind: crDataBool, boolVal: v.bval)
+  of JString:
+    return parseLiteral(v.str, ns, none(CirruDataScope))
+  of JInt:
+    return CirruData(kind: crDataNumber, numberVal: v.num.float)
+  of JFloat:
+    return CirruData(kind: crDataNumber, numberVal: v.fnum)
+  of JArray:
+    let arr = v.elems.map(proc(item: JsonNode): CirruData =
+      item.toCirruCode(ns)
+    )
+    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
+  else:
+    echo "Unexpected type: ", v
+    raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
+
+proc checkExprStructure*(exprList: CirruData): bool =
+  case exprList.kind
+  of crDataSymbol: return true
+  of crDataNumber: return true
+  of crDataBool: return true
+  of crDataNil: return true
+  of crDataString: return true
+  of crDataKeyword: return true
+  of crDataList:
+    for item in exprList:
+      if not checkExprStructure(item):
+        return false
+    return true
+  else:
+    return false
+
+proc fakeNativeCode*(info: string): RefCirruData =
+  RefCirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
+    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
+  ]))
+
+proc shortenCode*(code: string, n: int): string =
+  if code.len > n:
+    code[0..<n] & "..."
+  else:
+    code

@@ -21,12 +21,12 @@ import calcit_runner/data
 import calcit_runner/core_syntax
 import calcit_runner/core_func
 import calcit_runner/core_abstract
-import calcit_runner/helpers
+import calcit_runner/errors
 import calcit_runner/loader
-import calcit_runner/scope
-import calcit_runner/format
+import calcit_runner/stack
 import calcit_runner/gen_data
 import calcit_runner/preprocess
+import calcit_runner/gen_code
 
 var programCode: Table[string, FileSource]
 var programData: Table[string, ProgramFile]
@@ -131,18 +131,8 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     return ret
 
   of crDataMacro:
-
-    echo "[warn] Running macros: ", xs
-
-    let f = value.macroVal
-    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: xs[1..^1]))
-
-    var quoted = f(spreadArgs(xs[1..^1]), interpret, scope)
-    while quoted.isRecur:
-      quoted = f(quoted.args.spreadArgs, interpret, scope)
-    let ret = interpret(quoted, scope)
-    popDefStack()
-    return ret
+    echo "[warn] Found macros: ", xs
+    raiseEvalError("Macros are supposed to be handled during preprocessing", xs)
 
   of crDataSyntax:
     let f = value.syntaxVal
@@ -372,6 +362,13 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     showStack()
     echo ""
     raise e
+
+proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
+  for ns, f in programData:
+    var file = programData[ns]
+    if not ns.startsWith("calcit."):
+      file.ns = none(Table[string, ImportInfo])
+      file.defs.clear
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
