@@ -13,8 +13,10 @@ import cirru_edn
 
 import ./types
 import ./data
-import ./format
-import ./helpers
+import ./errors
+import ./to_json
+import ./gen_data
+import ./gen_code
 
 proc nativeAdd(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
