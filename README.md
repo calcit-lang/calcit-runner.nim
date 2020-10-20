@@ -1,16 +1,20 @@
 
-Calcit Runner in Nim
+Calcit Runner
 ----
 
 > (Under development) Run Calcit data directly with nim.
 
-Calcit Editor was designed for Clojure(Script). It emits a snapshot file as well as `.clj(s)` files.
-And a Clojure(Script) runtime is required for running such a program.
-In latest Calcit Editor, settings `:compact-output? true` in `:configs` enables compact mode,
+Running [Calcit Editor](https://github.com/Cirru/calcit-editor#compact-output) with `compact=true caclcit-editor` enables compact mode,
 which writes `compact.cirru` and `.compact-inc.cirru` instead of Clojure(Script).
-And this project provides a runner for `compact.cirru` directly, written on Nim for low overhead.
+And this project provides a runner for `compact.cirru`, written on Nim for low overhead.
 
-An example for `compact.cirru` may be:
+Dependent modules:
+
+- [Cirru Parser](https://github.com/Cirru/parser.nim) for indentation-based syntax parsing.
+- [Cirru EDN](https://github.com/Cirru/cirru-edn.nim) for `compact.cirru` file parsing.
+- [Ternary Tree](https://github.com/Cirru/ternary-tree) for persistent list and map structure.
+
+A `compact.cirru` file can be:
 
 ```cirru
 {} (:package |app)
@@ -27,6 +31,8 @@ An example for `compact.cirru` may be:
       :proc $ quote ()
 ```
 
+Syntax implemented in Calcit Runner is mostly learning from Clojure. Browse current APIs at http://repo.cirru.org/calcit-runner-apis/ .
+
 ### Usage
 
 Install dependency:
@@ -39,25 +45,19 @@ nimble install
 Run in dev mode:
 
 ```bash
+# rerun program on changes
 nimble watch
 
-# or
+# just run once
 nimble once
-
-# or tests
-nimble t
 ```
 
-It also watches the changes and rerun program.
+If you build `cr` with `nimble build`, just
 
-Notice the configs in `calcit.cirru`:
+```bash
+cr compact.cirru # run and wath
 
-```cirru
-{}
-  :configs $ {}
-    :compact-output? true
-    :init-fn |app.main/main!
-    :reload-fn |app.main/reload!
+cr compact.cirru --once # run only once
 ```
 
 _Not ready for a release yet_
