@@ -186,11 +186,14 @@ proc nativeReadFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
   if args.len != 1:
     raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let fileName = args[1]
+  let fileName = args[0]
   if fileName.kind != crDataString:
     raiseEvalError("Expected path name in string", args)
-  let content = readFile(fileName.stringVal)
-  return CirruData(kind: crDataString, stringVal: content)
+  try:
+    let content = readFile(fileName.stringVal)
+    return CirruData(kind: crDataString, stringVal: content)
+  except IOError as e:
+    raiseEvalError(fmt"Failed to read file, {e.msg}", args)
 
 proc nativeWriteFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
@@ -200,27 +203,33 @@ proc nativeWriteFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   if fileName.kind != crDataString:
     raiseEvalError("Expected path name in string", args)
   let content = args[1]
-  if content.kind != crDataSymbol:
+  if content.kind != crDataString:
     raiseEvalError("Expected content in string", args)
   writeFile(fileName.stringVal, content.stringVal)
 
   dimEcho fmt"Wrote to file {fileName.stringVal}"
   return CirruData(kind: crDataNil)
 
-proc nativeLoadJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeParseJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("parse-json requires a string", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let filePath = args[0]
-  if filePath.kind != crDataString:
-    raiseEvalError("load-json requires path in string", args[0])
-  let content = readFile(filePath.stringVal)
+  let content = args[0]
+  if content.kind != crDataString:
+    raiseEvalError("parse-json requires a string", content)
   try:
-    let jsonData = parseJson(content)
+    let jsonData = parseJson(content.stringVal)
     return jsonData.toCirruData()
   except JsonParsingError as e:
-    echo "Failed to parse"
+    echo "Failed to parse JSON", content
     raiseEvalError("Failed to parse file", args[0])
+
+proc nativeStringifyJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1:
+    raiseEvalError("formar-json requires 1 argument", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+
+  let jsonString = args[0].toJson().pretty()
+  return CirruData(kind: crDataString, stringVal: jsonString)
 
 proc nativeMacroexpand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
@@ -642,20 +651,15 @@ proc nativeStrConcat(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   let s2 = $args[1]
   return CirruData(kind: crDataString, stringVal: s1 & s2)
 
-proc nativeLoadCirruEdn(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeParseCirruEdn(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", args)
+    raiseEvalError("parse-cirru-edn requires a string", args)
 
-  let filePath = interpret(args[0], scope)
-  if filePath.kind != crDataString:
-    raiseEvalError("load-json requires path in string", args[0])
-  let content = readFile(filePath.stringVal)
-  try:
-    let ednData = parseEdnFromStr(content)
-    return ednData.toCirruData("", some(scope))
-  except JsonParsingError as e:
-    echo "Failed to parse"
-    raiseEvalError("Failed to parse file", args[0])
+  let content = args[0]
+  if content.kind != crDataString:
+    raiseEvalError("parse-cirru-edn requires a string", content)
+  let ednData = parseEdnFromStr(content.stringVal)
+  return ednData.toCirruData("user", some(scope))
 
 proc nativeSqrt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
@@ -786,7 +790,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["type-of"] = CirruData(kind: crDataFn, fnVal: nativeTypeOf, fnCode: fakeNativeCode("type-of"))
   programData[coreNs].defs["read-file"] = CirruData(kind: crDataFn, fnVal: nativeReadFile, fnCode: fakeNativeCode("read-file"))
   programData[coreNs].defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile, fnCode: fakeNativeCode("write-file"))
-  programData[coreNs].defs["load-json"] = CirruData(kind: crDataFn, fnVal: nativeLoadJson, fnCode: fakeNativeCode("load-json"))
+  programData[coreNs].defs["parse-json"] = CirruData(kind: crDataFn, fnVal: nativeParseJson, fnCode: fakeNativeCode("parse-json"))
+  programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataFn, fnVal: nativeStringifyJson, fnCode: fakeNativeCode("stringify-json"))
   programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand, fnCode: fakeNativeCode("macroexpand"))
   programData[coreNs].defs["println"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("println"))
   programData[coreNs].defs["echo"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("echo"))
@@ -816,7 +821,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&str"] = CirruData(kind: crDataFn, fnVal: nativeStr, fnCode: fakeNativeCode("&str"))
   programData[coreNs].defs["escape"] = CirruData(kind: crDataFn, fnVal: nativeEscape, fnCode: fakeNativeCode("escape"))
   programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataFn, fnVal: nativeStrConcat, fnCode: fakeNativeCode("&str-concat"))
-  programData[coreNs].defs["load-cirru-edn"] = CirruData(kind: crDataFn, fnVal: nativeLoadCirruEdn, fnCode: fakeNativeCode("load-cirru-edn"))
+  programData[coreNs].defs["parse-cirru-edn"] = CirruData(kind: crDataFn, fnVal: nativeParseCirruEdn, fnCode: fakeNativeCode("parse-cirru-edn"))
   programData[coreNs].defs["sqrt"] = CirruData(kind: crDataFn, fnVal: nativeSqrt, fnCode: fakeNativeCode("sqrt"))
   programData[coreNs].defs["ceil"] = CirruData(kind: crDataFn, fnVal: nativeCeil, fnCode: fakeNativeCode("ceil"))
   programData[coreNs].defs["floor"] = CirruData(kind: crDataFn, fnVal: nativeFloor, fnCode: fakeNativeCode("floor"))
