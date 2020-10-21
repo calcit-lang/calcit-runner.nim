@@ -350,7 +350,7 @@ proc nativeReverse(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   else:
     raiseEvalError("reverse requires a list", args)
 
-proc nativeIdentical(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeIdenticalQuestion(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("identical expects 2 args", args)
   let a = args[0]
@@ -801,12 +801,12 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["turn-string"] = CirruData(kind: crDataFn, fnVal: nativeTurnString, fnCode: fakeNativeCode("turn-string"))
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataFn, fnVal: nativeTurnSymbol, fnCode: fakeNativeCode("turn-symbol"))
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataFn, fnVal: nativeTurnKeyword, fnCode: fakeNativeCode("turn-keyword"))
-  programData[coreNs].defs["identical"] = CirruData(kind: crDataFn, fnVal: nativeIdentical, fnCode: fakeNativeCode("identical"))
+  programData[coreNs].defs["identical?"] = CirruData(kind: crDataFn, fnVal: nativeIdenticalQuestion, fnCode: fakeNativeCode("identical?"))
   programData[coreNs].defs["range"] = CirruData(kind: crDataFn, fnVal: nativeRange, fnCode: fakeNativeCode("range"))
   programData[coreNs].defs["slice"] = CirruData(kind: crDataFn, fnVal: nativeSlice, fnCode: fakeNativeCode("slice"))
   programData[coreNs].defs["&concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("&concat"))
   programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataFn, fnVal: nativeFormatTernaryTree, fnCode: fakeNativeCode("format-ternary-tree"))
-  programData[coreNs].defs["merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("merge"))
+  programData[coreNs].defs["&merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("&merge"))
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContains, fnCode: fakeNativeCode("contains?"))
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataFn, fnVal: nativeAssocBefore, fnCode: fakeNativeCode("assoc-before"))
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataFn, fnVal: nativeAssocAfter, fnCode: fakeNativeCode("assoc-after"))
