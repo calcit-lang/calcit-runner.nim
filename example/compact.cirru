@@ -17,6 +17,15 @@
               echo (contains? dict :a) (contains? dict :a2)
               echo $ keys dict
               echo (assoc dict :h 10) (dissoc dict :a) (dissoc dict :h)
+        |try-json $ quote
+          defn try-json ()
+            let
+                path "\"codes.json"
+                data $ parse-json (read-file path)
+                new-data $ ->> data
+                  map $ fn (item) (echo) (echo "\"item:" $ dissoc item |children) (dissoc item |children)
+              echo $ stringify-json new-data
+              write-file "\"codes-new.json" (stringify-json new-data) (, )
         |try-let $ quote
           defn try-let ()
             let
@@ -77,7 +86,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (try-fibo)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (try-json)
         |try-hygienic $ quote
           defn try-hygienic ()
             let

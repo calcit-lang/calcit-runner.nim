@@ -125,6 +125,79 @@
                           |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601478532560) (:text |dissoc)
                           |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601478534245) (:text |:h)
                           |b $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601478538903) (:text |dict)
+          |try-json $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269419533)
+            :data $ {}
+              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269419533) (:text |defn)
+              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269419533) (:text |try-json)
+              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269419533) (:data $ {})
+              |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269420855)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269422799) (:text |let)
+                  |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269423713)
+                    :data $ {}
+                      |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269423848)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269423367) (:text |path)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269784066) (:text "|\"codes.json")
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269440504)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269528464) (:text |data)
+                          |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269452286)
+                            :data $ {}
+                              |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269444861)
+                                :data $ {}
+                                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269449989) (:text |read-file)
+                                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269451533) (:text |path)
+                              |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269456010) (:text |parse-json)
+                      |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269529173)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269533833) (:text |new-data)
+                          |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269534123)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269536157) (:text |->>)
+                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269536815) (:text |data)
+                              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269537443)
+                                :data $ {}
+                                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269537926) (:text |map)
+                                  |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269559123)
+                                    :data $ {}
+                                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269539972) (:text |fn)
+                                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269540792)
+                                        :data $ {}
+                                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269543497) (:text |item)
+                                      |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269561090)
+                                        :data $ {}
+                                          |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269544983)
+                                            :data $ {}
+                                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269546099) (:text |dissoc)
+                                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269546760) (:text |item)
+                                              |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269551283) (:text ||children)
+                                          |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269562112) (:text |echo)
+                                          |L $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269565031) (:text "|\"item:")
+                                      |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269544983)
+                                        :data $ {}
+                                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269546099) (:text |dissoc)
+                                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269546760) (:text |item)
+                                          |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269551283) (:text ||children)
+                                      |n $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269566232)
+                                        :data $ {}
+                                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269566904) (:text |echo)
+                  |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269583368)
+                    :data $ {}
+                      |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269458065)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603270023850) (:text |stringify-json)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269581956) (:text |new-data)
+                      |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269584076) (:text |echo)
+                  |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269598044)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269601336) (:text |write-file)
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269613270)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603270073078) (:text |stringify-json)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269613270) (:text |new-data)
+                      |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269609800) (:text |)
+                      |b $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269790405) (:text "|\"codes-new.json")
           |try-let $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585437689)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585439046) (:text |defn)
@@ -581,6 +654,9 @@
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601476262044) (:text |try-maps)
                   |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601478556295) (:text |;)
+              |yyyyv $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1603269417132)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269418598) (:text |try-json)
               |yyyj $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1601546787039)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601546788602) (:text |try-str)
@@ -588,6 +664,7 @@
               |yyyyr $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602555504889)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602555508651) (:text |try-fibo)
+                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1603269416570) (:text |;)
               |yyyyT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602174513006)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602174529015) (:text |try-get-in)
