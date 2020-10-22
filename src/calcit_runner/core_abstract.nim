@@ -349,6 +349,59 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       [foldl, "&merge", xs, x0]]
   , coreNs)
 
+  let codeIdentity = genCirru(
+    [defn, identity, [x], x]
+  , coreNs)
+
+  let codeMapIndexed = genCirru(
+    [defn, "map-indexed", [f, xs],
+      [loop,
+        [[acc, ["[]"]], [idx, 0], [ys, xs]],
+        ["if", ["empty?", ys], acc,
+             [recur, [append, acc, [f, idx, [first, ys]]],
+                     ["&+", idx, 1],
+                     [rest, ys]]]]]
+  , coreNs)
+
+  let codeFilter = genCirru(
+    [defn, filter, [f, xs],
+      [foldl,
+        [fn, [acc, x],
+             ["if", [f, x],
+                  [append, acc, x],
+                  acc]],
+        xs,
+        ["[]"]]]
+  , coreNs)
+
+  let codeFilterNot = genCirru(
+    [defn, "filter-not", [f, xs],
+      [foldl,
+        [fn, [acc, x],
+             [unless, [f, x],
+                  [append, acc, x],
+                  acc]],
+        xs,
+        ["[]"]]]
+  , coreNs)
+
+  let codePairMap = genCirru(
+    [defn, "pair-map", [xs],
+      [foldl, [fn, [acc, pair],
+                   ["assert", "|expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
+                   [assoc, acc, [first, pair], [last, pair]]],
+              xs,
+              ["{}"]]]
+  , coreNs)
+
+  let codeZipmap = genCirru(
+    [defn, "zipmap", [xs0, ys0],
+      [loop, [[acc, ["{}"]], [xs, xs0], [ys, ys0]],
+        ["if", ["&or", ["empty?", xs], ["empty?", ys]], acc,
+          [recur, [assoc, acc, [first, xs], [first, ys]],
+                  [rest, xs], [rest, ys]]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -409,3 +462,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["concat"] = codeConcat
   programCode[coreNs].defs["mapcat"] = codeMapcat
   programCode[coreNs].defs["merge"] = codeMerge
+  programCode[coreNs].defs["identity"] = codeIdentity
+  programCode[coreNs].defs["map-indexed"] = codeMapIndexed
+  programCode[coreNs].defs["filter"] = codeFilter
+  programCode[coreNs].defs["filter-not"] = codeFilterNot
+  programCode[coreNs].defs["pair-map"] = codePairMap
+  programCode[coreNs].defs["zipmap"] = codeZipmap

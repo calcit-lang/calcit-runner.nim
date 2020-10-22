@@ -54,6 +54,21 @@
                     :d 4
                 {} (:a 1) (:b 2) (:c 3) (:d 4)
 
+              assert |pair-map $ =
+                pair-map $ []
+                  [] :a 1
+                  [] :b 2
+                {} (:a 1) (:b 2)
+
+              assert |zipmap $ =
+                zipmap
+                  [] :a :b :c
+                  [] 1 2 3
+                {}
+                  :a 1
+                  :b 2
+                  :c 3
+
         |hole-series $ quote
           defn hole-series (x)
             if (&<= x 0) (raise-at "\"unexpected small number" x)
@@ -131,11 +146,30 @@
                 reverse $ [] |a |b |c |d |e
                 [] |e |d |c |b |a
 
-              echo "|map and concat" $ =
+              assert "|map and concat" $ =
                 mapcat
                   fn (x) (range x)
                   [] 1 2 3 4
                 [] 0 0 1 0 1 2 0 1 2 3
+
+              assert |identity $ =
+                map identity $ range 10
+                range 10
+
+              assert |map-indexed $ =
+                map-indexed (fn (idx x) ([] idx (&str x))) (range 3)
+                []
+                  [] 0 |0
+                  [] 1 |1
+                  [] 2 |2
+
+              assert |filter $ =
+                filter (fn (x) (&> x 3)) (range 10)
+                [] 4 5 6 7 8 9
+
+              assert |filter-not $ =
+                filter-not (fn (x) (&> x 3)) (range 10)
+                [] 0 1 2 3
 
         |test-str $ quote
           defn test-str ()
