@@ -13,8 +13,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                                ["~", "true-branch"]]]
   ], coreNs)
 
-  let codeNativeNotEqual = genCirru(
-    ["defn", "&!=", ["x", "y"], ["not", ["&=", "x", "y"]]]
+  let codeNotEqual = genCirru(
+    ["defn", "/=", ["x", "y"], ["not", ["&=", "x", "y"]]]
   , coreNs)
 
   let codeNativeLittlerEqual = genCirru(
@@ -82,10 +82,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeEqual = genCirru(
     ["defn", "=", ["x", "&", "ys"], ["foldl-compare", "&=", "ys", "x"]]
-  , coreNs)
-
-  let codeNotEqual = genCirru(
-    ["defn", "!=", ["x", "&", "ys"], ["foldl-compare", "&!=", "ys", "x"]]
   , coreNs)
 
   let codeLargerEqual = genCirru(
@@ -348,12 +344,16 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       [concat, "&", [map, f, xs]]]
   , coreNs)
 
+  let codeMerge = genCirru(
+    [defn, merge, [x0, "&", xs],
+      [foldl, "&merge", xs, x0]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
 
   programCode[coreNs].defs["unless"] = codeUnless
-  programCode[coreNs].defs["&!="] = codeNativeNotEqual
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
   programCode[coreNs].defs["&>="] = codeNativeLargerEqual
   programCode[coreNs].defs["first"] = codeFirst
@@ -368,7 +368,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["<"] = codeLittlerThan
   programCode[coreNs].defs[">"] = codeLargerThan
   programCode[coreNs].defs["="] = codeEqual
-  programCode[coreNs].defs["!="] = codeNotEqual
+  programCode[coreNs].defs["/="] = codeNotEqual
   programCode[coreNs].defs[">="] = codeLargerEqual
   programCode[coreNs].defs["<="] = codeLittlerEqual
   programCode[coreNs].defs["apply"] = codeApply
@@ -408,3 +408,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["any?"] = codeAnyQuestion
   programCode[coreNs].defs["concat"] = codeConcat
   programCode[coreNs].defs["mapcat"] = codeMapcat
+  programCode[coreNs].defs["merge"] = codeMerge

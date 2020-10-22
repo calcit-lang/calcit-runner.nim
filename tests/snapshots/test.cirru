@@ -43,6 +43,16 @@
                 :c 3
                 :d 5
               assert |same $ = dict (dissoc dict :h)
+              assert |merge $ =
+                merge
+                  {}
+                    :a 1
+                    :b 2
+                  {}
+                    :c 3
+                  {}
+                    :d 4
+                {} (:a 1) (:b 2) (:c 3) (:d 4)
 
         |hole-series $ quote
           defn hole-series (x)
@@ -254,6 +264,8 @@
           defn test-compare ()
             assert "|find max" $ = 4 $ max $ [] 1 2 3 4
             assert "|find min" $ = 1 $ min $ [] 1 2 3 4
+
+            assert "|not equal" $ /= 1 2
 
         |test-every $ quote
           defn test-every ()
