@@ -148,7 +148,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token[0] == ':':
     return CirruData(kind: crDataKeyword, keywordVal: token[1..^1])
   elif token[0] == '\'':
-    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1])
+    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
 
   elif match(token, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))

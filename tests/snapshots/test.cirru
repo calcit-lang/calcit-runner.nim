@@ -307,6 +307,40 @@
               macroexpand $ quote $ ->> a (b c) (d e f)
               quote (d e f (b c a))
 
+            assert "|contains-symbol?" $ contains-symbol?
+              quote $ add $ + 1 %
+              , '%
+
+            assert "|contains-symbol?" $ not $ contains-symbol?
+              quote $ add $ + 1 2
+              , '%
+
+            assert "|lambda" $ =
+              map (\ + 1 %) (range 3)
+              range 1 4
+            assert "|lambda" $ =
+              map-indexed (\ [] % (&str %2)) (range 3)
+              []
+                [] 0 |0
+                [] 1 |1
+                [] 2 |2
+
+            assert "|expand lambda" $ =
+              macroexpand $ quote (\ + 2 %)
+              quote $ fn (%) (+ 2 %)
+
+            assert "|expand lambda" $ =
+              macroexpand $ quote $ \ x
+              quote $ fn (%) (x)
+
+            assert "|expand lambda" $ =
+              macroexpand $ quote $ \ + x %
+              quote $ fn (%) (+ x %)
+
+            assert "|expand lambda" $ =
+              macroexpand $ quote $ \ + x % %2
+              quote $ fn (% %2) (+ x % %2)
+
         |test-compare $ quote
           defn test-compare ()
             assert "|find max" $ = 4 $ max $ [] 1 2 3 4

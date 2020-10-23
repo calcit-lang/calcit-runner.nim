@@ -413,6 +413,23 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["not", ["nil?", x]]]
   , coreNs)
 
+  let codeContainsSymbolQuestion = genCirru(
+    [defn, "contains-symbol?", ["xs", "y"],
+      ["if", ["list?", "xs"],
+        [loop, [[body, xs]],
+          ["if", ["empty?", body], false,
+            ["if", ["contains-symbol?", [first, body], y], true,
+              [recur, [rest, body]]]]],
+        ["&=", "xs", "y"]]]
+  , coreNs)
+
+  let codeLambda = genCirru(
+    [defmacro, "\\", ["&", xs],
+      ["if", ["contains-symbol?", xs, "'%2"],
+        ["quote-replace", [fn, ["%", "%2"], ["~", xs]]],
+        ["quote-replace", [fn, ["%"], ["~", xs]]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -481,3 +498,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["zipmap"] = codeZipmap
   programCode[coreNs].defs["rand-nth"] = codeRandNth
   programCode[coreNs].defs["some?"] = codeSomeQuestion
+  programCode[coreNs].defs["contains-symbol?"] = codeContainsSymbolQuestion
+  programCode[coreNs].defs["\\"] = codeLambda
