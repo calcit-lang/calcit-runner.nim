@@ -18,6 +18,14 @@
             assert |empty $ empty? nil
             assert "|empty vector" $ empty? ([])
 
+            assert "|rand" $ <= 0 (rand) 100
+            assert "|rand" $ <= 0 (rand 10) 10
+            assert "|rand" $ <= 20 (rand 20 30) 30
+
+            assert "|rand-int" $ <= 0 (rand-int) 100
+            assert "|rand-int" $ <= 0 (rand-int 10) 10
+            assert "|rand-int" $ <= 20 (rand-int 20 30) 30
+
             do true
 
         |test-maps $ quote
@@ -53,6 +61,21 @@
                   {}
                     :d 4
                 {} (:a 1) (:b 2) (:c 3) (:d 4)
+
+              assert |pair-map $ =
+                pair-map $ []
+                  [] :a 1
+                  [] :b 2
+                {} (:a 1) (:b 2)
+
+              assert |zipmap $ =
+                zipmap
+                  [] :a :b :c
+                  [] 1 2 3
+                {}
+                  :a 1
+                  :b 2
+                  :c 3
 
         |hole-series $ quote
           defn hole-series (x)
@@ -131,11 +154,35 @@
                 reverse $ [] |a |b |c |d |e
                 [] |e |d |c |b |a
 
-              echo "|map and concat" $ =
+              assert "|map and concat" $ =
                 mapcat
                   fn (x) (range x)
                   [] 1 2 3 4
                 [] 0 0 1 0 1 2 0 1 2 3
+
+              assert |identity $ =
+                map identity $ range 10
+                range 10
+
+              assert |map-indexed $ =
+                map-indexed (fn (idx x) ([] idx (&str x))) (range 3)
+                []
+                  [] 0 |0
+                  [] 1 |1
+                  [] 2 |2
+
+              assert |filter $ =
+                filter (fn (x) (&> x 3)) (range 10)
+                [] 4 5 6 7 8 9
+
+              assert |filter-not $ =
+                filter-not (fn (x) (&> x 3)) (range 10)
+                [] 0 1 2 3
+
+              assert |rand-nth $ <= 0
+                index-of (range 10) $ rand-nth $ range 10
+
+              assert |rand-nth $ nil? $ rand-nth ([])
 
         |test-str $ quote
           defn test-str ()
@@ -267,6 +314,7 @@
 
             assert "|not equal" $ /= 1 2
 
+
         |test-every $ quote
           defn test-every ()
             let
@@ -283,6 +331,9 @@
               assert "|try any?" $ not $ any?
                 fn (x) (&> x 4)
                 , data
+
+            assert "|some?" $ some? 1
+            assert "|some?" $ not $ some? nil
 
         |main! $ quote
           defn main! ()

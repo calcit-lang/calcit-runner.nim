@@ -300,13 +300,6 @@ proc loadImportDictByNs(ns: string): Table[string, ImportInfo] =
     programData[ns].ns = some(v)
     return v
 
-proc showStack(): void =
-  let errorStack = reversed(defStack)
-  for item in errorStack:
-    echo item.ns, "/", item.def
-    dimEcho $item.code
-    dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
-
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   let snapshotInfo = loadSnapshot(snapshotFile)
   programCode = snapshotInfo.files
