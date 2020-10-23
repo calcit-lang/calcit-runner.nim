@@ -71,6 +71,8 @@ type
       ns*: string
       resolved*: Option[ResolvedPath]
       scope*: Option[CirruDataScope]
+      # TODO looking for simpler solution
+      dynamic*: bool
     of crDataRecur:
       args*: seq[CirruData]
       fnReady*: bool

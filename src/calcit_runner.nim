@@ -60,6 +60,9 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope): CirruData =
   if sym.kind != crDataSymbol:
     raiseEvalError("Expects a symbol", sym)
 
+  if sym.dynamic:
+    return sym
+
   if sym.resolved.isSome:
     let path = sym.resolved.get
 
@@ -171,10 +174,13 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
   of crDataSymbol:
     if localDefs.contains(code.symbolVal):
       return code
-    elif code.symbolVal == "&" or code.symbolVal == "~":
+    elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@":
       return code
     else:
       var sym = code
+
+      if sym.dynamic:
+        return sym
 
       let coreDefs = programData[coreNs].defs
       if coreDefs.contains(sym.symbolVal):
@@ -191,7 +197,7 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
         sym.resolved = some((sym.ns, sym.symbolVal))
         return sym
       elif sym.ns.startsWith("calcit."):
-        raiseEvalError(fmt"Cannot find symbol in core lib: ${sym}", sym)
+        raiseEvalError(fmt"Cannot find symbol in core lib: {sym}", sym)
       else:
         let importDict = loadImportDictByNs(sym.ns)
         if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
