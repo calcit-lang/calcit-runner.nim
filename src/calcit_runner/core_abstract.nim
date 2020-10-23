@@ -402,6 +402,17 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                   [rest, xs], [rest, ys]]]]]
   , coreNs)
 
+  let codeRandNth = genCirru(
+    [defn, "rand-nth", [xs],
+      ["if", ["empty?", xs], "nil",
+        [get, xs, ["rand-int", [count, xs]]]]]
+  , coreNs)
+
+  let codeSomeQuestion = genCirru(
+    [defn, "some?", [x],
+      ["not", ["nil?", x]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -468,3 +479,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["filter-not"] = codeFilterNot
   programCode[coreNs].defs["pair-map"] = codePairMap
   programCode[coreNs].defs["zipmap"] = codeZipmap
+  programCode[coreNs].defs["rand-nth"] = codeRandNth
+  programCode[coreNs].defs["some?"] = codeSomeQuestion

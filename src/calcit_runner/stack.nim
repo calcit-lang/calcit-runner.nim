@@ -1,6 +1,10 @@
 
 import lists
+
+import ternary_tree
+
 import ./types
+import ./errors
 
 type StackInfo* = object
   ns*: string
@@ -16,10 +20,17 @@ proc reversed*[T](s: seq[T]): seq[T] =
 
 proc reversed*[T](s: DoublyLinkedList[T]): DoublyLinkedList[T] =
   for i in s:
-    result.append i
+    result.prepend i
 
 proc pushDefStack*(x: StackInfo): void =
   defStack.append x
 
 proc popDefStack*(): void =
   defStack.remove defStack.tail
+
+proc showStack*(): void =
+  let errorStack = reversed(defStack)
+  for item in errorStack:
+    echo item.ns, "/", item.def
+    dimEcho $item.code
+    dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))

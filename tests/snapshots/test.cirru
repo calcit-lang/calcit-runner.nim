@@ -18,6 +18,14 @@
             assert |empty $ empty? nil
             assert "|empty vector" $ empty? ([])
 
+            assert "|rand" $ <= 0 (rand) 100
+            assert "|rand" $ <= 0 (rand 10) 10
+            assert "|rand" $ <= 20 (rand 20 30) 30
+
+            assert "|rand-int" $ <= 0 (rand-int) 100
+            assert "|rand-int" $ <= 0 (rand-int 10) 10
+            assert "|rand-int" $ <= 20 (rand-int 20 30) 30
+
             do true
 
         |test-maps $ quote
@@ -171,6 +179,11 @@
                 filter-not (fn (x) (&> x 3)) (range 10)
                 [] 0 1 2 3
 
+              assert |rand-nth $ <= 0
+                index-of (range 10) $ rand-nth $ range 10
+
+              assert |rand-nth $ nil? $ rand-nth ([])
+
         |test-str $ quote
           defn test-str ()
             assert "|string concat" $ = (&str-concat |a |b) |ab
@@ -301,6 +314,7 @@
 
             assert "|not equal" $ /= 1 2
 
+
         |test-every $ quote
           defn test-every ()
             let
@@ -317,6 +331,9 @@
               assert "|try any?" $ not $ any?
                 fn (x) (&> x 4)
                 , data
+
+            assert "|some?" $ some? 1
+            assert "|some?" $ not $ some? nil
 
         |main! $ quote
           defn main! ()

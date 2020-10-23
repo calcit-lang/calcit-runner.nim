@@ -7,6 +7,7 @@ import sequtils
 import strutils
 import options
 import sets
+import random
 
 import ternary_tree
 import cirru_edn
@@ -17,6 +18,9 @@ import ./errors
 import ./to_json
 import ./gen_data
 import ./gen_code
+
+# init generator for rand
+randomize()
 
 proc nativeAdd(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
@@ -770,6 +774,42 @@ proc nativeFoldl(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
 
   return acc
 
+proc nativeRand(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  case args.len
+  of 0:
+    return CirruData(kind: crDataNumber, numberVal: rand(100.0))
+  of 1:
+    let n = args[0]
+    if n.kind != crDataNumber: raiseEvalError("rand expects a number", args)
+    return CirruData(kind: crDataNumber, numberVal: rand(n.numberVal))
+  of 2:
+    let minN = args[0]
+    let maxN = args[1]
+    if minN.kind != crDataNumber: raiseEvalError("rand expects numbers", args)
+    if maxN.kind != crDataNumber: raiseEvalError("rand expects numbers", args)
+    let rangeN = maxN.numberVal - minN.numberVal
+    return CirruData(kind: crDataNumber, numberVal: minN.numberVal + rand(rangeN))
+  else:
+    raiseEvalError("rand expects 0~2 arguments", args)
+
+proc nativeRandInt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  case args.len
+  of 0:
+    return CirruData(kind: crDataNumber, numberVal: rand(100).float)
+  of 1:
+    let n = args[0]
+    if n.kind != crDataNumber: raiseEvalError("rand-int expects a number", args)
+    return CirruData(kind: crDataNumber, numberVal: rand(n.numberVal.int).float)
+  of 2:
+    let minN = args[0]
+    let maxN = args[1]
+    if minN.kind != crDataNumber: raiseEvalError("rand-int expects numbers", args)
+    if maxN.kind != crDataNumber: raiseEvalError("rand-int expects numbers", args)
+    let rangeN = maxN.numberVal - minN.numberVal
+    return CirruData(kind: crDataNumber, numberVal: (minN.numberVal.int + rand(rangeN).int).float)
+  else:
+    raiseEvalError("rand-int expects 0~2 arguments", args)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
@@ -837,3 +877,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataFn, fnVal: nativeIntersection, fnCode: fakeNativeCode("#intersection"))
   programData[coreNs].defs["recur"] = CirruData(kind: crDataFn, fnVal: nativeRecur, fnCode: fakeNativeCode("recur"))
   programData[coreNs].defs["foldl"] = CirruData(kind: crDataFn, fnVal: nativeFoldl, fnCode: fakeNativeCode("foldl"))
+  programData[coreNs].defs["rand"] = CirruData(kind: crDataFn, fnVal: nativeRand, fnCode: fakeNativeCode("rand"))
+  programData[coreNs].defs["rand-int"] = CirruData(kind: crDataFn, fnVal: nativeRandInt, fnCode: fakeNativeCode("rand-int"))
