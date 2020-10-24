@@ -146,7 +146,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     return quoted
 
   else:
-    raiseEvalError(fmt"Unknown head {head.symbolVal} for calling", head)
+    raiseEvalError(fmt"Unknown head({head.kind}) for calling", head)
 
 proc placeholderFunc(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   echo "[Warn] placeholder function for preprocessing"

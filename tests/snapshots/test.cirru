@@ -184,6 +184,37 @@
 
               assert |rand-nth $ nil? $ rand-nth ([])
 
+              assert "|contains in list" $ contains? (range 10) 6
+              assert "|contains in list" $ not $ contains? (range 10) 16
+
+              assert "|has-index?" $ has-index? (range 4) 3
+              assert "|has-index?" $ not $ has-index? (range 4) 4
+              assert "|has-index?" $ not $ has-index? (range 4) -1
+
+              assert "|update map" $ =
+                update ({} (:a 1)) :a $ \ + % 10
+                {} (:a 11)
+
+              assert "|update map" $ =
+                update ({} (:a 1)) :c $ \ + % 10
+                {} (:a 1)
+
+              assert "|update list" $ =
+                update (range 4) 1 $ \ + % 10
+                [] 0 11 2 3
+              assert "|update list" $ =
+                update (range 4) 11 $ \ + % 10
+                range 4
+
+              assert "|group-by" $ =
+                group-by
+                  \ mod % 3
+                  range 10
+                {}
+                  0 $ [] 0 3 6 9
+                  1 $ [] 1 4 7
+                  2 $ [] 2 5 8
+
         |test-str $ quote
           defn test-str ()
             assert "|string concat" $ = (&str-concat |a |b) |ab

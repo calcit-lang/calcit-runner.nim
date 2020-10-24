@@ -204,30 +204,22 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         "xs", "base"]]
   , coreNs)
 
-  let codeNativeIndexOf = genCirru(
-    ["defn", "&index-of", ["idx", "xs", "item"],
-      ["if", ["empty?", "xs"], "nil",
-        ["if", ["&=", "item", ["first", "xs"]], "idx",
-          ["recur", ["&+", 1, "idx"], ["rest", "xs"], "item"]]]]
-  , coreNs)
-
   let codeIndexOf = genCirru(
-    ["defn", "index-of", ["xs", "item"],
-      ["&index-of", 0, "xs", "item"]]
-  , coreNs)
-
-  let codeNativeFindIndex = genCirru(
-    ["defn", "&find-index", ["idx", "f", "xs"],
-      ["if", ["empty?", "xs"], "nil",
-        ["if", ["f", ["first", "xs"]], "idx",
-          ["recur", ["&+", 1, "idx"], "f", ["rest", "xs"]]]]]
+    [defn, "index-of", [xs0, item],
+      [loop,
+        [[idx, 0], [xs, xs0]],
+        ["if", ["empty?", xs], "nil",
+          ["if", ["&=", item, [first, xs]], idx,
+            [recur, ["&+", 1, idx], [rest, xs]]]]]]
   , coreNs)
 
   let codeFindIndex = genCirru(
-    ["defn", "find-index", ["f", "xs"],
-      ["let",
-        [["idx", ["&find-index", 0, "f", "xs"]]],
-        ["if", ["nil?", "idx"], "nil", "idx"]]]
+    [defn, "find-index", [f, xs0],
+      [loop,
+        [[idx, 0], [xs, xs0]],
+        ["if", "empty?", "xs", "nil",
+          ["if", [f, [first, xs]], idx,
+            [recur, ["&+", 1, idx], f, [rest, xs]]]]]]
   , coreNs)
 
   let codeFind = genCirru(
@@ -430,6 +422,41 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace", [fn, ["%"], ["~", xs]]]]]
   , coreNs)
 
+  let codeHasIndexQuestion = genCirru(
+    [defn, "has-index?", [xs, idx],
+      ["assert", "|expects a list", ["list?", xs]],
+      ["assert", "|expects list key to be a number", ["number?", idx]],
+      ["assert", "|expects list key to be an integer", ["&=", idx, [floor, idx]]],
+      ["&and",
+        ["&>", idx, 0],
+        ["&<", idx, [count, xs]]]
+      ]
+  , coreNs)
+
+  let codeUpdate = genCirru(
+    [defn, update, [x, k, f],
+      [cond,
+        [["list?", x],
+         ["if", ["has-index?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
+        [["map?", x],
+         ["if", ["contains?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
+        [true, ["raise-at", "|Cannot update key on item:", x]]]]
+  , coreNs)
+
+  let codeGroupBy = genCirru(
+    [defn, "group-by", [f, xs0],
+      ["loop",
+        [[acc, ["{}"]], [xs, xs0]],
+        ["if",
+          ["empty?", xs], acc,
+            ["let", [[x0, [first, xs]],
+                     [key, [f, x0]]],
+                    [recur, ["if", ["contains?", acc, key],
+                        [update, acc, key, ["\\", append, "%", x0]],
+                        [assoc, acc, key, ["[]", x0]]], [rest, xs]]]]]
+      ]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -471,9 +498,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["difference"] = codeDifference
   programCode[coreNs].defs["union"] = codeUnion
   programCode[coreNs].defs["intersection"] = codeIntersection
-  programCode[coreNs].defs["&index-of"] = codeNativeIndexOf
   programCode[coreNs].defs["index-of"] = codeIndexOf
-  programCode[coreNs].defs["&find-index"] = codeNativeFindIndex
   programCode[coreNs].defs["find-index"] = codeFindIndex
   programCode[coreNs].defs["find"] = codeFind
   programCode[coreNs].defs["->"] = codeThreadFirst
@@ -500,3 +525,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["some?"] = codeSomeQuestion
   programCode[coreNs].defs["contains-symbol?"] = codeContainsSymbolQuestion
   programCode[coreNs].defs["\\"] = codeLambda
+  programCode[coreNs].defs["has-index?"] = codeHasIndexQuestion
+  programCode[coreNs].defs["update"] = codeUpdate
+  programCode[coreNs].defs["group-by"] = codeGroupBy

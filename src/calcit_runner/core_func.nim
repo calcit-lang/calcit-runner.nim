@@ -176,7 +176,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
     of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "number")
     of crDataString: CirruData(kind: crDataKeyword, keywordVal: "string")
     of crDataBool: CirruData(kind: crDataKeyword, keywordVal: "bool")
-    of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "table")
+    of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "map")
     of crDataFn: CirruData(kind: crDataKeyword, keywordVal: "fn")
     of crDataMacro: CirruData(kind: crDataKeyword, keywordVal: "macro")
     of crDataKeyword: CirruData(kind: crDataKeyword, keywordVal: "keyword")
@@ -466,21 +466,20 @@ proc nativeMerge(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSco
 
   return CirruData(kind: crDataMap, mapVal: base.mapVal.merge(another.mapVal))
 
-proc nativeContains(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeContainsQuestion(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 2:
     raiseEvalError("contains requires 2 args", args)
   let base = args[0]
   let key = args[1]
 
   if base.isNil:
-    return base
-
-  if key.isNil:
-    return key
+    return CirruData(kind: crDataBool, boolVal: false)
 
   case base.kind
   of crDataMap:
     return CirruData(kind: crDataBool, boolVal: base.mapVal.contains(key))
+  of crDataList:
+    return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(key) >= 0)
   of crDataSet:
     return CirruData(kind: crDataBool, boolVal: base.setVal.contains(key))
   else:
@@ -852,7 +851,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["&concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("&concat"))
   programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataFn, fnVal: nativeFormatTernaryTree, fnCode: fakeNativeCode("format-ternary-tree"))
   programData[coreNs].defs["&merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("&merge"))
-  programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContains, fnCode: fakeNativeCode("contains?"))
+  programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContainsQuestion, fnCode: fakeNativeCode("contains?"))
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataFn, fnVal: nativeAssocBefore, fnCode: fakeNativeCode("assoc-before"))
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataFn, fnVal: nativeAssocAfter, fnCode: fakeNativeCode("assoc-after"))
   programData[coreNs].defs["keys"] = CirruData(kind: crDataFn, fnVal: nativeKeys, fnCode: fakeNativeCode("keys"))
