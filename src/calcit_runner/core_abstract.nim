@@ -397,7 +397,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeRandNth = genCirru(
     [defn, "rand-nth", [xs],
       ["if", ["empty?", xs], "nil",
-        [get, xs, ["rand-int", [count, xs]]]]]
+        [get, xs, ["rand-int", ["&-", [count, xs], 1]]]]]
   , coreNs)
 
   let codeSomeQuestion = genCirru(

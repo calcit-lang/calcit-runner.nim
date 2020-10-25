@@ -172,19 +172,19 @@ proc nativeTypeOf(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataSc
   if args.len != 1: coreFnError("type gets 1 argument")
   let v = args[0]
   case v.kind
-    of crDataNil: CirruData(kind: crDataKeyword, keywordVal: "nil")
-    of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: "number")
-    of crDataString: CirruData(kind: crDataKeyword, keywordVal: "string")
-    of crDataBool: CirruData(kind: crDataKeyword, keywordVal: "bool")
-    of crDataMap: CirruData(kind: crDataKeyword, keywordVal: "map")
-    of crDataFn: CirruData(kind: crDataKeyword, keywordVal: "fn")
-    of crDataMacro: CirruData(kind: crDataKeyword, keywordVal: "macro")
-    of crDataKeyword: CirruData(kind: crDataKeyword, keywordVal: "keyword")
-    of crDataSyntax: CirruData(kind: crDataKeyword, keywordVal: "syntax")
-    of crDataList: CirruData(kind: crDataKeyword, keywordVal: "list")
-    of crDataSet: CirruData(kind: crDataKeyword, keywordVal: "set")
-    of crDataRecur: CirruData(kind: crDataKeyword, keywordVal: "recur")
-    of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: "symbol")
+    of crDataNil: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nil"))
+    of crDataNumber: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("number"))
+    of crDataString: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("string"))
+    of crDataBool: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("bool"))
+    of crDataMap: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("map"))
+    of crDataFn: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("fn"))
+    of crDataMacro: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("macro"))
+    of crDataKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("keyword"))
+    of crDataSyntax: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("syntax"))
+    of crDataList: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("list"))
+    of crDataSet: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("set"))
+    of crDataRecur: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("recur"))
+    of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("symbol"))
 
 proc nativeReadFile(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
   if args.len != 1:
@@ -565,9 +565,9 @@ proc nativeTurnKeyword(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruD
   of crDataKeyword:
     return x
   of crDataString:
-    return CirruData(kind: crDataKeyword, keywordVal: x.stringVal)
+    return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(x.stringVal))
   of crDataSymbol:
-    return CirruData(kind: crDataKeyword, keywordVal: x.symbolVal)
+    return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(x.symbolVal))
   else:
     raiseEvalError("Cannot turn into keyword", (args))
 
@@ -577,7 +577,7 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: "", scope: some(scope), dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], ns: "", scope: some(scope), dynamic: true)
   of crDataString:
     return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: "", scope: some(scope), dynamic: true)
   of crDataSymbol:
@@ -591,7 +591,7 @@ proc nativeTurnString(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDa
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataString, stringVal: x.keywordVal)
+    return CirruData(kind: crDataString, stringVal: x.keywordVal[])
   of crDataString:
     return x
   of crDataSymbol:

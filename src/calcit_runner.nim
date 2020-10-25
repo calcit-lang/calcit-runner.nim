@@ -133,6 +133,18 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     popDefStack()
     return ret
 
+  of crDataKeyword:
+    if xs.len != 2: raiseEvalError("keyword function expects 1 argument", xs)
+    let base = interpret(xs[1], scope)
+    if base.kind == crDataNil:
+      return base
+    if base.kind != crDataMap: raiseEvalError("keyword function expects a map", xs)
+    let ret = base.mapVal[value]
+    if ret.isNone:
+      return CirruData(kind: crDataNil)
+    else:
+      return ret.get
+
   of crDataMacro:
     echo "[warn] Found macros: ", xs
     raiseEvalError("Macros are supposed to be handled during preprocessing", xs)
@@ -242,7 +254,7 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
         value = programData[path.ns].defs[path.def]
 
       case value.kind
-      of crDataFn:
+      of crDataFn, crDataKeyword:
         var xs = initTernaryTreeList[CirruData](@[originalValue])
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs)
