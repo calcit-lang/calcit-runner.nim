@@ -146,7 +146,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   if (token.len > 0) and (token[0] == '|' or token[0] == '"'):
     return CirruData(kind: crDataString, stringVal: token[1..^1])
   elif token[0] == ':':
-    return CirruData(kind: crDataKeyword, keywordVal: token[1..^1])
+    return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(token[1..^1]))
   elif token[0] == '\'':
     return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
 

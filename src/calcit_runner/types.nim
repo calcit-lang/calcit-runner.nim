@@ -10,6 +10,19 @@ import strformat
 
 import ternary_tree
 
+type
+  RefKeyword* = ref string
+
+var keywordRegistry: Table[string, RefKeyword]
+
+proc loadKeyword*(content: string): RefKeyword =
+  if not keywordRegistry.contains(content):
+    var k = new RefKeyword
+    k[] = content
+    keywordRegistry[content] = k
+
+  return keywordRegistry[content]
+
 type CirruCommandError* = ValueError
 
 type ImportKind* = enum
@@ -53,7 +66,7 @@ type
     of crDataBool: boolVal*: bool
     of crDataNumber: numberVal*: float
     of crDataString: stringVal*: string
-    of crDataKeyword: keywordVal*: string
+    of crDataKeyword: keywordVal*: RefKeyword
     of crDataFn:
       fnVal*: FnInData
       fnCode*: RefCirruData
@@ -146,7 +159,7 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataSet: fromSetToString(val.setVal)
     of crDataMap: fromMapToString(val.mapVal)
     of crDataNil: "nil"
-    of crDataKeyword: ":" & val.keywordVal
+    of crDataKeyword: ":" & val.keywordVal[]
     of crDataFn: "<Function>"
     of crDataMacro: "<Macro>"
     of crDataSyntax: "<Syntax>"
@@ -177,7 +190,7 @@ proc hash*(value: CirruData): Hash =
     of crDataBool:
       return hash("bool:" & $(value.boolVal))
     of crDataKeyword:
-      return hash("keyword:" & value.keywordVal)
+      return hash("keyword:" & value.keywordVal[])
     of crDataFn:
       result = hash("fn:")
       result = result !& hash(value.fnVal)

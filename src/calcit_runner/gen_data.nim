@@ -22,7 +22,7 @@ proc crData*(x: bool): CirruData =
 proc crData*(x: string, target: string = "string"): CirruData =
   case target:
   of "keyword":
-    CirruData(kind: crDataKeyword, keywordVal: x)
+    CirruData(kind: crDataKeyword, keywordVal: loadKeyword(x))
   of "symbol":
     CirruData(kind: crDataSymbol, symbolVal: x, ns: "user", scope: none(CirruDataScope))
   of "string":
@@ -49,7 +49,7 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
   of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
   of crEdnNumber: CirruData(kind: crDataNumber, numberVal: xs.numberVal)
   of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
-  of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: xs.keywordVal)
+  of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword(xs.keywordVal))
   of crEdnVector:
     var ys = initTernaryTreeList[CirruData](@[])
     for item in xs.listVal:

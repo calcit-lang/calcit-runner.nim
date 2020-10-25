@@ -18,7 +18,7 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataString:
     return JsonNode(kind: JString, str: x.stringVal)
   of crDataKeyword:
-    return JsonNode(kind: JString, str: x.keywordVal)
+    return JsonNode(kind: JString, str: x.keywordVal[])
   of crDataList:
     var elems: seq[JsonNode] = @[]
     for i, child in x.listVal:
@@ -36,7 +36,7 @@ proc toJson*(x: CirruData): JsonNode =
       of crDataString:
         fields[k.stringVal] = toJson(v)
       of crDataKeyword:
-        fields[k.keywordVal] = toJson(v)
+        fields[k.keywordVal[]] = toJson(v)
       else:
         raise newException(ValueError, "required string keys in JObject")
     return JsonNode(kind: JObject, fields: fields)

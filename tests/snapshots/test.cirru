@@ -400,6 +400,15 @@
             assert "|some?" $ some? 1
             assert "|some?" $ not $ some? nil
 
+        |test-keyword $ quote
+          defn test-keyword ()
+            assert "|keyword function" $ =
+              :a ({} (:a 1))
+              , 1
+            assert "|keyword used at nil" $ =
+              :a nil
+              , nil
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -437,6 +446,9 @@
 
             log-title "|Testing every/any"
             test-every
+
+            log-title "|Testing keyword function"
+            test-keyword
 
             echo "|Finished running test"
             do true
