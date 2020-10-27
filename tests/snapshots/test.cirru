@@ -77,6 +77,10 @@
                   :b 2
                   :c 3
 
+              assert |vals $ =
+                vals $ {} (:a 1) (:b 2) (:c 2)
+                [] 2 1 2
+
         |hole-series $ quote
           defn hole-series (x)
             if (&<= x 0) (raise-at "\"unexpected small number" x)
@@ -222,6 +226,15 @@
             assert "|string concat" $ = (str |a |b |c) |abc
             assert "|string concat" $ = (str 1 2 3) |123
             assert |convert $ = (type-of (&str 1)) :string
+            assert "|string replace" $ =
+              replace "|this is a" |is |IS
+              , "|thIS IS a"
+            assert "|string splitting" $ =
+              split "|a,b,c" "|,"
+              [] |a |b |c
+            assert "|string splitting" $ =
+              split-lines "|a\nb\nc"
+              [] |a |b |c
 
         |test-foldl $ quote
           defn test-foldl ()
