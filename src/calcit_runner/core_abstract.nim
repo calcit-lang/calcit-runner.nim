@@ -457,6 +457,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ]
   , coreNs)
 
+  let codeVals = genCirru(
+    [defn, vals, [x],
+      [map, ["\\", get, x, "%"], [keys, x]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -528,3 +533,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["has-index?"] = codeHasIndexQuestion
   programCode[coreNs].defs["update"] = codeUpdate
   programCode[coreNs].defs["group-by"] = codeGroupBy
+  programCode[coreNs].defs["vals"] = codeVals

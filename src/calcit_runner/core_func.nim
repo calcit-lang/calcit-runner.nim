@@ -809,6 +809,36 @@ proc nativeRandInt(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataS
   else:
     raiseEvalError("rand-int expects 0~2 arguments", args)
 
+proc nativeReplace(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 3: raiseEvalError("replace expects 3 arguments", args)
+  let base = args[0]
+  let target = args[1]
+  let to = args[2]
+  if base.kind != crDataString: raiseEvalError("replace expects a string", args)
+  if target.kind != crDataString: raiseEvalError("replace expects a string", args)
+  if to.kind != crDataString: raiseEvalError("replace expects a string", args)
+  return CirruData(kind: crDataString, stringVal: base.stringVal.replace(target.stringVal, to.stringVal))
+
+proc nativeSplit(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 2: raiseEvalError("replace expects 3 arguments", args)
+  let base = args[0]
+  let target = args[1]
+  if base.kind != crDataString: raiseEvalError("replace expects a string", args)
+  if target.kind != crDataString: raiseEvalError("replace expects a string", args)
+  var list = initTernaryTreeList[CirruData](@[])
+  for item in base.stringVal.split(target.stringVal):
+    list = list.append CirruData(kind: crDataString, stringVal: item)
+  return CirruData(kind: crDataList, listVal: list)
+
+proc nativeSplitLines(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("replace expects 3 arguments", args)
+  let base = args[0]
+  if base.kind != crDataString: raiseEvalError("replace expects a string", args)
+  var list = initTernaryTreeList[CirruData](@[])
+  for item in base.stringVal.splitLines:
+    list = list.append CirruData(kind: crDataString, stringVal: item)
+  return CirruData(kind: crDataList, listVal: list)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEvalFn): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
@@ -878,3 +908,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: EdnEv
   programData[coreNs].defs["foldl"] = CirruData(kind: crDataFn, fnVal: nativeFoldl, fnCode: fakeNativeCode("foldl"))
   programData[coreNs].defs["rand"] = CirruData(kind: crDataFn, fnVal: nativeRand, fnCode: fakeNativeCode("rand"))
   programData[coreNs].defs["rand-int"] = CirruData(kind: crDataFn, fnVal: nativeRandInt, fnCode: fakeNativeCode("rand-int"))
+  programData[coreNs].defs["replace"] = CirruData(kind: crDataFn, fnVal: nativeReplace, fnCode: fakeNativeCode("replace"))
+  programData[coreNs].defs["split"] = CirruData(kind: crDataFn, fnVal: nativeSplit, fnCode: fakeNativeCode("split"))
+  programData[coreNs].defs["split-lines"] = CirruData(kind: crDataFn, fnVal: nativeSplitLines, fnCode: fakeNativeCode("split-lines"))
