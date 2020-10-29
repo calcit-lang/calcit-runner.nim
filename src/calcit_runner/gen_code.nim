@@ -83,13 +83,6 @@ proc checkExprStructure*(exprList: CirruData): bool =
   else:
     return false
 
-proc fakeNativeCode*(info: string): RefCirruData =
-  RefCirruData(kind: crDataList, listVal: initTernaryTreeList(@[
-    CirruData(kind: crDataSymbol, symbolVal: "defnative", ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: info, ns: coreNs),
-    CirruData(kind: crDataSymbol, symbolVal: "__native_code__", ns: coreNs)
-  ]))
-
 proc shortenCode*(code: string, n: int): string =
   if code.len > n:
     code[0..<n] & "..."

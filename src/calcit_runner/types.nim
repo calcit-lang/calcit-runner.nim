@@ -70,7 +70,6 @@ type
     of crDataKeyword: keywordVal*: RefKeyword
     of crDataProc:
       procVal*: FnInData
-      procCode*: RefCirruData
     of crDataFn:
       fnName*: string
       fnScope*: CirruDataScope
@@ -82,7 +81,6 @@ type
       macroCode*: seq[CirruData]
     of crDataSyntax:
       syntaxVal*: FnInData
-      syntaxCode*: RefCirruData
     of crDataList: listVal*: TernaryTreeList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]

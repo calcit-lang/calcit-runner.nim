@@ -126,8 +126,8 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     let args = spreadFuncArgs(xs[1..^1], interpret, scope)
 
     # echo "HEAD: ", head, " ", xs
-    pushDefStack(head, value.procCode[], args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
+    pushDefStack(head, CirruData(kind: crDataNil), args)
     let ret = f(args, interpret, scope)
     popDefStack()
     return ret
@@ -171,7 +171,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
   of crDataSyntax:
     let f = value.syntaxVal
 
-    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.syntaxCode[], args: xs[1..^1]))
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataNil), args: xs[1..^1]))
     let quoted = f(xs[1..^1], interpret, scope)
     popDefStack()
     return quoted
@@ -190,7 +190,7 @@ proc preprocessSymbolByPath(ns: string, def: string): void =
 
   if not programData[ns].defs.hasKey(def):
     var code = programCode[ns].defs[def]
-    programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc, procCode: fakeNativeCode("placeholder"))
+    programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc)
     code = preprocess(code, toHashset[string](@[]))
     # echo "setting: ", ns, "/", def
     # echo "processed code: ", code
