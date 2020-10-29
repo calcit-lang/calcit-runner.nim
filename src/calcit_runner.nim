@@ -48,7 +48,7 @@ proc getEvaluatedByPath(ns: string, def: string, scope: CirruDataScope): CirruDa
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
 proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData
 
-proc nativeEval(item: CirruData, interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc nativeEval(item: CirruData, interpret: FnInterpret, scope: CirruDataScope): CirruData =
   var code = interpret(item, scope)
   code = preprocess(item, toHashset[string](@[]))
   if not checkExprStructure(code):
@@ -160,7 +160,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
   else:
     raiseEvalError(fmt"Unknown head({head.kind}) for calling", head)
 
-proc placeholderFunc(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData =
+proc placeholderFunc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   echo "[Warn] placeholder function for preprocessing"
   return CirruData(kind: crDataNil)
 

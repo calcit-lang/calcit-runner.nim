@@ -54,9 +54,9 @@ type
     crDataSyntax,
     crDataRecur,
 
-  EdnEvalFn* = proc(expr: CirruData, scope: CirruDataScope): CirruData
+  FnInterpret* = proc(expr: CirruData, scope: CirruDataScope): CirruData
 
-  FnInData* = proc(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): CirruData
+  FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData
 
   ResolvedPath* = tuple[ns: string, def: string]
 

@@ -190,7 +190,7 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
       args.add x
   args
 
-proc spreadFuncArgs*(xs: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): seq[CirruData] =
+proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): seq[CirruData] =
   var args: seq[CirruData] = @[]
   var spreadMode = false
   for x in xs:
