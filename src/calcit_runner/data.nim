@@ -25,7 +25,7 @@ proc isString*(x: CirruData): bool = x.kind == crDataString
 proc isKeyword*(x: CirruData): bool = x.kind == crDataKeyword
 proc isNil*(x: CirruData): bool = x.kind == crDataNil
 proc isSet*(x: CirruData): bool = x.kind == crDataSet
-proc isFn*(x: CirruData): bool = x.kind == crDataFn
+proc isFn*(x: CirruData): bool = x.kind == crDataProc
 proc isBool*(x: CirruData): bool = x.kind == crDataBool
 proc isMacro*(x: CirruData): bool = x.kind == crDataMacro
 proc isSyntax*(x: CirruData): bool = x.kind == crDataSyntax

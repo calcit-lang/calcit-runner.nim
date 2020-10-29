@@ -48,6 +48,7 @@ type
     crDataList,
     crDataSet,
     crDataMap,
+    crDataProc,
     crDataFn,
     crDataMacro,
     crDataSymbol,
@@ -67,8 +68,13 @@ type
     of crDataNumber: numberVal*: float
     of crDataString: stringVal*: string
     of crDataKeyword: keywordVal*: RefKeyword
+    of crDataProc:
+      procVal*: FnInData
+      procCode*: RefCirruData
     of crDataFn:
-      fnVal*: FnInData
+      fnName*: string
+      fnScope*: CirruDataScope
+      fnArgs*: RefCirruData
       fnCode*: RefCirruData
     of crDataMacro:
       macroVal*: FnInData
@@ -160,6 +166,7 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataMap: fromMapToString(val.mapVal)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal[]
+    of crDataProc: "<Proc>"
     of crDataFn: "<Function>"
     of crDataMacro: "<Macro>"
     of crDataSyntax: "<Syntax>"
@@ -178,6 +185,15 @@ proc toString*(val: CirruData, details: bool = false): string =
 proc `$`*(v: CirruData): string =
   v.toString(false)
 
+# mutual recursion
+proc hash*(value: CirruData): Hash
+
+proc hash*(scope: CirruDataScope): Hash =
+  result = hash("scope:")
+  for k, v in scope:
+    result = result !& hash(k)
+    result = result !& hash(v)
+  return result
 
 proc hash*(value: CirruData): Hash =
   case value.kind
@@ -191,9 +207,15 @@ proc hash*(value: CirruData): Hash =
       return hash("bool:" & $(value.boolVal))
     of crDataKeyword:
       return hash("keyword:" & value.keywordVal[])
+    of crDataProc:
+      result = hash("proc:")
+      result = result !& hash(value.procVal)
+      result = !$ result
     of crDataFn:
       result = hash("fn:")
-      result = result !& hash(value.fnVal)
+      result = result !& hash(value.fnArgs[])
+      result = result !& hash(value.fnCode[])
+      result = result !& hash(value.fnScope)
       result = !$ result
     of crDataSyntax:
       result = hash("syntax:")
@@ -245,8 +267,10 @@ proc `==`*(x, y: CirruData): bool =
       return x.numberVal == y.numberVal
     of crDataKeyword:
       return x.keywordVal == y.keywordVal
+    of crDataProc:
+      return x.procVal == y.procVal
     of crDataFn:
-      return x.fnVal == y.fnVal
+      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnScope == y.fnScope
     of crDataMacro:
       return x.macroVal == y.macroVal
     of crDataSyntax:

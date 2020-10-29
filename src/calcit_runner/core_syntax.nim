@@ -116,7 +116,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
+  return CirruData(kind: crDataProc, procVal: f, procCode: code)
 
 proc nativeFn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   let f = proc(xs: seq[CirruData], interpret2: FnInterpret, scope2: CirruDataScope): CirruData =
@@ -130,7 +130,7 @@ proc nativeFn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruData
     return ret
 
   let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
+  return CirruData(kind: crDataProc, procVal: f, procCode: code)
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   var letScope = scope
