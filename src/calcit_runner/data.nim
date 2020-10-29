@@ -163,7 +163,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token == "&E":
     return CirruData(kind: crDataNumber, numberVal: E)
   else:
-    CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
+    return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
 
 proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:
@@ -190,7 +190,7 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
       args.add x
   args
 
-proc spreadFuncArgs*(xs: seq[CirruData], interpret: EdnEvalFn, scope: CirruDataScope): seq[CirruData] =
+proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): seq[CirruData] =
   var args: seq[CirruData] = @[]
   var spreadMode = false
   for x in xs:

@@ -19,9 +19,6 @@ proc toCirruData(x: int): CirruData =
 proc toCirruData(x: float): CirruData =
   CirruData(kind: crDataNumber, numberVal: x)
 
-proc toCirruNil(): CirruData =
-  CirruData(kind: crDataNil)
-
 proc toCirruData(xs: varargs[CirruData]): CirruData =
   var args: seq[CirruData]
   for x in xs:

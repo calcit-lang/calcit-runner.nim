@@ -38,11 +38,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   # use native foldl for performance
-  let codeFoldl = genCirru(
-    ["defn", "foldl", ["f", "xs", "acc"],
-      ["if", ["empty?", "xs"], "acc",
-             ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
-  , coreNs)
+  # let codeFoldl = genCirru(
+  #   ["defn", "foldl", ["f", "xs", "acc"],
+  #     ["if", ["empty?", "xs"], "acc",
+  #            ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
+  # , coreNs)
 
   let codeAdd = genCirru(
     ["defn", "+", ["x", "&", "ys"],

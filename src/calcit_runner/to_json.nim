@@ -31,7 +31,7 @@ proc toJson*(x: CirruData): JsonNode =
     return JsonNode(kind: JArray, elems: elems)
   of crDataMap:
     var fields: OrderedTable[string, JsonNode]
-    for k, v in x.mapVal.pairs():
+    for k, v in x.mapVal:
       case k.kind:
       of crDataString:
         fields[k.stringVal] = toJson(v)
@@ -72,5 +72,5 @@ proc toCirruData*(v: JsonNode): CirruData =
     for key, value in v:
       let keyContent = CirruData(kind: crDataString, stringVal: key)
       let value = toCirruData(value)
-      table.add(keyContent, value)
+      table[keyContent] = value
     return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
