@@ -163,7 +163,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token == "&E":
     return CirruData(kind: crDataNumber, numberVal: E)
   else:
-    CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
+    return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
 
 proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:

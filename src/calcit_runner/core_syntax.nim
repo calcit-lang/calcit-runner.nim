@@ -56,13 +56,12 @@ proc nativeMap*(exprList: seq[CirruData], interpret: EdnEvalFn, scope: CirruData
       raiseEvalError("Each pair of table contains 2 elements", pair)
     let k = interpret(pair[0], scope)
     let v = interpret(pair[1], scope)
-    value.add(k, v)
+    value[k] = v
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
 proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): CirruDataScope =
   var argsScope: CirruDataScope
 
-  var counter = 0
   if definedArgs.kind != crDataList:
     raiseEvalError("Expected a list as arguments", definedArgs)
   let splitPosition = definedArgs.listVal.findIndex(proc(item: CirruData): bool =

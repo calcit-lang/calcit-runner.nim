@@ -224,7 +224,7 @@ proc nativeParseJson(args: seq[CirruData], interpret: EdnEvalFn, scope: CirruDat
   try:
     let jsonData = parseJson(content.stringVal)
     return jsonData.toCirruData()
-  except JsonParsingError as e:
+  except JsonParsingError:
     echo "Failed to parse JSON", content
     raiseEvalError("Failed to parse file", args[0])
 
