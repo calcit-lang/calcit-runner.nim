@@ -248,12 +248,19 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   let value = interpret(code[0], scope)
   if value.kind != crDataMacro:
     raiseEvalError("Expected a macro in the expression", code)
-  let f = value.macroVal
 
-  var quoted = f(spreadArgs(code[1..^1]), interpret, scope)
+  let xs = spreadArgs(code[1..^1])
+  let innerScope = scope.merge(processArguments(value.macroArgs, xs))
+
+  var quoted = CirruData(kind: crDataNil)
+  for child in value.macroCode:
+    quoted = interpret(child, innerScope)
 
   while quoted.isRecur:
-    quoted = f(quoted.args.spreadArgs, interpret, scope)
+    let loopScope = scope.merge(processArguments(value.macroArgs, spreadArgs(quoted.recurArgs)))
+    for child in value.macroCode:
+      quoted = interpret(child, loopScope)
+
   return quoted
 
 proc nativePrintln(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
@@ -755,24 +762,26 @@ proc nativeIntersection(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
 proc nativeRecur(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  return CirruData(kind: crDataRecur, args: args, fnReady: false)
+  return CirruData(kind: crDataRecur, recurArgs: args)
 
-proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
-  let f = args[0]
-  if f.kind != crDataProc: raiseEvalError("Expects f to be a function", args)
-  let xs = args[1]
-  var acc = args[2]
-  if xs.kind == crDataNil:
-    return acc
+# TODO no longer works in current function solution
+# proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+#   if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
+#   let f = args[0]
+#   if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
+#   let xs = args[1]
+#   var acc = args[2]
+#   if xs.kind == crDataNil:
+#     return acc
 
-  if xs.kind != crDataList:
-    raiseEvalError("Expects xs to be a list", args)
+#   if xs.kind != crDataList:
+#     raiseEvalError("Expects xs to be a list", args)
 
-  for item in xs.listVal:
-    acc = f.procVal(@[acc, item], interpret, scope)
+#   for item in xs.listVal:
+#     let list = @[f, acc, item]
+#     acc = interpret(CirruData(kind: crDataList, listVal: initTernaryTreeList(list)) , scope)
 
-  return acc
+#   return acc
 
 proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   case args.len
@@ -906,7 +915,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&union"] = CirruData(kind: crDataProc, procVal: nativeUnion, procCode: fakeNativeCode("#union"))
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataProc, procVal: nativeIntersection, procCode: fakeNativeCode("#intersection"))
   programData[coreNs].defs["recur"] = CirruData(kind: crDataProc, procVal: nativeRecur, procCode: fakeNativeCode("recur"))
-  programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl, procCode: fakeNativeCode("foldl"))
+  # programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl, procCode: fakeNativeCode("foldl"))
   programData[coreNs].defs["rand"] = CirruData(kind: crDataProc, procVal: nativeRand, procCode: fakeNativeCode("rand"))
   programData[coreNs].defs["rand-int"] = CirruData(kind: crDataProc, procVal: nativeRandInt, procCode: fakeNativeCode("rand-int"))
   programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace, procCode: fakeNativeCode("replace"))

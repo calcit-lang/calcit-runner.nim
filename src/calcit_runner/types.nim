@@ -74,11 +74,12 @@ type
     of crDataFn:
       fnName*: string
       fnScope*: CirruDataScope
-      fnArgs*: RefCirruData
-      fnCode*: RefCirruData
+      fnArgs*: TernaryTreeList[CirruData]
+      fnCode*: seq[CirruData]
     of crDataMacro:
-      macroVal*: FnInData
-      macroCode*: RefCirruData
+      macroName*: string
+      macroArgs*: TernaryTreeList[CirruData]
+      macroCode*: seq[CirruData]
     of crDataSyntax:
       syntaxVal*: FnInData
       syntaxCode*: RefCirruData
@@ -93,8 +94,7 @@ type
       # TODO looking for simpler solution
       dynamic*: bool
     of crDataRecur:
-      args*: seq[CirruData]
-      fnReady*: bool
+      recurArgs*: seq[CirruData]
 
   RefCirruData* = ref CirruData
 
@@ -141,6 +141,23 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   tableStr = tableStr & "}"
   return tableStr
 
+proc toString*(children: CirruDataScope): string =
+  let size = children.len()
+  if size > 100:
+    return "{...(100)...}"
+  var tableStr = "{"
+  var counted = 0
+  for k, child in pairs(children):
+    tableStr = tableStr & k & " " & toString(child)
+    counted = counted + 1
+    if counted < children.len:
+      tableStr = tableStr & ", "
+  tableStr = tableStr & "}"
+  return tableStr
+
+proc `$`*(children: CirruDataScope): string =
+  children.toString
+
 proc escapeString(x: string): string =
   if x.contains("\"") or x.contains(' '):
     escape("|" & x)
@@ -167,11 +184,13 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal[]
     of crDataProc: "<Proc>"
-    of crDataFn: "<Function>"
-    of crDataMacro: "<Macro>"
+    of crDataFn:
+      "<Function: " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ">"
+    of crDataMacro:
+      "<Macro: " & val.macroName & " " & $val.macroArgs.toSeq & " " & $val.macroCode & ">"
     of crDataSyntax: "<Syntax>"
     of crDataRecur:
-      let content = val.args.mapIt(it.toString).join(" ")
+      let content = val.recurArgs.mapIt(it.toString).join(" ")
       fmt"<Recur: {content}>"
     of crDataSymbol:
       if details:
@@ -187,6 +206,12 @@ proc `$`*(v: CirruData): string =
 
 # mutual recursion
 proc hash*(value: CirruData): Hash
+
+proc hash*[T](scope: TernaryTreeList[T]): Hash =
+  result = hash("ternary-list:")
+  for item in scope:
+    result = result !& hash(item)
+  return result
 
 proc hash*(scope: CirruDataScope): Hash =
   result = hash("scope:")
@@ -213,8 +238,8 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
     of crDataFn:
       result = hash("fn:")
-      result = result !& hash(value.fnArgs[])
-      result = result !& hash(value.fnCode[])
+      result = result !& hash(value.fnArgs)
+      result = result !& hash(value.fnCode)
       result = result !& hash(value.fnScope)
       result = !$ result
     of crDataSyntax:
@@ -223,7 +248,8 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
     of crDataMacro:
       result = hash("macro:")
-      result = result !& hash(value.macroVal)
+      result = result !& hash(value.macroArgs)
+      result = result !& hash(value.macroCode)
       result = !$ result
     of crDataList:
       result = hash("list:")
@@ -249,7 +275,7 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
     of crDataRecur:
       result =  hash("recur:")
-      result = result !& hash(value.args)
+      result = result !& hash(value.recurArgs)
       result = !$ result
 
 proc `==`*(x, y: CirruData): bool =
@@ -272,7 +298,7 @@ proc `==`*(x, y: CirruData): bool =
     of crDataFn:
       return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnScope == y.fnScope
     of crDataMacro:
-      return x.macroVal == y.macroVal
+      return x.macroArgs == y.macroArgs and x.macroCode == y.macroCode
     of crDataSyntax:
       return x.syntaxVal == y.syntaxVal
 
@@ -309,4 +335,4 @@ proc `==`*(x, y: CirruData): bool =
       return x.symbolVal == y.symbolVal
 
     of crDataRecur:
-      return x.args == y.args
+      return x.recurArgs == y.recurArgs

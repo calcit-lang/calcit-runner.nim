@@ -96,6 +96,7 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
   if xs.kind == crDataNumber: return xs
   if xs.kind == crDataBool: return xs
   if xs.kind == crDataProc: return xs
+  if xs.kind == crDataFn: return xs
 
   if xs.kind == crDataSymbol:
     return interpretSymbol(xs, scope)
@@ -125,11 +126,29 @@ proc interpret(xs: CirruData, scope: CirruDataScope): CirruData =
     let args = spreadFuncArgs(xs[1..^1], interpret, scope)
 
     # echo "HEAD: ", head, " ", xs
-    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.procCode[], args: args))
+    pushDefStack(head, value.procCode[], args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
-    var ret = f(args, interpret, scope)
-    while ret.isRecur and ret.fnReady:
-      ret = f(ret.args, interpret, scope)
+    let ret = f(args, interpret, scope)
+    popDefStack()
+    return ret
+
+  of crDataFn:
+    let args = spreadFuncArgs(xs[1..^1], interpret, scope)
+
+    # echo "HEAD: ", head, " ", xs
+    pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
+    # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
+
+    let innerScope = value.fnScope.merge(processArguments(value.fnArgs, args))
+    var ret = CirruData(kind: crDataNil)
+    for child in value.fnCode:
+      ret = interpret(child, innerScope)
+
+    while ret.isRecur:
+      let loopScope = value.fnScope.merge(processArguments(value.fnArgs, ret.recurArgs))
+      for child in value.fnCode:
+        ret = interpret(child, loopScope)
+
     popDefStack()
     return ret
 
@@ -253,20 +272,34 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
         let path = value.resolved.get
         value = programData[path.ns].defs[path.def]
 
+      # echo "run into: ", code, " ", value
+
       case value.kind
-      of crDataProc, crDataKeyword:
+      of crDataProc, crDataFn, crDataKeyword:
         var xs = initTernaryTreeList[CirruData](@[originalValue])
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs)
         return CirruData(kind: crDataList, listVal: xs)
       of crDataMacro:
-        let f = value.macroVal
         let emptyScope = CirruDataScope()
-        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: value.macroCode[], args: code[1..^1]))
 
-        var quoted = f(spreadArgs(code[1..^1]), interpret, emptyScope)
+        let xs = spreadArgs(code[1..^1])
+        let innerScope = emptyScope.merge(processArguments(value.macroArgs, xs))
+
+        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
+
+        var quoted = CirruData(kind: crDataNil)
+        for child in value.macroCode:
+          quoted = interpret(child, innerScope)
+
         while quoted.isRecur:
-          quoted = f(quoted.args.spreadArgs, interpret, emptyScope)
+          let loopScope = emptyScope.merge(processArguments(value.macroArgs, spreadArgs(quoted.recurArgs)))
+          for child in value.macroCode:
+            quoted = interpret(child, loopScope)
+
+        if quoted.isList.not and quoted.isRecur.not and quoted.isSymbol.not:
+          raiseEvalError("Expected list or recur from defmacro", quoted)
+
         popDefStack()
         # echo "Expanded macro: ", code, "  ->  ", quoted
         return preprocess(quoted, localDefs)
@@ -348,17 +381,18 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     preprocessSymbolByPath(pieces[0], pieces[1])
     let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
-    if entry.kind != crDataProc:
+    if entry.kind != crDataFn:
       raise newException(ValueError, "expects a function at app.main/main!")
 
     let mainCode = programCode[pieces[0]].defs[pieces[1]]
     defStack = initDoublyLinkedList[StackInfo]()
     pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
 
-    let f = entry.procVal
-    let args: seq[CirruData] = @[]
+    var ret = CirruData(kind: crDataNil)
+    for child in entry.fnCode:
+      ret = interpret(child, scope)
 
-    return f(args, interpret, scope)
+    return ret
 
   except CirruEvalError as e:
     echo ""
@@ -399,17 +433,16 @@ proc reloadProgram(snapshotFile: string): void =
     preprocessSymbolByPath(pieces[0], pieces[1])
     let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
 
-    if entry.kind != crDataProc:
+    if entry.kind != crDataFn:
       raise newException(ValueError, "expects a function at app.main/main!")
 
     let mainCode = programCode[pieces[0]].defs[pieces[1]]
     defStack = initDoublyLinkedList[StackInfo]()
     pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
 
-    let f = entry.procVal
-    let args: seq[CirruData] = @[]
-
-    discard f(args, interpret, scope)
+    var ret = CirruData(kind: crDataNil)
+    for child in entry.fnCode:
+      ret = interpret(child, scope)
 
   except CirruEvalError as e:
     echo ""

@@ -38,11 +38,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   # use native foldl for performance
-  # let codeFoldl = genCirru(
-  #   ["defn", "foldl", ["f", "xs", "acc"],
-  #     ["if", ["empty?", "xs"], "acc",
-  #            ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
-  # , coreNs)
+  let codeFoldl = genCirru(
+    ["defn", "foldl", ["f", "xs", "acc"],
+      ["if", ["empty?", "xs"], "acc",
+             ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
+  , coreNs)
 
   let codeAdd = genCirru(
     ["defn", "+", ["x", "&", "ys"],
@@ -466,13 +466,12 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   # TODO dissoc-in
   # TODO update-in
 
+  programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
   programCode[coreNs].defs["&>="] = codeNativeLargerEqual
   programCode[coreNs].defs["first"] = codeFirst
   programCode[coreNs].defs["when"] = codeWhen
-
-  # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["+"] = codeAdd
   programCode[coreNs].defs["-"] = codeMinus
   programCode[coreNs].defs["*"] = codeMultiply
