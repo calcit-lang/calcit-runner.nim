@@ -59,78 +59,19 @@ proc nativeMap*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
     value[k] = v
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
-proc processArguments(definedArgs: CirruData, passedArgs: seq[CirruData]): CirruDataScope =
-  var argsScope: CirruDataScope
-
-  if definedArgs.kind != crDataList:
-    raiseEvalError("Expected a list as arguments", definedArgs)
-  let splitPosition = definedArgs.listVal.findIndex(proc(item: CirruData): bool =
-    item.kind == crDataSymbol and item.symbolVal == "&"
-  )
-
-  if splitPosition >= 0:
-    if passedArgs.len < splitPosition:
-      raiseEvalError("No enough arguments", definedArgs)
-    if splitPosition != (definedArgs.len - 2):
-      raiseEvalError("& should appear before last argument", definedArgs)
-    for idx in 0..<splitPosition:
-      let definedArgName = definedArgs[idx]
-      if definedArgName.kind != crDataSymbol:
-        raiseEvalError("Expects arg in symbol", definedArgName)
-      argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
-    var varList = initTernaryTreeList[CirruData](@[])
-    for idx in splitPosition..<passedArgs.len:
-      varList = varList.append passedArgs[idx]
-    let varArgName = definedArgs[definedArgs.len - 1]
-    if varArgName.kind != crDataSymbol:
-      raiseEvalError("Expected var arg in symbol", varArgName)
-    argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: varList))
-    return argsScope
-
-  else:
-    var counter = 0
-    if definedArgs.len != passedArgs.len:
-      raiseEvalError(fmt"Args length mismatch: {definedArgs.len} {passedArgs.len}", definedArgs)
-    definedArgs.listVal.each(proc(arg: CirruData): void =
-      if arg.kind != crDataSymbol:
-        raiseEvalError("Expects arg in symbol", arg)
-      argsScope = argsScope.assoc(arg.symbolVal, passedArgs[counter])
-      counter += 1
-    )
-    return argsScope
-
 proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  # echo "defn: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  # writeStackTrace()
-
-  let f = proc(xs: seq[CirruData], interpret2: FnInterpret, scope2: CirruDataScope): CirruData =
-    let argsList = exprList[1]
-
-    let innerScope = scope.merge(processArguments(argsList, xs))
-
-    var ret = CirruData(kind: crDataNil)
-    for child in exprList[2..^1]:
-      ret = interpret(child, innerScope)
-    if ret.isRecur:
-      ret.fnReady = true
-    return ret
-
-  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
+  if exprList.len < 2: raiseEvalError("Expects name and args for defn", exprList)
+  let fnName = exprList[0]
+  if fnName.kind != crDataSymbol: raiseEvalError("Expects fnName to be string", exprList)
+  let argsList = exprList[1]
+  if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
+  return CirruData(kind: crDataFn, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
 
 proc nativeFn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  let f = proc(xs: seq[CirruData], interpret2: FnInterpret, scope2: CirruDataScope): CirruData =
-    let argsList = exprList[0]
-
-    let innerScope = scope.merge(processArguments(argsList, xs))
-
-    var ret = CirruData(kind: crDataNil)
-    for child in exprList[1..^1]:
-      ret = interpret(child, innerScope)
-    return ret
-
-  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataFn, fnVal: f, fnCode: code)
+  if exprList.len < 1: raiseEvalError("Expects args for fn", exprList)
+  let argsList = exprList[0]
+  if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
+  return CirruData(kind: crDataFn, fnName: "fn", fnArgs: argsList.listVal, fnCode: exprList[1..^1], fnScope: scope)
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   var letScope = scope
@@ -171,15 +112,15 @@ proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   for child in body:
     ret = interpret(child, loopScope)
   while ret.isRecur:
-    if ret.args.len != pairs.len:
-      raiseEvalError(fmt"recur args {ret.args.len} != {pairs.len}", exprList)
+    if ret.recurArgs.len != pairs.len:
+      raiseEvalError(fmt"recur args {ret.recurArgs.len} != {pairs.len}", exprList)
     var idx = 0
     for pair in pairs:
       if not pair.isList: raiseEvalError("Expect binding in a list", pair)
       if pair.len != 2: raiseEvalError("Expect binding in length 2", pair)
       let name = pair[0]
       if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
-      loopScope = loopScope.assoc(name.symbolVal, ret.args[idx])
+      loopScope = loopScope.assoc(name.symbolVal, ret.recurArgs[idx])
       idx = idx + 1
 
     for child in body:
@@ -264,19 +205,11 @@ proc nativeQuoteReplace(exprList: seq[CirruData], interpret: FnInterpret, scope:
   ret
 
 proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  let f = proc(xs: seq[CirruData], callingFn: FnInterpret, callingScope: CirruDataScope): CirruData =
-    let argsList = exprList[1]
-    let innerScope = scope.merge(processArguments(argsList, xs))
-
-    var ret = CirruData(kind: crDataNil)
-    for child in exprList[2..^1]:
-      ret = interpret(child, innerScope)
-    if ret.isList.not and ret.isRecur.not and ret.isSymbol.not:
-      raiseEvalError("Expected list or recur from defmacro", ret)
-    return ret
-
-  let code = RefCirruData(kind: crDataList, listVal: initTernaryTreeList(exprList))
-  return CirruData(kind: crDataMacro, macroVal: f, macroCode: code)
+  let macroName = exprList[0]
+  if macroName.kind != crDataSymbol: raiseEvalError("Expects macro name a symbol", exprList)
+  let argsList = exprList[1]
+  if argsList.kind != crDataList: raiseEvalError("Expects macro args to be a list", exprList)
+  return CirruData(kind: crDataMacro, macroName: macroName.symbolVal, macroArgs: argsList.listVal, macroCode: exprList[2..^1])
 
 proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   if exprList.len != 2:
@@ -291,16 +224,16 @@ proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError(message.stringVal, exprList)
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
-  programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeList, syntaxCode: fakeNativeCode("[]"))
-  programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert, syntaxCode: fakeNativeCode("assert"))
-  programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace, syntaxCode: fakeNativeCode("quote-replace"))
-  programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro, syntaxCode: fakeNativeCode("defmacro"))
-  programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment, syntaxCode: fakeNativeCode(";"))
-  programData[coreNs].defs["do"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDo, syntaxCode: fakeNativeCode("do"))
-  programData[coreNs].defs["if"] = CirruData(kind: crDataSyntax, syntaxVal: nativeIf, syntaxCode: fakeNativeCode("if"))
-  programData[coreNs].defs["defn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefn, syntaxCode: fakeNativeCode("defn"))
-  programData[coreNs].defs["fn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeFn, syntaxCode: fakeNativeCode("fn"))
-  programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet, syntaxCode: fakeNativeCode("let"))
-  programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote, syntaxCode: fakeNativeCode("quote"))
-  programData[coreNs].defs["{}"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMap, syntaxCode: fakeNativeCode("{}"))
-  programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop, syntaxCode: fakeNativeCode("loop"))
+  programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeList)
+  programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert)
+  programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
+  programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
+  programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment)
+  programData[coreNs].defs["do"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDo)
+  programData[coreNs].defs["if"] = CirruData(kind: crDataSyntax, syntaxVal: nativeIf)
+  programData[coreNs].defs["defn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefn)
+  programData[coreNs].defs["fn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeFn)
+  programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet)
+  programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
+  programData[coreNs].defs["{}"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMap)
+  programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop)

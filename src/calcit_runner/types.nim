@@ -48,6 +48,7 @@ type
     crDataList,
     crDataSet,
     crDataMap,
+    crDataProc,
     crDataFn,
     crDataMacro,
     crDataSymbol,
@@ -67,15 +68,19 @@ type
     of crDataNumber: numberVal*: float
     of crDataString: stringVal*: string
     of crDataKeyword: keywordVal*: RefKeyword
+    of crDataProc:
+      procVal*: FnInData
     of crDataFn:
-      fnVal*: FnInData
-      fnCode*: RefCirruData
+      fnName*: string
+      fnScope*: CirruDataScope
+      fnArgs*: TernaryTreeList[CirruData]
+      fnCode*: seq[CirruData]
     of crDataMacro:
-      macroVal*: FnInData
-      macroCode*: RefCirruData
+      macroName*: string
+      macroArgs*: TernaryTreeList[CirruData]
+      macroCode*: seq[CirruData]
     of crDataSyntax:
       syntaxVal*: FnInData
-      syntaxCode*: RefCirruData
     of crDataList: listVal*: TernaryTreeList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
@@ -87,8 +92,7 @@ type
       # TODO looking for simpler solution
       dynamic*: bool
     of crDataRecur:
-      args*: seq[CirruData]
-      fnReady*: bool
+      recurArgs*: seq[CirruData]
 
   RefCirruData* = ref CirruData
 
@@ -135,6 +139,23 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   tableStr = tableStr & "}"
   return tableStr
 
+proc toString*(children: CirruDataScope): string =
+  let size = children.len()
+  if size > 100:
+    return "{...(100)...}"
+  var tableStr = "{"
+  var counted = 0
+  for k, child in pairs(children):
+    tableStr = tableStr & k & " " & toString(child)
+    counted = counted + 1
+    if counted < children.len:
+      tableStr = tableStr & ", "
+  tableStr = tableStr & "}"
+  return tableStr
+
+proc `$`*(children: CirruDataScope): string =
+  children.toString
+
 proc escapeString(x: string): string =
   if x.contains("\"") or x.contains(' '):
     escape("|" & x)
@@ -160,11 +181,14 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataMap: fromMapToString(val.mapVal)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal[]
-    of crDataFn: "<Function>"
-    of crDataMacro: "<Macro>"
+    of crDataProc: "<Proc>"
+    of crDataFn:
+      "<Function: " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ">"
+    of crDataMacro:
+      "<Macro: " & val.macroName & " " & $val.macroArgs.toSeq & " " & $val.macroCode & ">"
     of crDataSyntax: "<Syntax>"
     of crDataRecur:
-      let content = val.args.mapIt(it.toString).join(" ")
+      let content = val.recurArgs.mapIt(it.toString).join(" ")
       fmt"<Recur: {content}>"
     of crDataSymbol:
       if details:
@@ -178,6 +202,21 @@ proc toString*(val: CirruData, details: bool = false): string =
 proc `$`*(v: CirruData): string =
   v.toString(false)
 
+# mutual recursion
+proc hash*(value: CirruData): Hash
+
+proc hash*[T](scope: TernaryTreeList[T]): Hash =
+  result = hash("ternary-list:")
+  for item in scope:
+    result = result !& hash(item)
+  return result
+
+proc hash*(scope: CirruDataScope): Hash =
+  result = hash("scope:")
+  for k, v in scope:
+    result = result !& hash(k)
+    result = result !& hash(v)
+  return result
 
 proc hash*(value: CirruData): Hash =
   case value.kind
@@ -191,9 +230,15 @@ proc hash*(value: CirruData): Hash =
       return hash("bool:" & $(value.boolVal))
     of crDataKeyword:
       return hash("keyword:" & value.keywordVal[])
+    of crDataProc:
+      result = hash("proc:")
+      result = result !& hash(value.procVal)
+      result = !$ result
     of crDataFn:
       result = hash("fn:")
-      result = result !& hash(value.fnVal)
+      result = result !& hash(value.fnArgs)
+      result = result !& hash(value.fnCode)
+      result = result !& hash(value.fnScope)
       result = !$ result
     of crDataSyntax:
       result = hash("syntax:")
@@ -201,7 +246,8 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
     of crDataMacro:
       result = hash("macro:")
-      result = result !& hash(value.macroVal)
+      result = result !& hash(value.macroArgs)
+      result = result !& hash(value.macroCode)
       result = !$ result
     of crDataList:
       result = hash("list:")
@@ -227,7 +273,7 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
     of crDataRecur:
       result =  hash("recur:")
-      result = result !& hash(value.args)
+      result = result !& hash(value.recurArgs)
       result = !$ result
 
 proc `==`*(x, y: CirruData): bool =
@@ -245,10 +291,12 @@ proc `==`*(x, y: CirruData): bool =
       return x.numberVal == y.numberVal
     of crDataKeyword:
       return x.keywordVal == y.keywordVal
+    of crDataProc:
+      return x.procVal == y.procVal
     of crDataFn:
-      return x.fnVal == y.fnVal
+      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnScope == y.fnScope
     of crDataMacro:
-      return x.macroVal == y.macroVal
+      return x.macroArgs == y.macroArgs and x.macroCode == y.macroCode
     of crDataSyntax:
       return x.syntaxVal == y.syntaxVal
 
@@ -285,4 +333,4 @@ proc `==`*(x, y: CirruData): bool =
       return x.symbolVal == y.symbolVal
 
     of crDataRecur:
-      return x.args == y.args
+      return x.recurArgs == y.recurArgs

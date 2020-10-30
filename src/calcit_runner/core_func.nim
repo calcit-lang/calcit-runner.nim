@@ -177,6 +177,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     of crDataString: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("string"))
     of crDataBool: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("bool"))
     of crDataMap: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("map"))
+    of crDataProc: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("proc"))
     of crDataFn: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("fn"))
     of crDataMacro: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("macro"))
     of crDataKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("keyword"))
@@ -247,12 +248,19 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   let value = interpret(code[0], scope)
   if value.kind != crDataMacro:
     raiseEvalError("Expected a macro in the expression", code)
-  let f = value.macroVal
 
-  var quoted = f(spreadArgs(code[1..^1]), interpret, scope)
+  let xs = spreadArgs(code[1..^1])
+  let innerScope = scope.merge(processArguments(value.macroArgs, xs))
+
+  var quoted = CirruData(kind: crDataNil)
+  for child in value.macroCode:
+    quoted = interpret(child, innerScope)
 
   while quoted.isRecur:
-    quoted = f(quoted.args.spreadArgs, interpret, scope)
+    let loopScope = scope.merge(processArguments(value.macroArgs, spreadArgs(quoted.recurArgs)))
+    for child in value.macroCode:
+      quoted = interpret(child, loopScope)
+
   return quoted
 
 proc nativePrintln(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
@@ -754,24 +762,26 @@ proc nativeIntersection(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
 proc nativeRecur(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  return CirruData(kind: crDataRecur, args: args, fnReady: false)
+  return CirruData(kind: crDataRecur, recurArgs: args)
 
-proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
-  let f = args[0]
-  if f.kind != crDataFn: raiseEvalError("Expects f to be a function", args)
-  let xs = args[1]
-  var acc = args[2]
-  if xs.kind == crDataNil:
-    return acc
+# TODO no longer works in current function solution
+# proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+#   if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
+#   let f = args[0]
+#   if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
+#   let xs = args[1]
+#   var acc = args[2]
+#   if xs.kind == crDataNil:
+#     return acc
 
-  if xs.kind != crDataList:
-    raiseEvalError("Expects xs to be a list", args)
+#   if xs.kind != crDataList:
+#     raiseEvalError("Expects xs to be a list", args)
 
-  for item in xs.listVal:
-    acc = f.fnVal(@[acc, item], interpret, scope)
+#   for item in xs.listVal:
+#     let list = @[f, acc, item]
+#     acc = interpret(CirruData(kind: crDataList, listVal: initTernaryTreeList(list)) , scope)
 
-  return acc
+#   return acc
 
 proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   case args.len
@@ -841,73 +851,73 @@ proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
-  programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnVal: nativeAdd, fnCode: fakeNativeCode("&+"))
-  programData[coreNs].defs["&-"] = CirruData(kind: crDataFn, fnVal: nativeMinus, fnCode: fakeNativeCode("&-"))
-  programData[coreNs].defs["&*"] = CirruData(kind: crDataFn, fnVal: nativeMultiply, fnCode: fakeNativeCode("&*"))
-  programData[coreNs].defs["&/"] = CirruData(kind: crDataFn, fnVal: nativeDivide, fnCode: fakeNativeCode("&/"))
-  programData[coreNs].defs["mod"] = CirruData(kind: crDataFn, fnVal: nativeMod, fnCode: fakeNativeCode("mod"))
-  programData[coreNs].defs["&<"] = CirruData(kind: crDataFn, fnVal: nativeLessThan, fnCode: fakeNativeCode("&<"))
-  programData[coreNs].defs["&>"] = CirruData(kind: crDataFn, fnVal: nativeGreaterThan, fnCode: fakeNativeCode("&>"))
-  programData[coreNs].defs["&="] = CirruData(kind: crDataFn, fnVal: nativeEqual, fnCode: fakeNativeCode("&="))
-  programData[coreNs].defs["&and"] = CirruData(kind: crDataFn, fnVal: nativeAnd, fnCode: fakeNativeCode("&and"))
-  programData[coreNs].defs["&or"] = CirruData(kind: crDataFn, fnVal: nativeOr, fnCode: fakeNativeCode("&or"))
-  programData[coreNs].defs["not"] = CirruData(kind: crDataFn, fnVal: nativeNot, fnCode: fakeNativeCode("not"))
-  programData[coreNs].defs["count"] = CirruData(kind: crDataFn, fnVal: nativeCount, fnCode: fakeNativeCode("count"))
-  programData[coreNs].defs["get"] = CirruData(kind: crDataFn, fnVal: nativeGet, fnCode: fakeNativeCode("get"))
-  programData[coreNs].defs["rest"] = CirruData(kind: crDataFn, fnVal: nativeRest, fnCode: fakeNativeCode("rest"))
-  programData[coreNs].defs["raise-at"] = CirruData(kind: crDataFn, fnVal: nativeRaiseAt, fnCode: fakeNativeCode("raise-at"))
-  programData[coreNs].defs["type-of"] = CirruData(kind: crDataFn, fnVal: nativeTypeOf, fnCode: fakeNativeCode("type-of"))
-  programData[coreNs].defs["read-file"] = CirruData(kind: crDataFn, fnVal: nativeReadFile, fnCode: fakeNativeCode("read-file"))
-  programData[coreNs].defs["write-file"] = CirruData(kind: crDataFn, fnVal: nativeWriteFile, fnCode: fakeNativeCode("write-file"))
-  programData[coreNs].defs["parse-json"] = CirruData(kind: crDataFn, fnVal: nativeParseJson, fnCode: fakeNativeCode("parse-json"))
-  programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataFn, fnVal: nativeStringifyJson, fnCode: fakeNativeCode("stringify-json"))
-  programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataFn, fnVal: nativeMacroexpand, fnCode: fakeNativeCode("macroexpand"))
-  programData[coreNs].defs["println"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("println"))
-  programData[coreNs].defs["echo"] = CirruData(kind: crDataFn, fnVal: nativePrintln, fnCode: fakeNativeCode("echo"))
-  programData[coreNs].defs["pr-str"] = CirruData(kind: crDataFn, fnVal: nativePrStr, fnCode: fakeNativeCode("pr-str"))
-  programData[coreNs].defs["prepend"] = CirruData(kind: crDataFn, fnVal: nativePrepend, fnCode: fakeNativeCode("prepend"))
-  programData[coreNs].defs["append"] = CirruData(kind: crDataFn, fnVal: nativeAppend, fnCode: fakeNativeCode("append"))
-  programData[coreNs].defs["first"] = CirruData(kind: crDataFn, fnVal: nativeFirst, fnCode: fakeNativeCode("first"))
-  programData[coreNs].defs["empty?"] = CirruData(kind: crDataFn, fnVal: nativeEmptyQuestion, fnCode: fakeNativeCode("empty?"))
-  programData[coreNs].defs["last"] = CirruData(kind: crDataFn, fnVal: nativeLast, fnCode: fakeNativeCode("last"))
-  programData[coreNs].defs["butlast"] = CirruData(kind: crDataFn, fnVal: nativeButlast, fnCode: fakeNativeCode("butlast"))
-  programData[coreNs].defs["reverse"] = CirruData(kind: crDataFn, fnVal: nativeReverse, fnCode: fakeNativeCode("reverse"))
-  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataFn, fnVal: nativeTurnString, fnCode: fakeNativeCode("turn-string"))
-  programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataFn, fnVal: nativeTurnSymbol, fnCode: fakeNativeCode("turn-symbol"))
-  programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataFn, fnVal: nativeTurnKeyword, fnCode: fakeNativeCode("turn-keyword"))
-  programData[coreNs].defs["identical?"] = CirruData(kind: crDataFn, fnVal: nativeIdenticalQuestion, fnCode: fakeNativeCode("identical?"))
-  programData[coreNs].defs["range"] = CirruData(kind: crDataFn, fnVal: nativeRange, fnCode: fakeNativeCode("range"))
-  programData[coreNs].defs["slice"] = CirruData(kind: crDataFn, fnVal: nativeSlice, fnCode: fakeNativeCode("slice"))
-  programData[coreNs].defs["&concat"] = CirruData(kind: crDataFn, fnVal: nativeConcat, fnCode: fakeNativeCode("&concat"))
-  programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataFn, fnVal: nativeFormatTernaryTree, fnCode: fakeNativeCode("format-ternary-tree"))
-  programData[coreNs].defs["&merge"] = CirruData(kind: crDataFn, fnVal: nativeMerge, fnCode: fakeNativeCode("&merge"))
-  programData[coreNs].defs["contains?"] = CirruData(kind: crDataFn, fnVal: nativeContainsQuestion, fnCode: fakeNativeCode("contains?"))
-  programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataFn, fnVal: nativeAssocBefore, fnCode: fakeNativeCode("assoc-before"))
-  programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataFn, fnVal: nativeAssocAfter, fnCode: fakeNativeCode("assoc-after"))
-  programData[coreNs].defs["keys"] = CirruData(kind: crDataFn, fnVal: nativeKeys, fnCode: fakeNativeCode("keys"))
-  programData[coreNs].defs["assoc"] = CirruData(kind: crDataFn, fnVal: nativeAssoc, fnCode: fakeNativeCode("assoc"))
-  programData[coreNs].defs["dissoc"] = CirruData(kind: crDataFn, fnVal: nativeDissoc, fnCode: fakeNativeCode("dissoc"))
-  programData[coreNs].defs["&str"] = CirruData(kind: crDataFn, fnVal: nativeStr, fnCode: fakeNativeCode("&str"))
-  programData[coreNs].defs["escape"] = CirruData(kind: crDataFn, fnVal: nativeEscape, fnCode: fakeNativeCode("escape"))
-  programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataFn, fnVal: nativeStrConcat, fnCode: fakeNativeCode("&str-concat"))
-  programData[coreNs].defs["parse-cirru-edn"] = CirruData(kind: crDataFn, fnVal: nativeParseCirruEdn, fnCode: fakeNativeCode("parse-cirru-edn"))
-  programData[coreNs].defs["sqrt"] = CirruData(kind: crDataFn, fnVal: nativeSqrt, fnCode: fakeNativeCode("sqrt"))
-  programData[coreNs].defs["ceil"] = CirruData(kind: crDataFn, fnVal: nativeCeil, fnCode: fakeNativeCode("ceil"))
-  programData[coreNs].defs["floor"] = CirruData(kind: crDataFn, fnVal: nativeFloor, fnCode: fakeNativeCode("floor"))
-  programData[coreNs].defs["sin"] = CirruData(kind: crDataFn, fnVal: nativeSin, fnCode: fakeNativeCode("sin"))
-  programData[coreNs].defs["cos"] = CirruData(kind: crDataFn, fnVal: nativeCos, fnCode: fakeNativeCode("cos"))
-  programData[coreNs].defs["round"] = CirruData(kind: crDataFn, fnVal: nativeRound, fnCode: fakeNativeCode("round"))
-  programData[coreNs].defs["pow"] = CirruData(kind: crDataFn, fnVal: nativePow, fnCode: fakeNativeCode("pow"))
-  programData[coreNs].defs["#{}"] = CirruData(kind: crDataFn, fnVal: nativeHashSet, fnCode: fakeNativeCode("#{}"))
-  programData[coreNs].defs["&include"] = CirruData(kind: crDataFn, fnVal: nativeInclude, fnCode: fakeNativeCode("#include"))
-  programData[coreNs].defs["&exclude"] = CirruData(kind: crDataFn, fnVal: nativeExclude, fnCode: fakeNativeCode("#exclude"))
-  programData[coreNs].defs["&difference"] = CirruData(kind: crDataFn, fnVal: nativeDifference, fnCode: fakeNativeCode("#difference"))
-  programData[coreNs].defs["&union"] = CirruData(kind: crDataFn, fnVal: nativeUnion, fnCode: fakeNativeCode("#union"))
-  programData[coreNs].defs["&intersection"] = CirruData(kind: crDataFn, fnVal: nativeIntersection, fnCode: fakeNativeCode("#intersection"))
-  programData[coreNs].defs["recur"] = CirruData(kind: crDataFn, fnVal: nativeRecur, fnCode: fakeNativeCode("recur"))
-  programData[coreNs].defs["foldl"] = CirruData(kind: crDataFn, fnVal: nativeFoldl, fnCode: fakeNativeCode("foldl"))
-  programData[coreNs].defs["rand"] = CirruData(kind: crDataFn, fnVal: nativeRand, fnCode: fakeNativeCode("rand"))
-  programData[coreNs].defs["rand-int"] = CirruData(kind: crDataFn, fnVal: nativeRandInt, fnCode: fakeNativeCode("rand-int"))
-  programData[coreNs].defs["replace"] = CirruData(kind: crDataFn, fnVal: nativeReplace, fnCode: fakeNativeCode("replace"))
-  programData[coreNs].defs["split"] = CirruData(kind: crDataFn, fnVal: nativeSplit, fnCode: fakeNativeCode("split"))
-  programData[coreNs].defs["split-lines"] = CirruData(kind: crDataFn, fnVal: nativeSplitLines, fnCode: fakeNativeCode("split-lines"))
+  programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
+  programData[coreNs].defs["&-"] = CirruData(kind: crDataProc, procVal: nativeMinus)
+  programData[coreNs].defs["&*"] = CirruData(kind: crDataProc, procVal: nativeMultiply)
+  programData[coreNs].defs["&/"] = CirruData(kind: crDataProc, procVal: nativeDivide)
+  programData[coreNs].defs["mod"] = CirruData(kind: crDataProc, procVal: nativeMod)
+  programData[coreNs].defs["&<"] = CirruData(kind: crDataProc, procVal: nativeLessThan)
+  programData[coreNs].defs["&>"] = CirruData(kind: crDataProc, procVal: nativeGreaterThan)
+  programData[coreNs].defs["&="] = CirruData(kind: crDataProc, procVal: nativeEqual)
+  programData[coreNs].defs["&and"] = CirruData(kind: crDataProc, procVal: nativeAnd)
+  programData[coreNs].defs["&or"] = CirruData(kind: crDataProc, procVal: nativeOr)
+  programData[coreNs].defs["not"] = CirruData(kind: crDataProc, procVal: nativeNot)
+  programData[coreNs].defs["count"] = CirruData(kind: crDataProc, procVal: nativeCount)
+  programData[coreNs].defs["get"] = CirruData(kind: crDataProc, procVal: nativeGet)
+  programData[coreNs].defs["rest"] = CirruData(kind: crDataProc, procVal: nativeRest)
+  programData[coreNs].defs["raise-at"] = CirruData(kind: crDataProc, procVal: nativeRaiseAt)
+  programData[coreNs].defs["type-of"] = CirruData(kind: crDataProc, procVal: nativeTypeOf)
+  programData[coreNs].defs["read-file"] = CirruData(kind: crDataProc, procVal: nativeReadFile)
+  programData[coreNs].defs["write-file"] = CirruData(kind: crDataProc, procVal: nativeWriteFile)
+  programData[coreNs].defs["parse-json"] = CirruData(kind: crDataProc, procVal: nativeParseJson)
+  programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataProc, procVal: nativeStringifyJson)
+  programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataProc, procVal: nativeMacroexpand)
+  programData[coreNs].defs["println"] = CirruData(kind: crDataProc, procVal: nativePrintln)
+  programData[coreNs].defs["echo"] = CirruData(kind: crDataProc, procVal: nativePrintln)
+  programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
+  programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)
+  programData[coreNs].defs["append"] = CirruData(kind: crDataProc, procVal: nativeAppend)
+  programData[coreNs].defs["first"] = CirruData(kind: crDataProc, procVal: nativeFirst)
+  programData[coreNs].defs["empty?"] = CirruData(kind: crDataProc, procVal: nativeEmptyQuestion)
+  programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
+  programData[coreNs].defs["butlast"] = CirruData(kind: crDataProc, procVal: nativeButlast)
+  programData[coreNs].defs["reverse"] = CirruData(kind: crDataProc, procVal: nativeReverse)
+  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataProc, procVal: nativeTurnString)
+  programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataProc, procVal: nativeTurnSymbol)
+  programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataProc, procVal: nativeTurnKeyword)
+  programData[coreNs].defs["identical?"] = CirruData(kind: crDataProc, procVal: nativeIdenticalQuestion)
+  programData[coreNs].defs["range"] = CirruData(kind: crDataProc, procVal: nativeRange)
+  programData[coreNs].defs["slice"] = CirruData(kind: crDataProc, procVal: nativeSlice)
+  programData[coreNs].defs["&concat"] = CirruData(kind: crDataProc, procVal: nativeConcat)
+  programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataProc, procVal: nativeFormatTernaryTree)
+  programData[coreNs].defs["&merge"] = CirruData(kind: crDataProc, procVal: nativeMerge)
+  programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
+  programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
+  programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
+  programData[coreNs].defs["keys"] = CirruData(kind: crDataProc, procVal: nativeKeys)
+  programData[coreNs].defs["assoc"] = CirruData(kind: crDataProc, procVal: nativeAssoc)
+  programData[coreNs].defs["dissoc"] = CirruData(kind: crDataProc, procVal: nativeDissoc)
+  programData[coreNs].defs["&str"] = CirruData(kind: crDataProc, procVal: nativeStr)
+  programData[coreNs].defs["escape"] = CirruData(kind: crDataProc, procVal: nativeEscape)
+  programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataProc, procVal: nativeStrConcat)
+  programData[coreNs].defs["parse-cirru-edn"] = CirruData(kind: crDataProc, procVal: nativeParseCirruEdn)
+  programData[coreNs].defs["sqrt"] = CirruData(kind: crDataProc, procVal: nativeSqrt)
+  programData[coreNs].defs["ceil"] = CirruData(kind: crDataProc, procVal: nativeCeil)
+  programData[coreNs].defs["floor"] = CirruData(kind: crDataProc, procVal: nativeFloor)
+  programData[coreNs].defs["sin"] = CirruData(kind: crDataProc, procVal: nativeSin)
+  programData[coreNs].defs["cos"] = CirruData(kind: crDataProc, procVal: nativeCos)
+  programData[coreNs].defs["round"] = CirruData(kind: crDataProc, procVal: nativeRound)
+  programData[coreNs].defs["pow"] = CirruData(kind: crDataProc, procVal: nativePow)
+  programData[coreNs].defs["#{}"] = CirruData(kind: crDataProc, procVal: nativeHashSet)
+  programData[coreNs].defs["&include"] = CirruData(kind: crDataProc, procVal: nativeInclude)
+  programData[coreNs].defs["&exclude"] = CirruData(kind: crDataProc, procVal: nativeExclude)
+  programData[coreNs].defs["&difference"] = CirruData(kind: crDataProc, procVal: nativeDifference)
+  programData[coreNs].defs["&union"] = CirruData(kind: crDataProc, procVal: nativeUnion)
+  programData[coreNs].defs["&intersection"] = CirruData(kind: crDataProc, procVal: nativeIntersection)
+  programData[coreNs].defs["recur"] = CirruData(kind: crDataProc, procVal: nativeRecur)
+  # programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl)
+  programData[coreNs].defs["rand"] = CirruData(kind: crDataProc, procVal: nativeRand)
+  programData[coreNs].defs["rand-int"] = CirruData(kind: crDataProc, procVal: nativeRandInt)
+  programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace)
+  programData[coreNs].defs["split"] = CirruData(kind: crDataProc, procVal: nativeSplit)
+  programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
