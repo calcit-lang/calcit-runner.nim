@@ -465,9 +465,28 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ]
   , coreNs)
 
+  let codeKeys = genCirru(
+    [defn, keys, [x],
+      [map, first, ["to-pairs", x]]]
+  , coreNs)
+
   let codeVals = genCirru(
     [defn, vals, [x],
-      [map, ["\\", get, x, "%"], [keys, x]]]
+      [map, last, ["to-pairs", x]]]
+  , coreNs)
+
+  let codeFrequencies = genCirru(
+    [defn, frequencies, [xs0],
+      ["assert", "|expects a list for frequencies", ["list?", xs0]],
+      [loop,
+        [[acc, ["{}"]], [xs, xs0]],
+        ["let", [[x0, [first, xs]]],
+          ["if", ["empty?", xs], acc,
+            [recur,
+              ["if", ["contains?", acc, [first, xs]],
+                [update, acc, [first, xs], ["\\", "+", "%", 1]],
+                [assoc, acc, [first, xs], 1]],
+              [rest, xs]]]]]]
   , coreNs)
 
   # TODO assoc-in
@@ -542,4 +561,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["has-index?"] = codeHasIndexQuestion
   programCode[coreNs].defs["update"] = codeUpdate
   programCode[coreNs].defs["group-by"] = codeGroupBy
+  programCode[coreNs].defs["keys"] = codeKeys
   programCode[coreNs].defs["vals"] = codeVals
+  programCode[coreNs].defs["frequencies"] = codeFrequencies

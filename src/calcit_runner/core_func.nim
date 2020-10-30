@@ -509,16 +509,6 @@ proc nativeAssocAfter(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("assoc-after requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocAfter(key.numberVal.int, item))
 
-proc nativeKeys(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 1:
-    raiseEvalError("keys requires 1 arg", args)
-  let base = args[0]
-  if base.isNil:
-    return base
-  if not base.isMap:
-    raiseEvalError("keys requires a map", args)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(base.mapVal.keys))
-
 proc nativeAssoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("assoc requires 3 arg", args)
@@ -837,13 +827,23 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   return CirruData(kind: crDataList, listVal: list)
 
 proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 1: raiseEvalError("replace expects 3 arguments", args)
+  if args.len != 1: raiseEvalError("replace expects 1 argument", args)
   let base = args[0]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
   var list = initTernaryTreeList[CirruData](@[])
   for item in base.stringVal.splitLines:
     list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
+
+proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
+  let base = args[0]
+  if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
+  var acc: seq[CirruData]
+  for pair in base.mapVal.toPairs:
+    let list = initTernaryTreeList[CirruData](@[pair.k, pair.v])
+    acc.add CirruData(kind: crDataList, listVal: list)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -890,7 +890,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
-  programData[coreNs].defs["keys"] = CirruData(kind: crDataProc, procVal: nativeKeys)
   programData[coreNs].defs["assoc"] = CirruData(kind: crDataProc, procVal: nativeAssoc)
   programData[coreNs].defs["dissoc"] = CirruData(kind: crDataProc, procVal: nativeDissoc)
   programData[coreNs].defs["&str"] = CirruData(kind: crDataProc, procVal: nativeStr)
@@ -917,3 +916,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace)
   programData[coreNs].defs["split"] = CirruData(kind: crDataProc, procVal: nativeSplit)
   programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
+  programData[coreNs].defs["to-pairs"] = CirruData(kind: crDataProc, procVal: nativeToPairs)

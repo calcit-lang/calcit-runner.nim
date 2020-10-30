@@ -77,6 +77,14 @@
                   :b 2
                   :c 3
 
+              assert |to-pairs $ =
+                to-pairs $ {}
+                  :a 1
+                  :b 2
+                []
+                  [] :a 1
+                  [] :b 2
+
               assert |vals $ =
                 vals $ {} (:a 1) (:b 2) (:c 2)
                 [] 2 1 2
@@ -218,6 +226,13 @@
                   0 $ [] 0 3 6 9
                   1 $ [] 1 4 7
                   2 $ [] 2 5 8
+
+              assert "|frequencies" $ =
+                frequencies $ [] 1 2 2 3 3 3
+                {}
+                  1 1
+                  2 2
+                  3 3
 
         |test-str $ quote
           defn test-str ()
