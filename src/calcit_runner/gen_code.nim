@@ -9,7 +9,6 @@ import ternary_tree
 
 import ./types
 import ./data
-import ./errors
 
 proc toCirruData(x: string, ns: string): CirruData =
   return parseLiteral(x, ns, none(CirruDataScope))
@@ -88,42 +87,3 @@ proc shortenCode*(code: string, n: int): string =
     code[0..<n] & "..."
   else:
     code
-
-
-proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[CirruData]): CirruDataScope =
-  var argsScope: CirruDataScope
-
-  let splitPosition = definedArgs.findIndex(proc(item: CirruData): bool =
-    item.kind == crDataSymbol and item.symbolVal == "&"
-  )
-
-  if splitPosition >= 0:
-    if passedArgs.len < splitPosition:
-      raiseEvalError("No enough arguments", CirruData(kind: crDataList, listVal: definedArgs))
-    if splitPosition != (definedArgs.len - 2):
-      raiseEvalError("& should appear before last argument", CirruData(kind: crDataList, listVal: definedArgs))
-    for idx in 0..<splitPosition:
-      let definedArgName = definedArgs[idx]
-      if definedArgName.kind != crDataSymbol:
-        raiseEvalError("Expects arg in symbol", definedArgName)
-      argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
-    var varList = initTernaryTreeList[CirruData](@[])
-    for idx in splitPosition..<passedArgs.len:
-      varList = varList.append passedArgs[idx]
-    let varArgName = definedArgs[definedArgs.len - 1]
-    if varArgName.kind != crDataSymbol:
-      raiseEvalError("Expected var arg in symbol", varArgName)
-    argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: varList))
-    return argsScope
-
-  else:
-    var counter = 0
-    if definedArgs.len != passedArgs.len:
-      raiseEvalError(fmt"Args length mismatch, defined:{definedArgs.len} passed:{passedArgs.len}", CirruData(kind: crDataList, listVal: definedArgs))
-    definedArgs.each(proc(arg: CirruData): void =
-      if arg.kind != crDataSymbol:
-        raiseEvalError("Expects arg in symbol", arg)
-      argsScope = argsScope.assoc(arg.symbolVal, passedArgs[counter])
-      counter += 1
-    )
-    return argsScope

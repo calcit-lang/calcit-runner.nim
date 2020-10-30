@@ -16,6 +16,7 @@ import calcit_runner/loader
 import calcit_runner/stack
 import calcit_runner/preprocess
 import calcit_runner/gen_code
+import calcit_runner/eval_util
 
 var programCode*: Table[string, FileSource]
 var programData*: Table[string, ProgramFile]
@@ -131,15 +132,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope): CirruData =
     pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
 
-    let innerScope = value.fnScope.merge(processArguments(value.fnArgs, args))
-    var ret = CirruData(kind: crDataNil)
-    for child in value.fnCode:
-      ret = interpret(child, innerScope)
-
-    while ret.isRecur:
-      let loopScope = value.fnScope.merge(processArguments(value.fnArgs, ret.recurArgs))
-      for child in value.fnCode:
-        ret = interpret(child, loopScope)
+    let ret = evaluteFnData(value, args, interpret)
 
     popDefStack()
     return ret
@@ -273,25 +266,10 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
           xs = xs.append preprocess(child, localDefs)
         return CirruData(kind: crDataList, listVal: xs)
       of crDataMacro:
-        let emptyScope = CirruDataScope()
-
         let xs = spreadArgs(code[1..^1])
-        let innerScope = emptyScope.merge(processArguments(value.macroArgs, xs))
-
         pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
 
-        var quoted = CirruData(kind: crDataNil)
-        for child in value.macroCode:
-          quoted = interpret(child, innerScope)
-
-        while quoted.isRecur:
-          let loopScope = emptyScope.merge(processArguments(value.macroArgs, spreadArgs(quoted.recurArgs)))
-          for child in value.macroCode:
-            quoted = interpret(child, loopScope)
-
-        if quoted.isList.not and quoted.isRecur.not and quoted.isSymbol.not:
-          raiseEvalError("Expected list or recur from defmacro", quoted)
-
+        let quoted = evaluteMacroData(value, xs, interpret)
         popDefStack()
         # echo "Expanded macro: ", code, "  ->  ", quoted
         return preprocess(quoted, localDefs)
