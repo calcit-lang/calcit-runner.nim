@@ -130,12 +130,14 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     ["defn", "nil?", ["x"], ["&=", ["type-of", "x"], ":nil"]]
   , coreNs)
 
-  let codeProcQuestion = genCirru(
-    ["defn", "proc?", ["x"], ["&=", ["type-of", "x"], ":proc"]]
+  let codeMacroQuestion = genCirru(
+    ["defn", "macro?", ["x"], ["&=", ["type-of", "x"], ":macro"]]
   , coreNs)
 
   let codeFnQuestion = genCirru(
-    ["defn", "fn?", ["x"], ["&=", ["type-of", "x"], ":fn"]]
+    ["defn", "fn?", ["x"],
+      ["&or", ["&=", ["type-of", "x"], ":fn"],
+              ["&=", ["type-of", "x"], ":proc"]]]
   , coreNs)
 
   let codeEach = genCirru(
@@ -519,8 +521,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["symbol?"] = codeSymbolQuestion
   programCode[coreNs].defs["bool?"] = codeBoolQuestion
   programCode[coreNs].defs["nil?"] = codeNilQuestion
-  programCode[coreNs].defs["proc?"] = codeProcQuestion
   programCode[coreNs].defs["fn?"] = codeFnQuestion
+  programCode[coreNs].defs["macro?"] = codeMacroQuestion
   programCode[coreNs].defs["each"] = codeEach
   programCode[coreNs].defs["map"] = codeMap
   programCode[coreNs].defs["take"] = codeTake
