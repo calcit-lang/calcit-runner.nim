@@ -130,6 +130,16 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     ["defn", "nil?", ["x"], ["&=", ["type-of", "x"], ":nil"]]
   , coreNs)
 
+  let codeMacroQuestion = genCirru(
+    ["defn", "macro?", ["x"], ["&=", ["type-of", "x"], ":macro"]]
+  , coreNs)
+
+  let codeFnQuestion = genCirru(
+    ["defn", "fn?", ["x"],
+      ["&or", ["&=", ["type-of", "x"], ":fn"],
+              ["&=", ["type-of", "x"], ":proc"]]]
+  , coreNs)
+
   let codeEach = genCirru(
     ["defn", "each", ["f", "xs"],
       ["if", ["not", ["empty?", "xs"]],
@@ -457,16 +467,35 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ]
   , coreNs)
 
+  let codeKeys = genCirru(
+    [defn, keys, [x],
+      [map, first, ["to-pairs", x]]]
+  , coreNs)
+
   let codeVals = genCirru(
     [defn, vals, [x],
-      [map, ["\\", get, x, "%"], [keys, x]]]
+      [map, last, ["to-pairs", x]]]
+  , coreNs)
+
+  let codeFrequencies = genCirru(
+    [defn, frequencies, [xs0],
+      ["assert", "|expects a list for frequencies", ["list?", xs0]],
+      [loop,
+        [[acc, ["{}"]], [xs, xs0]],
+        ["let", [[x0, [first, xs]]],
+          ["if", ["empty?", xs], acc,
+            [recur,
+              ["if", ["contains?", acc, [first, xs]],
+                [update, acc, [first, xs], ["\\", "+", "%", 1]],
+                [assoc, acc, [first, xs], 1]],
+              [rest, xs]]]]]]
   , coreNs)
 
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
 
-  programCode[coreNs].defs["foldl"] = codeFoldl
+  # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
   programCode[coreNs].defs["&>="] = codeNativeLargerEqual
@@ -492,6 +521,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["symbol?"] = codeSymbolQuestion
   programCode[coreNs].defs["bool?"] = codeBoolQuestion
   programCode[coreNs].defs["nil?"] = codeNilQuestion
+  programCode[coreNs].defs["fn?"] = codeFnQuestion
+  programCode[coreNs].defs["macro?"] = codeMacroQuestion
   programCode[coreNs].defs["each"] = codeEach
   programCode[coreNs].defs["map"] = codeMap
   programCode[coreNs].defs["take"] = codeTake
@@ -532,4 +563,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["has-index?"] = codeHasIndexQuestion
   programCode[coreNs].defs["update"] = codeUpdate
   programCode[coreNs].defs["group-by"] = codeGroupBy
+  programCode[coreNs].defs["keys"] = codeKeys
   programCode[coreNs].defs["vals"] = codeVals
+  programCode[coreNs].defs["frequencies"] = codeFrequencies

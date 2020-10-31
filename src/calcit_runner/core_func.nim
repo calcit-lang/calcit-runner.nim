@@ -18,6 +18,7 @@ import ./errors
 import ./to_json
 import ./gen_data
 import ./gen_code
+import ./eval_util
 
 # init generator for rand
 randomize()
@@ -250,16 +251,7 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
     raiseEvalError("Expected a macro in the expression", code)
 
   let xs = spreadArgs(code[1..^1])
-  let innerScope = scope.merge(processArguments(value.macroArgs, xs))
-
-  var quoted = CirruData(kind: crDataNil)
-  for child in value.macroCode:
-    quoted = interpret(child, innerScope)
-
-  while quoted.isRecur:
-    let loopScope = scope.merge(processArguments(value.macroArgs, spreadArgs(quoted.recurArgs)))
-    for child in value.macroCode:
-      quoted = interpret(child, loopScope)
+  let quoted = evaluteMacroData(value, xs, interpret)
 
   return quoted
 
@@ -517,16 +509,6 @@ proc nativeAssocAfter(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("assoc-after requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocAfter(key.numberVal.int, item))
 
-proc nativeKeys(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 1:
-    raiseEvalError("keys requires 1 arg", args)
-  let base = args[0]
-  if base.isNil:
-    return base
-  if not base.isMap:
-    raiseEvalError("keys requires a map", args)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(base.mapVal.keys))
-
 proc nativeAssoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   if args.len != 3:
     raiseEvalError("assoc requires 3 arg", args)
@@ -764,24 +746,28 @@ proc nativeIntersection(args: seq[CirruData], interpret: FnInterpret, scope: Cir
 proc nativeRecur(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   return CirruData(kind: crDataRecur, recurArgs: args)
 
-# TODO no longer works in current function solution
-# proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-#   if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
-#   let f = args[0]
-#   if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
-#   let xs = args[1]
-#   var acc = args[2]
-#   if xs.kind == crDataNil:
-#     return acc
+proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+  if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
+  let f = args[0]
+  if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
+  let xs = args[1]
+  var acc = args[2]
+  if xs.kind == crDataNil:
+    return acc
 
-#   if xs.kind != crDataList:
-#     raiseEvalError("Expects xs to be a list", args)
+  if xs.kind != crDataList:
+    raiseEvalError("Expects xs to be a list", args)
 
-#   for item in xs.listVal:
-#     let list = @[f, acc, item]
-#     acc = interpret(CirruData(kind: crDataList, listVal: initTernaryTreeList(list)) , scope)
+  for item in xs.listVal:
+    case f.kind
+    of crDataProc:
+      acc = f.procVal(@[acc, item], interpret, scope)
+    of crDataFn:
+      acc = evaluteFnData(f, @[acc, item], interpret)
+    else:
+      raiseEvalError("Unexpected f to call in foldl", args)
 
-#   return acc
+  return acc
 
 proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   case args.len
@@ -841,13 +827,23 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   return CirruData(kind: crDataList, listVal: list)
 
 proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if args.len != 1: raiseEvalError("replace expects 3 arguments", args)
+  if args.len != 1: raiseEvalError("replace expects 1 argument", args)
   let base = args[0]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
   var list = initTernaryTreeList[CirruData](@[])
   for item in base.stringVal.splitLines:
     list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
+
+proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+  if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
+  let base = args[0]
+  if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
+  var acc: seq[CirruData]
+  for pair in base.mapVal.toPairs:
+    let list = initTernaryTreeList[CirruData](@[pair.k, pair.v])
+    acc.add CirruData(kind: crDataList, listVal: list)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -894,7 +890,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
-  programData[coreNs].defs["keys"] = CirruData(kind: crDataProc, procVal: nativeKeys)
   programData[coreNs].defs["assoc"] = CirruData(kind: crDataProc, procVal: nativeAssoc)
   programData[coreNs].defs["dissoc"] = CirruData(kind: crDataProc, procVal: nativeDissoc)
   programData[coreNs].defs["&str"] = CirruData(kind: crDataProc, procVal: nativeStr)
@@ -915,9 +910,10 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&union"] = CirruData(kind: crDataProc, procVal: nativeUnion)
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataProc, procVal: nativeIntersection)
   programData[coreNs].defs["recur"] = CirruData(kind: crDataProc, procVal: nativeRecur)
-  # programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl)
+  programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl)
   programData[coreNs].defs["rand"] = CirruData(kind: crDataProc, procVal: nativeRand)
   programData[coreNs].defs["rand-int"] = CirruData(kind: crDataProc, procVal: nativeRandInt)
   programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace)
   programData[coreNs].defs["split"] = CirruData(kind: crDataProc, procVal: nativeSplit)
   programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
+  programData[coreNs].defs["to-pairs"] = CirruData(kind: crDataProc, procVal: nativeToPairs)

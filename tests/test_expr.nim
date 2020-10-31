@@ -12,3 +12,12 @@ test "Basic gynienic":
 
 test "Cirru tests":
   check (runProgram("tests/snapshots/test.cirru") == crData(true))
+
+test "List tests":
+  check (runProgram("tests/snapshots/test-list.cirru") == crData(true))
+
+test "Map tests":
+  check (runProgram("tests/snapshots/test-map.cirru") == crData(true))
+
+test "Macros tests":
+  check (runProgram("tests/snapshots/test-macro.cirru") == crData(true))
