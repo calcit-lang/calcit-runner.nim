@@ -97,7 +97,10 @@
             if true (println "\"true") (println "\"false")
             unless true (println "\"true") (println "\"false")
         |try-redraw-canvas $ quote
-          defn try-redraw-canvas () (draw-canvas true)
+          defn try-redraw-canvas ()
+            draw-canvas $ {} (:type :polyline) (:from $ [] 40 40)
+              :stops $ [] ([] 100 60) ([] 200 200) ([] 600 60) ([] 500 400)
+              :stroke-color $ {} (:r 90) (:g 10) (:b 10)
         |var-macro $ quote
           defmacro var-macro (a & xs) (echo a xs) (quote $ do)
         |try-math $ quote
@@ -177,7 +180,9 @@
               echo $ get-in b ([] 0 :a 2)
               echo $ get-in data ([] :x :y :z)
         |try-canvas $ quote
-          defn try-canvas () (init-canvas) (draw-canvas true)
+          defn try-canvas ()
+            init-canvas $ {} (:title "\"DEMO") (:width 800) (:height 600)
+            try-redraw-canvas
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
