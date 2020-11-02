@@ -27,9 +27,15 @@ import calcit_runner/evaluate
 
 var runOnce = false
 
+# slots for dynamic registering GUI functions
+var tempProcsToLoad: Table[string, FnInData]
+
 export CirruData, CirruDataKind, `==`, crData
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
+
+proc registerCoreProc*(procName: string, f: FnInData) =
+  tempProcsToLoad[procName] = f
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   let snapshotInfo = loadSnapshot(snapshotFile)
@@ -45,6 +51,10 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   loadCoreSyntax(programData, interpret)
 
   loadCoreFuncs(programCode)
+
+  # register temp functions
+  for procName, tempProc in tempProcsToLoad:
+    programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
 
   let scope = CirruDataScope()
 
@@ -135,6 +145,7 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
     writeFile incrementFile, "{}"
 
   let fileChangeCb = proc (event: fsw_cevent, event_num: cuint): void =
+    sleep 150
     coloredEcho fgYellow, "\n-------- file change --------\n"
     loadChanges(incrementFile, programCode)
     try:

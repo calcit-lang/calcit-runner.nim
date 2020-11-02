@@ -86,7 +86,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (try-json)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (; try-json) (try-canvas)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -96,6 +96,11 @@
           defn try-unless ()
             if true (println "\"true") (println "\"false")
             unless true (println "\"true") (println "\"false")
+        |try-redraw-canvas $ quote
+          defn try-redraw-canvas ()
+            draw-canvas $ {} (:type :polyline) (:from $ [] 40 40)
+              :stops $ [] ([] 100 60) ([] 200 200) ([] 600 60) ([] 500 400)
+              :stroke-color $ {} (:r 90) (:g 10) (:b 10)
         |var-macro $ quote
           defmacro var-macro (a & xs) (echo a xs) (quote $ do)
         |try-math $ quote
@@ -174,6 +179,10 @@
               echo $ get-in data ([] :a 2)
               echo $ get-in b ([] 0 :a 2)
               echo $ get-in data ([] :x :y :z)
+        |try-canvas $ quote
+          defn try-canvas ()
+            init-canvas $ {} (:title "\"DEMO") (:width 800) (:height 600)
+            try-redraw-canvas
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
@@ -197,7 +206,7 @@
             echo (str |a |b |c) (str 1 2 3)
             echo $ type-of (&str 1)
         |reload! $ quote
-          defn reload! () (println "\"Reloaded...") (main!)
+          defn reload! () (println "\"Reloaded...") (; main!) (try-redraw-canvas)
         |recur-inc $ quote
           defn recur-inc (acc max-value) (; echo "\"adding to acc: " acc)
             if (&< acc max-value)

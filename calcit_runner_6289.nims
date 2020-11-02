@@ -1,3 +1,8 @@
+import system except getCommand, setCommand, switch, `--`,
+  packageName, version, author, description, license, srcDir, binDir, backend,
+  skipDirs, skipFiles, skipExt, installDirs, installFiles, installExt, bin, foreignDeps,
+  requires, task, packageName
+import nimscriptapi, strutils
 
 # Package
 
@@ -31,3 +36,5 @@ task t, "Runs the test suite":
 
 task ct, "Runs calcit tests":
   exec "nim c -r --hints:off tests/run_calcit.nim"
+
+onExit()

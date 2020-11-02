@@ -9,14 +9,14 @@ import cirru_parser
 import cirru_edn
 import ternary_tree
 
-import calcit_runner/types
-import calcit_runner/data
-import calcit_runner/errors
-import calcit_runner/loader
-import calcit_runner/stack
-import calcit_runner/preprocess
-import calcit_runner/gen_code
-import calcit_runner/eval_util
+import ./types
+import ./data
+import ./errors
+import ./loader
+import ./stack
+import ./preprocess
+import ./gen_code
+import ./eval_util
 
 var programCode*: Table[string, FileSource]
 var programData*: Table[string, ProgramFile]
@@ -30,10 +30,9 @@ proc hasNsAndDef(ns: string, def: string): bool =
 
 proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
   for ns, f in programData:
-    var file = programData[ns]
     if not ns.startsWith("calcit."):
-      file.ns = none(Table[string, ImportInfo])
-      file.defs.clear
+      programData[ns].ns = none(Table[string, ImportInfo])
+      programData[ns].defs.clear
 
   # mutual recursion
 proc getEvaluatedByPath*(ns: string, def: string, scope: CirruDataScope): CirruData
