@@ -12,8 +12,6 @@ import sets
 import cirru_parser
 import cirru_edn
 import ternary_tree
-import libfswatch
-import libfswatch/fswatch
 
 import calcit_runner/types
 import calcit_runner/core_syntax
@@ -24,18 +22,21 @@ import calcit_runner/loader
 import calcit_runner/stack
 import calcit_runner/gen_data
 import calcit_runner/evaluate
+import calcit_runner/watcher
 
 var runOnce = false
 
 # slots for dynamic registering GUI functions
-var tempProcsToLoad: Table[string, FnInData]
+var onLoadPluginProcs: Table[string, FnInData]
+var taskDuringLoop* = proc() =
+  discard
 
 export CirruData, CirruDataKind, `==`, crData
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
 
 proc registerCoreProc*(procName: string, f: FnInData) =
-  tempProcsToLoad[procName] = f
+  onLoadPluginProcs[procName] = f
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   let snapshotInfo = loadSnapshot(snapshotFile)
@@ -53,7 +54,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   loadCoreFuncs(programCode)
 
   # register temp functions
-  for procName, tempProc in tempProcsToLoad:
+  for procName, tempProc in onLoadPluginProcs:
     programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
 
   let scope = CirruDataScope()
@@ -140,34 +141,45 @@ proc reloadProgram(snapshotFile: string): void =
     echo ""
     raise e
 
+let handleFileChange = proc (snapshotFile: string, incrementFile: string): void =
+  sleep 150
+  coloredEcho fgYellow, "\n-------- file change --------\n"
+  loadChanges(incrementFile, programCode)
+  try:
+    reloadProgram(snapshotFile)
+  except ValueError as e:
+    coloredEcho fgRed, "Failed to rerun program: ", e.msg
+
+  except CirruParseError as e:
+    coloredEcho fgRed, "\nError: failed to parse"
+    echo e.msg
+
+  except CirruCommandError as e:
+    coloredEcho fgRed, "Failed to run command"
+    echo e.msg
+
 proc watchFile(snapshotFile: string, incrementFile: string): void =
   if not existsFile(incrementFile):
     writeFile incrementFile, "{}"
 
-  let fileChangeCb = proc (event: fsw_cevent, event_num: cuint): void =
-    sleep 150
-    coloredEcho fgYellow, "\n-------- file change --------\n"
-    loadChanges(incrementFile, programCode)
-    try:
-      reloadProgram(snapshotFile)
-    except ValueError as e:
-      coloredEcho fgRed, "Failed to rerun program: ", e.msg
+  watchingChan.open()
 
-    except CirruParseError as e:
-      coloredEcho fgRed, "\nError: failed to parse"
-      echo e.msg
-
-    except CirruCommandError as e:
-      coloredEcho fgRed, "Failed to run command"
-      echo e.msg
+  var theWatchingTask: Thread[string]
+  createThread(theWatchingTask, watchingTask, incrementFile)
+  # disabled since task blocking
+  # joinThreads(@[theWatchingTask])
 
   dimEcho "\nRunner: in watch mode...\n"
 
-  var mon = newMonitor()
-  discard mon.handle.fsw_set_latency 0.2
-  mon.addPath(incrementFile)
-  mon.setCallback(fileChangeCb)
-  mon.start()
+  while true:
+    let tried = watchingChan.tryRecv()
+    if tried.dataAvailable:
+      # echo tried.msg
+      handleFileChange(snapshotFile, incrementFile)
+
+    taskDuringLoop()
+
+    sleep(400)
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
