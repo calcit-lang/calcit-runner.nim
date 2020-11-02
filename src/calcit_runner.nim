@@ -159,7 +159,7 @@ let handleFileChange = proc (snapshotFile: string, incrementFile: string): void 
     echo e.msg
 
 proc watchFile(snapshotFile: string, incrementFile: string): void =
-  if not existsFile(incrementFile):
+  if not fileExists(incrementFile):
     writeFile incrementFile, "{}"
 
   watchingChan.open()
