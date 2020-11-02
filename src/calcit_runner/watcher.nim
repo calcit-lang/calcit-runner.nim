@@ -13,3 +13,11 @@ proc watchingTask*(incrementFile: string) {.thread.} =
   mon.addPath(incrementFile)
   mon.setCallback(fileChangeCb)
   mon.start()
+
+proc startFileWatcher*(incrementFile: string): void =
+  watchingChan.open()
+
+  var theWatchingTask: Thread[string]
+  createThread(theWatchingTask, watchingTask, incrementFile)
+  # disabled since task blocking
+  # joinThreads(@[theWatchingTask])

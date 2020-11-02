@@ -162,12 +162,7 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
   if not fileExists(incrementFile):
     writeFile incrementFile, "{}"
 
-  watchingChan.open()
-
-  var theWatchingTask: Thread[string]
-  createThread(theWatchingTask, watchingTask, incrementFile)
-  # disabled since task blocking
-  # joinThreads(@[theWatchingTask])
+  startFileWatcher(incrementFile)
 
   dimEcho "\nRunner: in watch mode...\n"
 
