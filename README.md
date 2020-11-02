@@ -38,8 +38,8 @@ Syntax implemented in Calcit Runner is mostly learning from Clojure. Browse curr
 Install dependency:
 
 ```bash
-brew install fswatch
-nimble install
+brew install fswatch sdl2 cairo
+nimble test -y
 ```
 
 Run in dev mode:
