@@ -25,6 +25,10 @@ import calcit_runner/evaluate
 import calcit_runner/watcher
 
 var runOnce = false
+var watchingChan = cast[ptr Channel[string]](
+  allocShared0(sizeof(Channel[string]))
+)
+
 
 # slots for dynamic registering GUI functions
 var onLoadPluginProcs: Table[string, FnInData]
@@ -162,17 +166,17 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
   if not existsFile(incrementFile):
     writeFile incrementFile, "{}"
 
-  watchingChan.open()
+  watchingChan[].open()
 
-  var theWatchingTask: Thread[string]
-  createThread(theWatchingTask, watchingTask, incrementFile)
+  var theWatchingTask: Thread[tuple[incrementFile: string, watchingChan: ptr Channel[string]]]
+  createThread(theWatchingTask, watchingTask, (incrementFile, watchingChan))
   # disabled since task blocking
   # joinThreads(@[theWatchingTask])
 
   dimEcho "\nRunner: in watch mode...\n"
 
   while true:
-    let tried = watchingChan.tryRecv()
+    let tried = watchingChan[].tryRecv()
     if tried.dataAvailable:
       # echo tried.msg
       handleFileChange(snapshotFile, incrementFile)
