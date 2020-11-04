@@ -68,6 +68,12 @@
                 vals $ {} (:a 1) (:b 2) (:c 2)
                 [] 2 1 2
 
+        |test-native-map-syntax $  quote
+          defn test-native-map-syntax ()
+            assert "|internally {} is a macro" $ =
+              macroexpand $ quote $ {} (:a 1)
+              quote $ &{} ([] :a 1)
+
         |log-title $ quote
           defn log-title (title)
             echo
@@ -79,6 +85,9 @@
 
             log-title "|Testing maps"
             test-maps
+
+            log-title "|Testing map syntax"
+            test-native-map-syntax
 
             echo "|Finished running test"
             do true
