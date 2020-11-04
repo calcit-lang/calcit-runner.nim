@@ -110,21 +110,45 @@
                 update (range 4) 11 $ \ + % 10
                 range 4
 
-              assert "|group-by" $ =
-                group-by
-                  \ mod % 3
-                  range 10
-                {}
-                  0 $ [] 0 3 6 9
-                  1 $ [] 1 4 7
-                  2 $ [] 2 5 8
+        |test-groups $ quote
+          defn test-groups ()
 
-              assert "|frequencies" $ =
-                frequencies $ [] 1 2 2 3 3 3
-                {}
-                  1 1
-                  2 2
-                  3 3
+            assert "|group-by" $ =
+              group-by
+                \ mod % 3
+                range 10
+              {}
+                0 $ [] 0 3 6 9
+                1 $ [] 1 4 7
+                2 $ [] 2 5 8
+
+            assert "|frequencies" $ =
+              frequencies $ [] 1 2 2 3 3 3
+              {}
+                1 1
+                2 2
+                3 3
+
+            assert "|section-by" $ =
+              section-by 2 $ range 10
+              []
+                [] 0 1
+                [] 2 3
+                [] 4 5
+                [] 6 7
+                [] 8 9
+            assert |section-by $ =
+              section-by 3 $ range 10
+              []
+                [] 0 1 2
+                [] 3 4 5
+                [] 6 7 8
+                [] 9
+
+        |test-comma $ quote
+          assert "|allow commas in lists" $ =
+            [] 1 2 3 4
+            [] 1 , 2 , 3 , 4
 
         |test-every $ quote
           defn test-every ()
@@ -179,6 +203,9 @@
 
             log-title "|Testing every/any"
             test-every
+
+            log-title "|Testing groups"
+            test-groups
 
             echo "|Finished running test"
             do true

@@ -3,7 +3,6 @@ import calcit_runner
 
 import json_paint
 
-import ./calcit_runner/data
 import ./calcit_runner/canvas
 
 registerCoreProc("init-canvas", nativeInitCanvas)
