@@ -491,6 +491,28 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
               [rest, xs]]]]]]
   , coreNs)
 
+  let codeSectionBy = genCirru(
+    [defn, "section-by", [n, xs0],
+      [loop, [[acc, ["[]"]], [xs, xs0]],
+        ["if", ["&<=", [count, xs], n],
+          [append, acc, xs],
+          [recur, [append, acc, [take, n, xs]], [drop, n, xs]]]]]
+  , coreNs)
+
+  let codeG = genCirru(
+    [defn, g, [options, "&", xs],
+      [merge, options, ["{}", [":type", ":group"], [":children", xs]]]]
+  , coreNs)
+
+  # nested list creation that allows emitting second level `[]`s
+  let codeListList = genCirru(
+    [defmacro, "[][]", ["&", xs],
+      ["let",
+        [[items, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]],
+                        xs]]],
+        ["quote-replace", ["[]", ["~@", items]]]]]
+    , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -566,3 +588,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["keys"] = codeKeys
   programCode[coreNs].defs["vals"] = codeVals
   programCode[coreNs].defs["frequencies"] = codeFrequencies
+  programCode[coreNs].defs["section-by"] = codeSectionBy
+  programCode[coreNs].defs["g"] = codeG
+  programCode[coreNs].defs["[][]"] = codeListList

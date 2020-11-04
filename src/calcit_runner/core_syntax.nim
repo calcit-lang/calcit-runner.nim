@@ -15,6 +15,9 @@ import ./gen_code
 proc nativeList(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   var args = initTernaryTreeList[CirruData](@[])
   for node in exprList:
+    # commas in body are considered as nothing
+    if node.kind == crDataSymbol and node.symbolVal == ",":
+      continue
     args = args.append interpret(node, scope)
   return CirruData(kind: crDataList, listVal: args)
 

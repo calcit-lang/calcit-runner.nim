@@ -38,46 +38,19 @@ var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/relo
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
 
-proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
-  let snapshotInfo = loadSnapshot(snapshotFile)
-  programCode = snapshotInfo.files
-  codeConfigs = snapshotInfo.configs
-
-  programData.clear
-
-  programCode[coreNs] = FileSource()
-  programData[coreNs] = ProgramFile()
-
-  loadCoreDefs(programData, interpret)
-  loadCoreSyntax(programData, interpret)
-
-  loadCoreFuncs(programCode)
-
-  # register temp functions
-  for procName, tempProc in onLoadPluginProcs:
-    programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
-
+proc runCode(ns: string, def: string): CirruData =
   let scope = CirruDataScope()
 
-  let pieces = if initFn.isSome:
-    initFn.get.split("/")
-  else:
-   codeConfigs.initFn.split('/')
-
-  if pieces.len != 2:
-    echo "Unknown initFn", pieces
-    raise newException(ValueError, "Unknown initFn")
-
   try:
-    preprocessSymbolByPath(pieces[0], pieces[1])
-    let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
+    preprocessSymbolByPath(ns, def)
+    let entry = getEvaluatedByPath(ns, def, scope)
 
     if entry.kind != crDataFn:
       raise newException(ValueError, "expects a function at app.main/main!")
 
-    let mainCode = programCode[pieces[0]].defs[pieces[1]]
+    let mainCode = programCode[ns].defs[def]
     defStack = initDoublyLinkedList[StackInfo]()
-    pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
+    pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
 
     var ret = CirruData(kind: crDataNil)
     for child in entry.fnCode:
@@ -99,47 +72,52 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     echo ""
     raise e
 
+  except AssertionError as e:
+    coloredEcho fgRed, "Failed to run command"
+    echo e.msg
+
+proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
+  let snapshotInfo = loadSnapshot(snapshotFile)
+  programCode = snapshotInfo.files
+  codeConfigs = snapshotInfo.configs
+
+  programData.clear
+
+  programCode[coreNs] = FileSource()
+  programData[coreNs] = ProgramFile()
+
+  loadCoreDefs(programData, interpret)
+  loadCoreSyntax(programData, interpret)
+
+  loadCoreFuncs(programCode)
+
+  # register temp functions
+  for procName, tempProc in onLoadPluginProcs:
+    programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
+
+  let pieces = if initFn.isSome:
+    initFn.get.split("/")
+  else:
+   codeConfigs.initFn.split('/')
+
+  if pieces.len != 2:
+    echo "Unknown initFn", pieces
+    raise newException(ValueError, "Unknown initFn")
+
+  runCode(pieces[0], pieces[1])
+
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
   programCode = loadSnapshot(snapshotFile).files
   clearProgramDefs(programData)
   programCode[coreNs] = previousCoreSource
-  var scope: CirruDataScope
-
   let pieces = codeConfigs.reloadFn.split('/')
 
   if pieces.len != 2:
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
-  try:
-    preprocessSymbolByPath(pieces[0], pieces[1])
-    let entry = getEvaluatedByPath(pieces[0], pieces[1], scope)
-
-    if entry.kind != crDataFn:
-      raise newException(ValueError, "expects a function at app.main/main!")
-
-    let mainCode = programCode[pieces[0]].defs[pieces[1]]
-    defStack = initDoublyLinkedList[StackInfo]()
-    pushDefStack StackInfo(ns: pieces[0], def: pieces[1], code: mainCode)
-
-    var ret = CirruData(kind: crDataNil)
-    for child in entry.fnCode:
-      ret = interpret(child, scope)
-
-  except CirruEvalError as e:
-    echo ""
-    coloredEcho fgRed, e.msg, " ", $e.code
-    showStack()
-    echo ""
-    raise e
-
-  except CirruCoreError as e:
-    echo ""
-    coloredEcho fgRed, e.msg, " ", $e.data
-    showStack()
-    echo ""
-    raise e
+  discard runCode(pieces[0], pieces[1])
 
 let handleFileChange = proc (snapshotFile: string, incrementFile: string): void =
   sleep 150
@@ -147,6 +125,7 @@ let handleFileChange = proc (snapshotFile: string, incrementFile: string): void 
   loadChanges(incrementFile, programCode)
   try:
     reloadProgram(snapshotFile)
+
   except ValueError as e:
     coloredEcho fgRed, "Failed to rerun program: ", e.msg
 
