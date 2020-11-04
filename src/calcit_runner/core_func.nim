@@ -845,6 +845,16 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     acc.add CirruData(kind: crDataList, listVal: list)
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
 
+proc nativeMap*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+  var value = initTable[CirruData, CirruData]()
+  for pair in exprList:
+    if pair.kind != crDataList:
+      raiseEvalError("Map requires nested children pairs", pair)
+    if pair.len() != 2:
+      raiseEvalError("Each pair of table contains 2 elements", pair)
+    value[pair[0]] = pair[1]
+  return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -917,3 +927,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["split"] = CirruData(kind: crDataProc, procVal: nativeSplit)
   programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
   programData[coreNs].defs["to-pairs"] = CirruData(kind: crDataProc, procVal: nativeToPairs)
+  programData[coreNs].defs["&{}"] = CirruData(kind: crDataProc, procVal: nativeMap)

@@ -513,6 +513,17 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace", ["[]", ["~@", items]]]]]
     , coreNs)
 
+  let codeMapSyntax = genCirru(
+    [defmacro, "{}", ["&", xs],
+      ["let", [[ys, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]], xs]]],
+        ["quote-replace", ["&{}", ["~@", ys]]]]]
+  , coreNs)
+
+  let codeFn = genCirru(
+    [defmacro, fn, [args, "&", body],
+      ["quote-replace", [defn, "generated-fn", ["~", args], ["~@", body]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -591,3 +602,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["section-by"] = codeSectionBy
   programCode[coreNs].defs["g"] = codeG
   programCode[coreNs].defs["[][]"] = codeListList
+  programCode[coreNs].defs["{}"] = codeMapSyntax
+  programCode[coreNs].defs["fn"] = codeFn

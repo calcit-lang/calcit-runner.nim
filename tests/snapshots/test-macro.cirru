@@ -90,19 +90,19 @@
 
             assert "|expand lambda" $ =
               macroexpand $ quote (\ + 2 %)
-              quote $ fn (%) (+ 2 %)
+              quote $ defn generated-fn (%) (+ 2 %)
 
             assert "|expand lambda" $ =
               macroexpand $ quote $ \ x
-              quote $ fn (%) (x)
+              quote $ defn generated-fn (%) (x)
 
             assert "|expand lambda" $ =
               macroexpand $ quote $ \ + x %
-              quote $ fn (%) (+ x %)
+              quote $ defn generated-fn (%) (+ x %)
 
             assert "|expand lambda" $ =
               macroexpand $ quote $ \ + x % %2
-              quote $ fn (% %2) (+ x % %2)
+              quote $ defn generated-fn (% %2) (+ x % %2)
 
         |main! $ quote
           defn main! ()

@@ -50,18 +50,6 @@ proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 proc nativeComment(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   return CirruData(kind: crDataNil)
 
-proc nativeMap*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  var value = initTable[CirruData, CirruData]()
-  for pair in exprList:
-    if pair.kind != crDataList:
-      raiseEvalError("Table requires nested children pairs", pair)
-    if pair.len() != 2:
-      raiseEvalError("Each pair of table contains 2 elements", pair)
-    let k = interpret(pair[0], scope)
-    let v = interpret(pair[1], scope)
-    value[k] = v
-  return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
-
 proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   if exprList.len < 2: raiseEvalError("Expects name and args for defn", exprList)
   let fnName = exprList[0]
@@ -69,12 +57,6 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
   return CirruData(kind: crDataFn, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
-
-proc nativeFn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
-  if exprList.len < 1: raiseEvalError("Expects args for fn", exprList)
-  let argsList = exprList[0]
-  if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
-  return CirruData(kind: crDataFn, fnName: "fn", fnArgs: argsList.listVal, fnCode: exprList[1..^1], fnScope: scope)
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
   var letScope = scope
@@ -235,8 +217,6 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnI
   programData[coreNs].defs["do"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDo)
   programData[coreNs].defs["if"] = CirruData(kind: crDataSyntax, syntaxVal: nativeIf)
   programData[coreNs].defs["defn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefn)
-  programData[coreNs].defs["fn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeFn)
   programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet)
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
-  programData[coreNs].defs["{}"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMap)
   programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop)

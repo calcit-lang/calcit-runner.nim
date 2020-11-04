@@ -280,14 +280,10 @@ proc preprocess(code: CirruData, localDefs: Hashset[string]): CirruData =
           return code
         of "defn", "defmacro":
           return processDefn(code, localDefs, preprocessHelper)
-        of "fn":
-          return processFn(code, localDefs, preprocessHelper)
         of "let", "loop":
           return processBinding(code, localDefs, preprocessHelper)
         of "[]", "if", "assert", "do", "quote-replace":
           return processAll(code, localDefs, preprocessHelper)
-        of "{}":
-          return processMap(code, localDefs, preprocessHelper)
         of "quote":
           return processQuote(code, localDefs, preprocessHelper)
         else:

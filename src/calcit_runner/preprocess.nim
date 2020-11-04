@@ -24,30 +24,6 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
     ys = ys.append preprocess(item, localDefs)
   return CirruData(kind: crDataList, listVal: ys)
 
-proc processMap*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
-  if xs.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
-  if xs.len < 1:
-    raiseEvalError("Expects len >1", xs)
-
-  let head = xs[0]
-  let body = xs.listVal.rest()
-
-  var ys = initTernaryTreeList[CirruData](@[head])
-  for pair in body:
-    if pair.kind != crDataList:
-      raiseEvalError("Expects a list", xs)
-    if pair.len != 2:
-      raiseEvalError("Expects len of 2", pair)
-
-    let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
-      preprocess(pair[0], localDefs),
-      preprocess(pair[1], localDefs),
-    ]))
-    ys = ys.append newPair
-
-  return CirruData(kind: crDataList, listVal: ys)
-
 proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
@@ -71,35 +47,6 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
   # echo "DEBUG"
   # echo CirruData(kind: crDataList, listVal: ys)
   # echo CirruData(kind: crDataList, listVal: body)
-
-  for item in body:
-    ys = ys.append preprocess(item, newDefs)
-
-  return CirruData(kind: crDataList, listVal: ys)
-
-proc processFn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
-  if xs.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
-  if xs.len < 3:
-    raiseEvalError("Expects len >=3", xs)
-
-  var ys = xs.listVal.slice(0,2)
-  let args = xs[1]
-  let body = xs.listVal.slice(2, xs.len)
-
-  # echo "DEBUG"
-  # echo CirruData(kind: crDataList, listVal: ys)
-  # echo CirruData(kind: crDataList, listVal: body)
-
-  var newDefs = localDefs
-  if args.kind != crDataList:
-    raiseEvalError("Expects a list", args)
-
-  for item in args:
-    if item.kind != crDataSymbol:
-      raiseEvalError("Expects a symbol", item)
-    if item.symbolVal != "&":
-      newDefs.incl(item.symbolVal)
 
   for item in body:
     ys = ys.append preprocess(item, newDefs)
