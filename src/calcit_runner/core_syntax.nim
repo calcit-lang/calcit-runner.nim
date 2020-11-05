@@ -121,7 +121,7 @@ proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   case exprList.kind
   of crDataSymbol:
-    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
+    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, scope: some(scope))
   of crDataList:
     var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:

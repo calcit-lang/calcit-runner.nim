@@ -65,7 +65,7 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
   if macroValue.kind != crDataMacro: raiseEvalError("Expects a macro", macroValue)
 
   let emptyScope = CirruDataScope()
-  let innerScope = emptyScope.merge(processArguments(macroValue.macroArgs, args))
+  let innerScope = emptyScope.merge(processArguments(macroValue.macroArgs, spreadArgs(args)))
 
   var quoted = CirruData(kind: crDataNil)
   for child in macroValue.macroCode:

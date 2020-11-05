@@ -250,7 +250,7 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if value.kind != crDataMacro:
     raiseEvalError("Expected a macro in the expression", code)
 
-  let xs = spreadArgs(code[1..^1])
+  let xs = code[1..^1]
   let quoted = evaluteMacroData(value, xs, interpret, ns)
 
   return quoted
@@ -567,9 +567,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], ns: "", scope: some(scope), dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], scope: some(scope), dynamic: true)
   of crDataString:
-    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: "", scope: some(scope), dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, scope: some(scope), dynamic: true)
   of crDataSymbol:
     return x
   else:
@@ -652,7 +652,7 @@ proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   if content.kind != crDataString:
     raiseEvalError("parse-cirru-edn requires a string", content)
   let ednData = parseEdnFromStr(content.stringVal)
-  return ednData.toCirruData("user", some(scope))
+  return ednData.toCirruData(ns, some(scope))
 
 proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
