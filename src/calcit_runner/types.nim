@@ -55,9 +55,9 @@ type
     crDataSyntax,
     crDataRecur,
 
-  FnInterpret* = proc(expr: CirruData, scope: CirruDataScope): CirruData
+  FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
-  FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData
+  FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
 
   ResolvedPath* = tuple[ns: string, def: string]
 
@@ -75,10 +75,12 @@ type
       fnScope*: CirruDataScope
       fnArgs*: TernaryTreeList[CirruData]
       fnCode*: seq[CirruData]
+      fnNs*: string
     of crDataMacro:
       macroName*: string
       macroArgs*: TernaryTreeList[CirruData]
       macroCode*: seq[CirruData]
+      macroNs*: string
     of crDataSyntax:
       syntaxVal*: FnInData
     of crDataList: listVal*: TernaryTreeList[CirruData]

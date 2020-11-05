@@ -8,9 +8,9 @@ import ./data
 import ./errors
 
 type
-  FnPreprocess = proc(code: CirruData, localDefs: Hashset[string]): CirruData
+  FnPreprocess = proc(code: CirruData, localDefs: Hashset[string], ns: string): CirruData
 
-proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
+proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len < 1:
@@ -21,10 +21,10 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
 
   var ys = initTernaryTreeList[CirruData](@[head])
   for item in body:
-    ys = ys.append preprocess(item, localDefs)
+    ys = ys.append preprocess(item, localDefs, ns)
   return CirruData(kind: crDataList, listVal: ys)
 
-proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
+proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len <= 3:
@@ -49,11 +49,11 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
   # echo CirruData(kind: crDataList, listVal: body)
 
   for item in body:
-    ys = ys.append preprocess(item, newDefs)
+    ys = ys.append preprocess(item, newDefs, ns)
 
   return CirruData(kind: crDataList, listVal: ys)
 
-proc processBinding*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
+proc processBinding*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len < 3:
@@ -80,7 +80,7 @@ proc processBinding*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPr
 
     let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
       defName,
-      preprocess(detail, newDefs)
+      preprocess(detail, newDefs, ns)
     ]))
 
     if defName.kind != crDataSymbol:
@@ -94,11 +94,11 @@ proc processBinding*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPr
   ys = ys.append CirruData(kind: crDataList, listVal: bindingBuffer)
 
   for item in body:
-    ys = ys.append preprocess(item, newDefs)
+    ys = ys.append preprocess(item, newDefs, ns)
 
   return CirruData(kind: crDataList, listVal: ys)
 
-proc processQuote*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess): CirruData =
+proc processQuote*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len < 1:
@@ -107,6 +107,6 @@ proc processQuote*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrep
   let body = xs.listVal.rest()
 
   for item in body:
-    discard preprocess(item, localDefs)
+    discard preprocess(item, localDefs, ns)
 
   xs

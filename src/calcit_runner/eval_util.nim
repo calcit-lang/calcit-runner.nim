@@ -46,22 +46,22 @@ proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[
     )
     return argsScope
 
-proc evaluteFnData*(fnValue: CirruData, args: seq[CirruData], interpret: FnInterpret): CirruData =
+proc evaluteFnData*(fnValue: CirruData, args: seq[CirruData], interpret: FnInterpret, ns: string): CirruData =
   if fnValue.kind != crDataFn: raiseEvalError("Expects a funtion", fnValue)
 
   let innerScope = fnValue.fnScope.merge(processArguments(fnValue.fnArgs, args))
   var ret = CirruData(kind: crDataNil)
   for child in fnValue.fnCode:
-    ret = interpret(child, innerScope)
+    ret = interpret(child, innerScope, fnValue.fnNs)
 
   while ret.isRecur:
     let loopScope = fnValue.fnScope.merge(processArguments(fnValue.fnArgs, ret.recurArgs))
     for child in fnValue.fnCode:
-      ret = interpret(child, loopScope)
+      ret = interpret(child, loopScope, fnValue.fnNs)
 
   return ret
 
-proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: FnInterpret): CirruData =
+proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: FnInterpret, ns: string): CirruData =
   if macroValue.kind != crDataMacro: raiseEvalError("Expects a macro", macroValue)
 
   let emptyScope = CirruDataScope()
@@ -69,12 +69,12 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
 
   var quoted = CirruData(kind: crDataNil)
   for child in macroValue.macroCode:
-    quoted = interpret(child, innerScope)
+    quoted = interpret(child, innerScope, macroValue.macroNs)
 
   while quoted.isRecur:
     let loopScope = emptyScope.merge(processArguments(macroValue.macroArgs, spreadArgs(quoted.recurArgs)))
     for child in macroValue.macroCode:
-      quoted = interpret(child, loopScope)
+      quoted = interpret(child, loopScope, macroValue.macroNs)
 
   if quoted.isList.not and quoted.isRecur.not and quoted.isSymbol.not:
     raiseEvalError("Expected list or recur from defmacro", quoted)
