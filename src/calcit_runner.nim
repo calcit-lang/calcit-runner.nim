@@ -54,7 +54,7 @@ proc runCode(ns: string, def: string): CirruData =
 
     var ret = CirruData(kind: crDataNil)
     for child in entry.fnCode:
-      ret = interpret(child, scope)
+      ret = interpret(child, scope, ns)
 
     return ret
 

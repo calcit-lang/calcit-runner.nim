@@ -25,11 +25,11 @@ proc reversed*[T](s: DoublyLinkedList[T]): DoublyLinkedList[T] =
 proc pushDefStack*(x: StackInfo): void =
   defStack.append x
 
-proc pushDefStack*(node: CirruData, code: CirruData, args: seq[CirruData]): void =
+proc pushDefStack*(node: CirruData, code: CirruData, args: seq[CirruData], ns: string): void =
   if node.kind == crDataSymbol:
-    pushDefStack(StackInfo(ns: node.ns, def: node.symbolVal, code: code, args: args))
+    pushDefStack(StackInfo(ns: ns, def: node.symbolVal, code: code, args: args))
   else:
-    pushDefStack(StackInfo(ns: "??", def: "??", code: code, args: args))
+    pushDefStack(StackInfo(ns: ns, def: "??", code: code, args: args))
 
 proc popDefStack*(): void =
   defStack.remove defStack.tail

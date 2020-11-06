@@ -12,45 +12,45 @@ import ./types
 import ./errors
 import ./gen_code
 
-proc nativeList(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeList(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var args = initTernaryTreeList[CirruData](@[])
   for node in exprList:
     # commas in body are considered as nothing
     if node.kind == crDataSymbol and node.symbolVal == ",":
       continue
-    args = args.append interpret(node, scope)
+    args = args.append interpret(node, scope, ns)
   return CirruData(kind: crDataList, listVal: args)
 
-proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len < 2):
     raiseEvalError(fmt"No arguments for if", exprList)
   elif (exprList.len == 2):
     let node = exprList[0]
-    let cond = interpret(node, scope)
+    let cond = interpret(node, scope, ns)
     if cond.kind == crDataBool:
       if cond.boolVal:
-        return interpret(exprList[1], scope)
+        return interpret(exprList[1], scope, ns)
       else:
         return CirruData(kind: crDataNil)
     else:
       raiseEvalError("Not a bool in if", node)
   elif (exprList.len == 3):
     let node = exprList[0]
-    let cond = interpret(node, scope)
+    let cond = interpret(node, scope, ns)
     if cond.kind == crDataBool:
       if cond.boolVal:
-        return interpret(exprList[1], scope)
+        return interpret(exprList[1], scope, ns)
       else:
-        return interpret(exprList[2], scope)
+        return interpret(exprList[2], scope, ns)
     else:
       raiseEvalError("Not a bool in if", node)
   else:
     raiseEvalError("Too many arguments for if", exprList)
 
-proc nativeComment(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeComment(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   return CirruData(kind: crDataNil)
 
-proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len < 2: raiseEvalError("Expects name and args for defn", exprList)
   let fnName = exprList[0]
   if fnName.kind != crDataSymbol: raiseEvalError("Expects fnName to be string", exprList)
@@ -58,7 +58,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
   return CirruData(kind: crDataFn, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
 
-proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var letScope = scope
   if exprList.len < 1:
     raiseEvalError("No enough code for let, too short", exprList)
@@ -75,12 +75,12 @@ proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     let value = pair[1]
     if name.kind != crDataSymbol:
       raiseEvalError("Expecting binding name in string", name)
-    letScope = letScope.assoc(name.symbolVal, interpret(value, letScope))
+    letScope = letScope.assoc(name.symbolVal, interpret(value, letScope, ns))
   result = CirruData(kind: crDataNil)
   for child in body:
-    result = interpret(child, letScope)
+    result = interpret(child, letScope, ns)
 
-proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var loopScope = scope
   if exprList.len < 1: raiseEvalError("No enough code for loop, too short", exprList)
   let pairs = exprList[0]
@@ -92,10 +92,10 @@ proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
     let name = pair[0]
     let value = pair[1]
     if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
-    loopScope = loopScope.assoc(name.symbolVal, interpret(value, loopScope))
+    loopScope = loopScope.assoc(name.symbolVal, interpret(value, loopScope, ns))
   var ret = CirruData(kind: crDataNil)
   for child in body:
-    ret = interpret(child, loopScope)
+    ret = interpret(child, loopScope, ns)
   while ret.isRecur:
     if ret.recurArgs.len != pairs.len:
       raiseEvalError(fmt"recur args {ret.recurArgs.len} != {pairs.len}", exprList)
@@ -109,19 +109,19 @@ proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
       idx = idx + 1
 
     for child in body:
-      ret = interpret(child, loopScope)
+      ret = interpret(child, loopScope, ns)
   ret
 
-proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   result = CirruData(kind: crDataNil)
   for child in exprList:
-    result = interpret(child, scope)
+    result = interpret(child, scope, ns)
 
 # TODO, symbols in macros refers to define scope
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   case exprList.kind
   of crDataSymbol:
-    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns, scope: some(scope))
+    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, scope: some(scope))
   of crDataList:
     var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
@@ -135,13 +135,13 @@ proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   else:
     raiseEvalError("Unexpected data for attaching", exprList)
 
-proc nativeQuote(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeQuote(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 1:
     raiseEvalError("quote expects 1 argument", exprList)
   let code = attachScope(exprList[0], scope)
   return code
 
-proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   case exprList.kind
   of crDataSymbol: return exprList
   of crDataString: return exprList
@@ -154,7 +154,7 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
     if exprList[0].isSymbol and exprList[0].symbolVal == "~":
       if exprList.len != 2:
         raiseEvalError "Expected 1 argument in ~ of quote-replace", exprList
-      return interpret(exprList[1], scope)
+      return interpret(exprList[1], scope, ns)
 
     var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
@@ -163,46 +163,46 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
         if head.symbolVal == "~":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~ of quote-replace", item
-          list = list.append interpret(item[1], scope)
+          list = list.append interpret(item[1], scope, ns)
         elif head.symbolVal == "~@":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~@ of quote-replace", item
-          let xs = interpret(item[1], scope)
+          let xs = interpret(item[1], scope, ns)
           if xs.kind != crDataList:
             raiseEvalError "Expected list for ~@ of quote-replace", xs
           for x in xs:
             list = list.append x
         else:
-          list = list.append replaceExpr(item, interpret, scope)
+          list = list.append replaceExpr(item, interpret, scope, ns)
       else:
-        list = list.append replaceExpr(item, interpret, scope)
+        list = list.append replaceExpr(item, interpret, scope, ns)
     return CirruData(kind: crDataList, listVal: list)
   else:
     raiseEvalError("Unknown data in expr", exprList)
 
-proc nativeQuoteReplace(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeQuoteReplace(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 1:
     raiseEvalError(fmt"quote-replace expects 1 argument, got {exprList.len}", exprList)
 
-  let ret = replaceExpr(attachScope(exprList[0], scope), interpret, scope)
+  let ret = replaceExpr(attachScope(exprList[0], scope), interpret, scope, ns)
   if not checkExprStructure(ret):
     raiseEvalError("Unexpected structure from quote-replace", ret)
   ret
 
-proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   let macroName = exprList[0]
   if macroName.kind != crDataSymbol: raiseEvalError("Expects macro name a symbol", exprList)
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects macro args to be a list", exprList)
   return CirruData(kind: crDataMacro, macroName: macroName.symbolVal, macroArgs: argsList.listVal, macroCode: exprList[2..^1])
 
-proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 2:
     raiseEvalError("assert expects 1 argument", exprList)
-  let message = interpret(exprList[0], scope)
+  let message = interpret(exprList[0], scope, ns)
   if message.kind != crDataString:
     raiseEvalError("Expected assert message in string", exprList[0])
-  let target = interpret(exprList[1], scope)
+  let target = interpret(exprList[1], scope, ns)
   if target.kind != crDataBool:
     raiseEvalError("Expected assert target in bool", exprList[1])
   if not target.boolVal:

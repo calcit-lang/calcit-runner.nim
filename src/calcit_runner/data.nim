@@ -148,7 +148,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token[0] == ':':
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(token[1..^1]))
   elif token[0] == '\'':
-    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], dynamic: true)
 
   elif match(token, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
@@ -163,7 +163,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token == "&E":
     return CirruData(kind: crDataNumber, numberVal: E)
   else:
-    return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
+    return CirruData(kind: crDataSymbol, symbolVal: token, scope: scope)
 
 proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:
@@ -190,12 +190,12 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
       args.add x
   args
 
-proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): seq[CirruData] =
+proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): seq[CirruData] =
   var args: seq[CirruData] = @[]
   var spreadMode = false
   for x in xs:
     if spreadMode:
-      let ys = interpret(x, scope)
+      let ys = interpret(x, scope, ns)
       if not ys.isList:
         raiseEvalError("Spread mode expects a list", xs)
       ys.listVal.each(proc(y: CirruData): void =
@@ -205,5 +205,5 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     elif x.isSymbol and x.symbolVal == "&":
       spreadMode = true
     else:
-      args.add interpret(x, scope)
+      args.add interpret(x, scope, ns)
   args
