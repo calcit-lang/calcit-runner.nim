@@ -88,6 +88,7 @@ type
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
     of crDataSymbol:
       symbolVal*: string
+      ns*: string
       resolved*: Option[ResolvedPath]
       scope*: Option[CirruDataScope]
       # TODO looking for simpler solution
@@ -194,9 +195,9 @@ proc toString*(val: CirruData, details: bool = false): string =
     of crDataSymbol:
       if details:
         if val.scope.isSome:
-          "scoped::" & escapeString(val.symbolVal)
+          "scoped::" & val.ns & "/" & escapeString(val.symbolVal)
         else:
-          escapeString(val.symbolVal)
+          val.ns & "/" & escapeString(val.symbolVal)
       else:
         val.symbolVal
 
@@ -269,11 +270,11 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
 
     of crDataSymbol:
-      result = hash("symbol:")
+      result =  hash("symbol:")
       result = result !& hash(value.symbolVal)
       result = !$ result
     of crDataRecur:
-      result = hash("recur:")
+      result =  hash("recur:")
       result = result !& hash(value.recurArgs)
       result = !$ result
 

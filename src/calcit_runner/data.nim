@@ -148,7 +148,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token[0] == ':':
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(token[1..^1]))
   elif token[0] == '\'':
-    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
 
   elif match(token, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
@@ -163,7 +163,7 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   elif token == "&E":
     return CirruData(kind: crDataNumber, numberVal: E)
   else:
-    return CirruData(kind: crDataSymbol, symbolVal: token, scope: scope)
+    return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns, scope: scope)
 
 proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
   if xs.kind == cirruString:
