@@ -60,11 +60,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
 
     return programData[path.ns].defs[path.def]
 
-  if sym.scope.isSome:
-    let fromOriginalScope = sym.scope.get[sym.symbolVal]
-    if fromOriginalScope.isSome:
-      return fromOriginalScope.get
-  elif scope.contains(sym.symbolVal):
+  if scope.contains(sym.symbolVal):
     let fromScope = scope[sym.symbolVal]
     if fromScope.isSome:
       return fromScope.get
@@ -82,16 +78,13 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   raiseEvalError(fmt"Symbol not initialized or recognized: {sym.symbolVal}", sym)
 
 proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
-  if xs.kind == crDataNil: return xs
-  if xs.kind == crDataString: return xs
-  if xs.kind == crDataKeyword: return xs
-  if xs.kind == crDataNumber: return xs
-  if xs.kind == crDataBool: return xs
-  if xs.kind == crDataProc: return xs
-  if xs.kind == crDataFn: return xs
-
-  if xs.kind == crDataSymbol:
+  case xs.kind
+  of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataProc, crDataFn:
+    return xs
+  of crDataSymbol:
     return interpretSymbol(xs, scope, ns)
+  else:
+    discard
 
   if xs.len == 0:
     raiseEvalError("Cannot interpret empty expression", xs)
@@ -265,7 +258,7 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)
       of crDataMacro:
-        let xs = spreadArgs(code[1..^1])
+        let xs = code[1..^1]
         pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
 
         let quoted = evaluteMacroData(value, xs, interpret, ns)
