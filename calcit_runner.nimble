@@ -29,5 +29,8 @@ task perf, "run with perf":
 task t, "Runs the test suite":
   exec "nim c -r --hints:off --threads:on tests/test_expr.nim"
 
+task tg, "test gynienic macro":
+  exec "nim c -r --hints:off --threads:on tests/test_gynienic.nim"
+
 task ct, "Runs calcit tests":
   exec "nim c -r --hints:off --threads:on tests/run_calcit.nim"
