@@ -524,6 +524,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["quote-replace", [defn, "generated-fn", ["~", args], ["~@", body]]]]
   , coreNs)
 
+  let codeAssertEqual = genCirru(
+    [defmacro, "assert=", [a, b],
+      ["quote-replace",
+        ["let", [[va, ["~", a]],
+                 [vb, ["~", b]]],
+                ["if", ["/=", va, vb],
+                       ["do",
+                          ["echo"],
+                          ["echo", "|Wanted:", va],
+                          ["echo", "|Got:   ", vb],
+                          ["raise-at", "|Not equal!", ["~", b]]],
+                        "nil"]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -604,3 +618,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["[][]"] = codeListList
   programCode[coreNs].defs["{}"] = codeMapSyntax
   programCode[coreNs].defs["fn"] = codeFn
+  programCode[coreNs].defs["assert="] = codeAssertEqual

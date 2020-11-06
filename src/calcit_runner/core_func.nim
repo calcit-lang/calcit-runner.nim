@@ -567,9 +567,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], scope: some(scope), dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], ns: ns, dynamic: true)
   of crDataString:
-    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, scope: some(scope), dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: ns, dynamic: true)
   of crDataSymbol:
     return x
   else:

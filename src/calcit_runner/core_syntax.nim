@@ -121,7 +121,7 @@ proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
   case exprList.kind
   of crDataSymbol:
-    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, scope: some(scope))
+    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns)
   of crDataList:
     var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
@@ -148,6 +148,7 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
   of crDataNumber: return exprList
   of crDataBool: return exprList
   of crDataKeyword: return exprList
+  of crDataNil: return exprList
   of crDataList:
     if exprList.len == 0:
       return CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[]))
@@ -160,11 +161,11 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
     for item in exprList:
       if item.kind == crDataList:
         let head = item[0]
-        if head.symbolVal == "~":
+        if head.kind == crDataSymbol and head.symbolVal == "~":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~ of quote-replace", item
           list = list.append interpret(item[1], scope, ns)
-        elif head.symbolVal == "~@":
+        elif head.kind == crDataSymbol and head.symbolVal == "~@":
           if item.len != 2:
             raiseEvalError "Expected 1 argument in ~@ of quote-replace", item
           let xs = interpret(item[1], scope, ns)

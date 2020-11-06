@@ -60,11 +60,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
 
     return programData[path.ns].defs[path.def]
 
-  if sym.scope.isSome:
-    let fromOriginalScope = sym.scope.get[sym.symbolVal]
-    if fromOriginalScope.isSome:
-      return fromOriginalScope.get
-  elif scope.contains(sym.symbolVal):
+  if scope.contains(sym.symbolVal):
     let fromScope = scope[sym.symbolVal]
     if fromScope.isSome:
       return fromScope.get
@@ -98,7 +94,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   let head = xs[0]
 
   if head.kind == crDataSymbol and head.symbolVal == "eval":
-    pushDefStack(StackInfo(ns: ns, def: head.symbolVal, code: xs, args: xs[1..^1]))
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: xs, args: xs[1..^1]))
     if xs.len < 2:
       raiseEvalError("eval expects 1 argument", xs)
     let ret = nativeEval(xs[1], interpret, scope, ns)
@@ -116,7 +112,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
 
     # echo "HEAD: ", head, " ", xs
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
-    pushDefStack(head, CirruData(kind: crDataNil), args, ns)
+    pushDefStack(head, CirruData(kind: crDataNil), args)
     let ret = f(args, interpret, scope, ns)
     popDefStack()
     return ret
@@ -125,7 +121,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
 
     # echo "HEAD: ", head, " ", xs
-    pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args, ns)
+    pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
 
     let ret = evaluteFnData(value, args, interpret, ns)
@@ -152,7 +148,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   of crDataSyntax:
     let f = value.syntaxVal
 
-    pushDefStack(StackInfo(ns: ns, def: head.symbolVal, code: CirruData(kind: crDataNil), args: xs[1..^1]))
+    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataNil), args: xs[1..^1]))
     let quoted = f(xs[1..^1], interpret, scope, ns)
     popDefStack()
     return quoted
@@ -204,14 +200,14 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
         sym.resolved = some((coreNs, sym.symbolVal))
         return sym
 
-      if hasNsAndDef(ns, sym.symbolVal):
-        preprocessSymbolByPath(ns, sym.symbolVal)
-        sym.resolved = some((ns, sym.symbolVal))
+      if hasNsAndDef(sym.ns, sym.symbolVal):
+        preprocessSymbolByPath(sym.ns, sym.symbolVal)
+        sym.resolved = some((sym.ns, sym.symbolVal))
         return sym
-      elif ns.startsWith("calcit."):
+      elif sym.ns.startsWith("calcit."):
         raiseEvalError(fmt"Cannot find symbol in core lib: {sym}", sym)
       else:
-        let importDict = loadImportDictByNs(ns)
+        let importDict = loadImportDictByNs(sym.ns)
         if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
           let pieces = sym.symbolVal.split('/')
           if pieces.len != 2:
@@ -263,7 +259,7 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
         return CirruData(kind: crDataList, listVal: xs)
       of crDataMacro:
         let xs = code[1..^1]
-        pushDefStack(StackInfo(ns: ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
+        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
 
         let quoted = evaluteMacroData(value, xs, interpret, ns)
         popDefStack()

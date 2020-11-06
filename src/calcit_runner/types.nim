@@ -88,8 +88,8 @@ type
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
     of crDataSymbol:
       symbolVal*: string
+      ns*: string
       resolved*: Option[ResolvedPath]
-      scope*: Option[CirruDataScope]
       # TODO looking for simpler solution
       dynamic*: bool
     of crDataRecur:
@@ -121,10 +121,10 @@ const coreNs* = "calcit.core"
 proc toString*(val: CirruData, details: bool = false): string
 
 proc fromListToString(children: seq[CirruData]): string =
-  return "(" & children.mapIt(toString(it)).join(" ") & ")"
+  return "(" & children.mapIt(toString(it, true)).join(" ") & ")"
 
 proc fromSetToString(children: HashSet[CirruData]): string =
-  return "#{" & children.mapIt(toString(it)).join(" ") & "}"
+  return "#{" & children.mapIt(toString(it, true)).join(" ") & "}"
 
 proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   let size = children.len()
@@ -133,7 +133,7 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
   var tableStr = "{"
   var counted = 0
   for k, child in pairs(children):
-    tableStr = tableStr & toString(k) & " " & toString(child)
+    tableStr = tableStr & toString(k, true) & " " & toString(child, true)
     counted = counted + 1
     if counted < children.len:
       tableStr = tableStr & ", "
@@ -176,7 +176,10 @@ proc toString*(val: CirruData, details: bool = false): string =
       else:
         $(val.numberVal)
     of crDataString:
-      val.stringVal
+      if details:
+        val.stringVal.escapeString
+      else:
+        val.stringVal
     of crDataList: fromListToString(val.listVal.toSeq)
     of crDataSet: fromSetToString(val.setVal)
     of crDataMap: fromMapToString(val.mapVal)
@@ -193,10 +196,7 @@ proc toString*(val: CirruData, details: bool = false): string =
       fmt"<Recur: {content}>"
     of crDataSymbol:
       if details:
-        if val.scope.isSome:
-          "scoped::" & escapeString(val.symbolVal)
-        else:
-          escapeString(val.symbolVal)
+        val.ns & "/" & escapeString(val.symbolVal)
       else:
         val.symbolVal
 
