@@ -13,7 +13,7 @@ binDir        = "out/"
 
 requires "nim >= 0.20.0"
 requires "libfswatch"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.3.3"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.3.4"
 requires "ternary_tree >= 0.1.27"
 requires "https://github.com/Quamolit/json-paint.nim#v0.0.6"
 
