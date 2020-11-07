@@ -72,7 +72,7 @@ proc runCode(ns: string, def: string): CirruData =
     echo ""
     raise e
 
-  except AssertionError as e:
+  except Defect as e:
     coloredEcho fgRed, "Failed to run command"
     echo e.msg
 

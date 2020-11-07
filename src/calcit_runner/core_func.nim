@@ -19,6 +19,7 @@ import ./to_json
 import ./gen_data
 import ./gen_code
 import ./eval_util
+import ./atoms
 
 # init generator for rand
 randomize()
@@ -187,6 +188,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     of crDataSet: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("set"))
     of crDataRecur: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("recur"))
     of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("symbol"))
+    of crDataAtom: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("atom"))
 
 proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -845,7 +847,7 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     acc.add CirruData(kind: crDataList, listVal: list)
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
 
-proc nativeMap*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var value = initTable[CirruData, CirruData]()
   for pair in exprList:
     if pair.kind != crDataList:
@@ -854,6 +856,58 @@ proc nativeMap*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
       raiseEvalError("Each pair of table contains 2 elements", pair)
     value[pair[0]] = pair[1]
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
+
+proc nativeDeref(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("deref expects 1 argument", args)
+  let a = args[0]
+  if a.kind != crDataAtom: raiseEvalError("expects an atom to deref", args)
+  let attempt = getAtomByPath(a.atomNs, a.atomDef)
+  if attempt.isNone:
+    raiseEvalError("found no value for such atom", args)
+  attempt.get.value
+
+proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("reset! expects 2 arguments", args)
+  let a = args[0]
+  if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
+  let v = args[1]
+
+  let attempt = getAtomByPath(a.atomNs, a.atomDef)
+  if attempt.isNone:
+    raiseEvalError("found no value for such atom", args)
+
+  let oldValue = attempt.get.value
+
+  setAtomByPath(a.atomNs, a.atomDef, v)
+
+  for k, listener in attempt.get.watchers:
+    case listener.kind
+    of crDataProc:
+      discard listener.procVal(@[v, oldValue], interpret, scope, ns)
+    of crDataFn:
+      discard evaluteFnData(listener, @[v, oldValue], interpret, ns)
+    else:
+      raiseEvalError("Unexpected f to call as a listener", args)
+
+  return CirruData(kind: crDataNil)
+
+proc nativeAddWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 3: raiseEvalError("reset! expects 3 arguments", args)
+  let a = args[0]
+  if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
+  let k = args[1]
+  if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
+  let f = args[2]
+  if f.kind != crDataFn and a.kind != crDataProc: raiseEvalError("expects an function for add-watch", args)
+  addAtomWatcher(a.atomNs, a.atomDef, k.keywordVal[], f)
+
+proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("reset! expects 2 arguments", args)
+  let a = args[0]
+  if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
+  let k = args[1]
+  if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
+  removeAtomWatcher(a.atomNs, a.atomDef, k.keywordVal[])
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -928,3 +982,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
   programData[coreNs].defs["to-pairs"] = CirruData(kind: crDataProc, procVal: nativeToPairs)
   programData[coreNs].defs["&{}"] = CirruData(kind: crDataProc, procVal: nativeMap)
+  programData[coreNs].defs["deref"] = CirruData(kind: crDataProc, procVal: nativeDeref)
+  programData[coreNs].defs["reset!"] = CirruData(kind: crDataProc, procVal: nativeResetBang)
+  programData[coreNs].defs["add-watch"] = CirruData(kind: crDataProc, procVal: nativeAddWatch)
+  programData[coreNs].defs["remove-watch"] = CirruData(kind: crDataProc, procVal: nativeRemoveWatch)

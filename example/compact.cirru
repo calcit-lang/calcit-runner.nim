@@ -86,7 +86,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (; try-json) (try-canvas)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (; try-json) (; try-canvas) (try-atom)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -184,6 +184,8 @@
           defn try-canvas ()
             init-canvas $ {} (:title "\"DEMO") (:width 1200) (:height 800)
             try-redraw-canvas
+        |*state-a $ quote
+          defatom *state-a $ {} (:count 0)
         |try-core-lib $ quote
           defn try-core-lib () (echo $ + 1 2 3)
             echo (&+ 1 2) (&- 2 1)
@@ -196,6 +198,10 @@
                 do (echo a b)
                   recur (&+ a 1) (&+ b 2)
                 &+ a b
+        |try-atom $ quote
+          defn try-atom () (echo *state-a) (echo $ deref *state-a)
+            add-watch *state-a :a $ fn (a b) (echo "\"change happened:" a b)
+            remove-watch *state-a :a
         |try-edn $ quote
           defn try-edn ()
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
@@ -207,7 +213,11 @@
             echo (str |a |b |c) (str 1 2 3)
             echo $ type-of (&str 1)
         |reload! $ quote
-          defn reload! () (println "\"Reloaded...") (; main!) (try-redraw-canvas)
+          defn reload! () (println "\"Reloaded...") (; main!) (; try-redraw-canvas) (echo *state-a) (echo $ deref *state-a)
+            ; reset! *state-a $ {} (:count 3)
+            swap! *state-a update :count $ \ &+ 4 %
+            echo *state-a
+            echo $ deref *state-a
         |recur-inc $ quote
           defn recur-inc (acc max-value) (; echo "\"adding to acc: " acc)
             if (&< acc max-value)

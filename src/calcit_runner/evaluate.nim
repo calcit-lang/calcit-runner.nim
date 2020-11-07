@@ -279,6 +279,8 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
           return processAll(code, localDefs, preprocessHelper, ns)
         of "quote":
           return processQuote(code, localDefs, preprocessHelper, ns)
+        of "defatom":
+          return processDefAtom(code, localDefs, preprocessHelper, ns)
         else:
           raiseEvalError(fmt"Unknown syntax: ${head}", code)
 

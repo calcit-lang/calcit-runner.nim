@@ -11,6 +11,7 @@ import ./data
 import ./types
 import ./errors
 import ./gen_code
+import ./atoms
 
 proc nativeList(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var args = initTernaryTreeList[CirruData](@[])
@@ -199,7 +200,7 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: Cir
 
 proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 2:
-    raiseEvalError("assert expects 1 argument", exprList)
+    raiseEvalError("assert expects 2 arguments", exprList)
   let message = interpret(exprList[0], scope, ns)
   if message.kind != crDataString:
     raiseEvalError("Expected assert message in string", exprList[0])
@@ -208,6 +209,17 @@ proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("Expected assert target in bool", exprList[1])
   if not target.boolVal:
     raiseEvalError(message.stringVal, exprList)
+
+proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if exprList.len != 2:
+    raiseEvalError("assert expects 2 arguments", exprList)
+  let name = exprList[0]
+  if name.kind != crDataSymbol: raiseEvalError("Expects a symbol for atom", exprList)
+  let attempt = getAtomByPath(name.ns, name.symbolVal)
+  if attempt.isNone:
+    let value = interpret(exprList[1], scope, ns)
+    setAtomByPath(name.ns, name.symbolVal, value)
+  CirruData(kind: crDataAtom, atomNs: name.ns, atomDef: name.symbolVal)
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
   programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeList)
@@ -221,3 +233,4 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnI
   programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet)
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
   programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop)
+  programData[coreNs].defs["defatom"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefAtom)

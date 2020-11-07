@@ -8,7 +8,7 @@ import ./types
 import ./errors
 import ./to_json
 
-proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len == 0:
     initCanvas("DEMO", 400, 400)
   else:
@@ -23,7 +23,7 @@ proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
       initCanvas(title.get.stringVal, width.get.numberVal.int, height.get.numberVal.int)
   return CirruData(kind: crDataBool, boolVal: true)
 
-proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope): CirruData =
+proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("Expects 1 argument", args)
   let data = args[0]
   renderCanvas(data.toJson)
