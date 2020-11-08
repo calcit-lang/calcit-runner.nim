@@ -34,7 +34,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeWhen = genCirru(
     ["defmacro", "when", ["cond", "&", "body"],
-      ["quote-replace", ["if", ["do", ["~@", "body"]], "nil"]]]
+      ["quote-replace", ["if", ["~", cond], ["do", ["~@", "body"]], "nil"]]]
   , coreNs)
 
   # use native foldl for performance
@@ -538,6 +538,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                         "nil"]]]]
   , coreNs)
 
+  let codeSwapBang = genCirru(
+    [defmacro, "swap!", [a, f, "&", args],
+      ["quote-replace", ["reset!", ["~", a], [["~", f], [deref, ["~", a]], ["~@", args]]]]]
+  , coreNs)
+
   # TODO assoc-in
   # TODO dissoc-in
   # TODO update-in
@@ -619,3 +624,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["{}"] = codeMapSyntax
   programCode[coreNs].defs["fn"] = codeFn
   programCode[coreNs].defs["assert="] = codeAssertEqual
+  programCode[coreNs].defs["swap!"] = codeSwapBang

@@ -49,6 +49,7 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataMacro: return JsonNode(kind: JNull)
   of crDataSyntax: return JsonNode(kind: JNull)
   of crDataRecur: return JsonNode(kind: JNull)
+  of crDataAtom: return JsonNode(kind: JNull)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruData*(v: JsonNode): CirruData =

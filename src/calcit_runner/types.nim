@@ -54,6 +54,7 @@ type
     crDataSymbol,
     crDataSyntax,
     crDataRecur,
+    crDataAtom,
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
@@ -94,6 +95,9 @@ type
       dynamic*: bool
     of crDataRecur:
       recurArgs*: seq[CirruData]
+    of crDataAtom:
+      atomNs*: string
+      atomDef*: string
 
   RefCirruData* = ref CirruData
 
@@ -199,6 +203,8 @@ proc toString*(val: CirruData, details: bool = false): string =
         val.ns & "/" & escapeString(val.symbolVal)
       else:
         val.symbolVal
+    of crDataAtom:
+      "<Atom " & val.atomNs & "/" & val.atomDef & " >"
 
 proc `$`*(v: CirruData): string =
   v.toString(false)
@@ -277,6 +283,12 @@ proc hash*(value: CirruData): Hash =
       result = result !& hash(value.recurArgs)
       result = !$ result
 
+    of crDataAtom:
+      result = hash("atom:")
+      result = result !& hash(value.atomNs)
+      result = result !& hash(value.atomDef)
+      result = !$ result
+
 proc `==`*(x, y: CirruData): bool =
   if x.kind != y.kind:
     return false
@@ -335,3 +347,6 @@ proc `==`*(x, y: CirruData): bool =
 
     of crDataRecur:
       return x.recurArgs == y.recurArgs
+
+    of crDataAtom:
+      return x.atomNs == y.atomNs and x.atomDef == y.atomDef

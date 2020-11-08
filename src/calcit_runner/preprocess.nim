@@ -110,3 +110,12 @@ proc processQuote*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrep
     discard preprocess(item, localDefs, ns)
 
   xs
+
+proc processDefAtom*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
+  if xs.kind != crDataList or xs.listVal.len != 3:
+    raiseEvalError("Expects a list of 3 for defatom", xs)
+
+  var ys = xs.listVal.slice(0,2)
+  ys = ys.append preprocess(xs.listVal[2], localDefs, ns)
+
+  return CirruData(kind: crDataList, listVal: ys)
