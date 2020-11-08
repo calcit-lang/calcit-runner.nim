@@ -6,7 +6,6 @@ import json
 import terminal
 import tables
 import options
-import parseopt
 import sets
 
 import cirru_parser
@@ -22,14 +21,11 @@ import calcit_runner/loader
 import calcit_runner/stack
 import calcit_runner/gen_data
 import calcit_runner/evaluate
-import calcit_runner/watcher
-
-var runOnce = false
+import calcit_runner/eval_util
+import calcit_runner/to_json
 
 # slots for dynamic registering GUI functions
 var onLoadPluginProcs: Table[string, FnInData]
-var taskDuringLoop* = proc() =
-  discard
 
 export CirruData, CirruDataKind, `==`, crData
 
@@ -38,7 +34,7 @@ var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/relo
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
 
-proc runCode(ns: string, def: string): CirruData =
+proc runCode(ns: string, def: string, data: CirruData, dropArg: bool = false): CirruData =
   let scope = CirruDataScope()
 
   try:
@@ -46,15 +42,15 @@ proc runCode(ns: string, def: string): CirruData =
     let entry = getEvaluatedByPath(ns, def, scope)
 
     if entry.kind != crDataFn:
-      raise newException(ValueError, "expects a function at app.main/main!")
+      raise newException(ValueError, "expects a function at " & ns & "/" & def)
 
     let mainCode = programCode[ns].defs[def]
     defStack = initDoublyLinkedList[StackInfo]()
     pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
 
-    var ret = CirruData(kind: crDataNil)
-    for child in entry.fnCode:
-      ret = interpret(child, scope, ns)
+    let args = if dropArg: @[] else: @[data]
+    let ret = evaluteFnData(entry, args, interpret, ns)
+    popDefStack()
 
     return ret
 
@@ -104,7 +100,11 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
-  runCode(pieces[0], pieces[1])
+  runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
+
+proc runEventListener*(event: JsonNode) =
+
+  discard runCode("app.main", "on-window-event", event.toCirruData)
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
@@ -117,9 +117,9 @@ proc reloadProgram(snapshotFile: string): void =
     echo "Unknown initFn", pieces
     raise newException(ValueError, "Unknown initFn")
 
-  discard runCode(pieces[0], pieces[1])
+  discard runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
-let handleFileChange = proc (snapshotFile: string, incrementFile: string): void =
+let handleFileChange* = proc (snapshotFile: string, incrementFile: string): void =
   sleep 150
   coloredEcho fgYellow, "\n-------- file change --------\n"
   loadChanges(incrementFile, programCode)
@@ -137,60 +137,3 @@ let handleFileChange = proc (snapshotFile: string, incrementFile: string): void 
     coloredEcho fgRed, "Failed to run command"
     echo e.msg
 
-proc watchFile(snapshotFile: string, incrementFile: string): void =
-  if not fileExists(incrementFile):
-    writeFile incrementFile, "{}"
-
-  watchingChan.open()
-
-  var theWatchingTask: Thread[string]
-  createThread(theWatchingTask, watchingTask, incrementFile)
-  # disabled since task blocking
-  # joinThreads(@[theWatchingTask])
-
-  dimEcho "\nRunner: in watch mode...\n"
-
-  while true:
-    let tried = watchingChan.tryRecv()
-    if tried.dataAvailable:
-      # echo tried.msg
-      handleFileChange(snapshotFile, incrementFile)
-
-    taskDuringLoop()
-
-    sleep(400)
-
-# https://rosettacode.org/wiki/Handle_a_signal#Nim
-proc handleControl() {.noconv.} =
-  echo "\nKilled with Control c."
-  quit 0
-
-proc main*(): void =
-  var cliArgs = initOptParser(commandLineParams())
-  var snapshotFile = "compact.cirru"
-  var incrementFile = ".compact-inc.cirru"
-
-  while true:
-    cliArgs.next()
-    case cliArgs.kind
-    of cmdEnd: break
-    of cmdShortOption:
-      if cliArgs.key == "1":
-        if cliArgs.val == "" or cliArgs.val == "true":
-          runOnce = true
-          dimEcho "Runner: watching mode disabled."
-    of cmdLongOption:
-      if cliArgs.key == "once":
-        if cliArgs.val == "" or cliArgs.val == "true":
-          runOnce = true
-          dimEcho "Runner: watching mode disabled."
-    of cmdArgument:
-      snapshotFile = cliArgs.key
-      incrementFile = cliArgs.key.replace("compact", ".compact-inc")
-      dimEcho "Runner: specifying files", snapshotFile, incrementFile
-
-  discard runProgram(snapshotFile)
-
-  if not runOnce:
-    setControlCHook(handleControl)
-    watchFile(snapshotFile, incrementFile)

@@ -4,7 +4,7 @@
   :files $ {}
     |app.main $ {}
       :ns $ quote
-        ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib)
+        ns app.main $ :require ([] app.lib :refer $ [] show-info) ([] app.lib :as lib) ([] app.draw :as draw)
       :defs $ {}
         |try-maps $ quote
           defn try-maps ()
@@ -86,7 +86,7 @@
                 a 3
               case a (1 "\"one") (2 "\"two") (a "\"else..")
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (; try-json) (; try-canvas) (try-atom)
+          defn main! () (println "\"Loaded program!") (; try-let) (; try-func) (; try-macro) (; try-hygienic) (; try-core-lib) (; try-var-args) (; try-unless) (; try-foldl) (; echo $ hole-series 162) (; try-list) (; try-map-fn) (; try-maps) (; try-str) (; try-edn) (; try-math) (; try-set) (; try-recur 0) (; try-get-in) (; try-every) (; try-fibo) (; try-json) (draw/try-canvas) (; try-atom)
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -96,16 +96,19 @@
           defn try-unless ()
             if true (println "\"true") (println "\"false")
             unless true (println "\"true") (println "\"false")
-        |try-redraw-canvas $ quote
-          defn try-redraw-canvas ()
-            draw-canvas $ g ({})
-              {} (:type :polyline) (:from $ [] 40 40)
-                :stops $ [][] (100 60) (200 200) (600 60) (500 400) (300 300)
-                :stroke-color $ [] 200 90 80 1
         |var-macro $ quote
           defmacro var-macro (a & xs) (echo a xs) (quote $ do)
         |try-math $ quote
           defn try-math () (echo $ sin 1) (echo $ cos 1) (echo $ floor 1.1) (echo $ ceil 1.1) (echo $ round 1.1) (echo $ pow 3 4) (echo $ mod 33 4) (echo $ sqrt 81) (echo &PI) (echo &E)
+        |on-window-event $ quote
+          defn on-window-event (event)
+            when (&= "\"inc" $ get event "\"path") (echo "\"event:" event)
+              reset! draw/*control-point $ let
+                  p (deref draw/*control-point) (, )
+                {}
+                  :x $ &+ 4 (:x p)
+                  :y $ &- (:y p) (, 2)
+              draw/try-redraw-canvas
         |fibo $ quote
           defn fibo (x)
             if (< x 2) (, 1)
@@ -180,10 +183,6 @@
               echo $ get-in data ([] :a 2)
               echo $ get-in b ([] 0 :a 2)
               echo $ get-in data ([] :x :y :z)
-        |try-canvas $ quote
-          defn try-canvas ()
-            init-canvas $ {} (:title "\"DEMO") (:width 1200) (:height 800)
-            try-redraw-canvas
         |*state-a $ quote
           defatom *state-a $ {} (:count 0)
         |try-core-lib $ quote
@@ -213,11 +212,7 @@
             echo (str |a |b |c) (str 1 2 3)
             echo $ type-of (&str 1)
         |reload! $ quote
-          defn reload! () (println "\"Reloaded...") (; main!) (; try-redraw-canvas) (echo *state-a) (echo $ deref *state-a)
-            ; reset! *state-a $ {} (:count 3)
-            swap! *state-a update :count $ \ &+ 4 %
-            echo *state-a
-            echo $ deref *state-a
+          defn reload! () (println "\"Reloaded...") (; main!) (draw/try-redraw-canvas) (; reload-atom)
         |recur-inc $ quote
           defn recur-inc (acc max-value) (; echo "\"adding to acc: " acc)
             if (&< acc max-value)
@@ -262,6 +257,12 @@
             echo $ difference (#{} 1 2) (#{} 2 3) (#{} 3 4)
             echo $ union (#{} 1 2) (#{} 2 3) (#{} 3 4)
             echo $ intersection (#{} 1 2 3) (#{} 2 3) (#{} 3 4)
+        |reload-atom $ quote
+          defn reload-atom () (println "\"handl atom changes") (echo *state-a) (echo $ deref *state-a)
+            ; reset! *state-a $ {} (:count 3)
+            swap! *state-a update :count $ \ &+ 4 %
+            echo *state-a
+            echo $ deref *state-a
       :proc $ quote ()
       :configs $ {} (:extension nil)
     |app.lib $ {}
@@ -269,5 +270,25 @@
       :defs $ {}
         |show-info $ quote
           defn show-info (x) (echo "\"information blabla" x)
+      :proc $ quote ()
+      :configs $ {}
+    |app.draw $ {}
+      :ns $ quote (ns app.draw)
+      :defs $ {}
+        |try-redraw-canvas $ quote
+          defn try-redraw-canvas ()
+            draw-canvas $ g ({})
+              {} (:type :polyline) (:from $ [] 40 40)
+                :stops $ [][] (100 60) (200 200) (600 60) (500 400) (300 300)
+                    :x $ deref *control-point
+                    :y $ deref *control-point
+                :stroke-color $ [] 200 90 80 1
+              {} (:type :touch-area) (:x 100) (:y 100) (:radius 20) (:path "\"inc") (:events $ [] :touch-down)
+        |try-canvas $ quote
+          defn try-canvas ()
+            init-canvas $ {} (:title "\"DEMO") (:width 1200) (:height 800)
+            try-redraw-canvas
+        |*control-point $ quote
+          defatom *control-point $ {} (:x 400) (:y 400)
       :proc $ quote ()
       :configs $ {}

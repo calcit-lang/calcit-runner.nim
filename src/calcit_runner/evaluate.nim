@@ -166,6 +166,8 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     programData[ns] = newFile
 
   if not programData[ns].defs.hasKey(def):
+    if programCode[ns].defs.hasKey(def).not:
+      raise newException(ValueError, "No such definition: " & def)
     var code = programCode[ns].defs[def]
     programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc)
     code = preprocess(code, toHashset[string](@[]), ns)
