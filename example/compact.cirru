@@ -102,13 +102,17 @@
           defn try-math () (echo $ sin 1) (echo $ cos 1) (echo $ floor 1.1) (echo $ ceil 1.1) (echo $ round 1.1) (echo $ pow 3 4) (echo $ mod 33 4) (echo $ sqrt 81) (echo &PI) (echo &E)
         |on-window-event $ quote
           defn on-window-event (event)
-            when (&= "\"inc" $ get event "\"path") (echo "\"event:" event)
-              reset! draw/*control-point $ let
-                  p (deref draw/*control-point) (, )
-                {}
-                  :x $ &+ 4 (:x p)
-                  :y $ &- (:y p) (, 2)
-              draw/try-redraw-canvas
+            let
+                t $ get event "\"type"
+              case t ("\"window-resized" $ draw/try-redraw-canvas)
+                "\"mouse-button-down" $ when (&= "\"inc" $ get event "\"path")
+                  reset! draw/*control-point $ let
+                      p (deref draw/*control-point) (, )
+                    {}
+                      :x $ &+ 4 (:x p)
+                      :y $ &- (:y p) (, 2)
+                  draw/try-redraw-canvas
+                t $ echo event
         |fibo $ quote
           defn fibo (x)
             if (< x 2) (, 1)
