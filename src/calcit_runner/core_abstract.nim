@@ -282,7 +282,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace",
           ["if", ["&=", ["~", "item"], ["~", "expr"]], ["~", "branch"],
             ["~", ["if", ["empty?", "else"], "nil",
-                    ["quote-replace", ["case", ["~", "item"], "&", ["~", "else"]]]]]]]]]
+                    ["quote-replace", ["case", ["~", "item"], ["~@", "else"]]]]]]]]]
   , coreNs)
 
   let codeGetIn = genCirru(

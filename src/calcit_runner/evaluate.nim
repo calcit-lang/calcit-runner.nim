@@ -89,7 +89,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   if xs.len == 0:
     raiseEvalError("Cannot interpret empty expression", xs)
 
-  # echo "interpret: ", xs
+  # echo "\nInterpret: ", xs
 
   let head = xs[0]
 
@@ -179,7 +179,7 @@ proc preprocessHelper(code: CirruData, localDefs: Hashset[string], ns: string): 
   preprocess(code, localDefs, ns)
 
 proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
-  # echo "preprocess: ", code
+  # echo "\nPreprocess: ", code
   case code.kind
   of crDataSymbol:
     if localDefs.contains(code.symbolVal):
@@ -265,7 +265,8 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
 
         let quoted = evaluteMacroData(value, xs, interpret, ns)
         popDefStack()
-        # echo "Expanded macro: ", code, "  ->  ", quoted
+        # echo "\nMacro ->: ", code
+        # echo   "expanded: ", quoted
         return preprocess(quoted, localDefs, ns)
       of crDataSyntax:
         if head.kind != crDataSymbol:

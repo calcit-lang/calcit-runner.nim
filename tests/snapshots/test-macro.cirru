@@ -26,6 +26,8 @@
               assert "|try cond" $ &= (compare-x 6) "|>5"
               assert "|try cond" $ &= (compare-x 4) "|<=5"
 
+        |test-case $ quote
+          defn test-case ()
             let
                 detect-x $ fn (x)
                   case x
@@ -35,6 +37,16 @@
               assert "|try case" $ &= (detect-x 1) "|one"
               assert "|try case" $ &= (detect-x 2) "|two"
               assert "|try case" $ &= (detect-x 3) "|else"
+
+        |test-expr-in-case $ quote
+          defn test-expr-in-case ()
+            assert "|try expr in case" $ = |5
+              case (+ 1 4)
+                (+ 2 0) |2
+                (+ 2 1) |3
+                (+ 2 2) |4
+                (+ 2 3) |5
+                (+ 2 4) |6
 
         |test-thread-macros $ quote
           defn test-thread-macros ()
@@ -106,8 +118,14 @@
 
         |main! $ quote
           defn main! ()
-            log-title "|Testing cond/case"
+            log-title "|Testing cond"
             test-cond
+
+            log-title "|Testing case"
+            test-case
+
+            log-title "|Testing expr in case"
+            test-expr-in-case
 
             log-title "|Testing thread macros"
             test-thread-macros
