@@ -3,14 +3,12 @@ out/*
 
 example/.compact-inc.cirru
 
-calcitRunner_*.nims
-
-
 # Ignore all
 src/cr
 tests/test_expr
 tests/run_calcit
 tests/prof
+test_gynienic
 
 src/*.out
 

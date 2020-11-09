@@ -89,7 +89,6 @@
             log-title "|Testing map syntax"
             test-native-map-syntax
 
-            echo "|Finished running test"
             do true
 
       :proc $ quote ()

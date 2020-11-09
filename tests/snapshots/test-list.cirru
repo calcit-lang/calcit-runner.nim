@@ -207,7 +207,6 @@
             log-title "|Testing groups"
             test-groups
 
-            echo "|Finished running test"
             do true
 
       :proc $ quote ()

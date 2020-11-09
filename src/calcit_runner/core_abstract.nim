@@ -543,9 +543,34 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["quote-replace", ["reset!", ["~", a], [["~", f], [deref, ["~", a]], ["~@", args]]]]]
   , coreNs)
 
-  # TODO assoc-in
-  # TODO dissoc-in
-  # TODO update-in
+  let codeAssocIn = genCirru(
+    [defn, "assoc-in", [data, path, v],
+      ["if", ["empty?", path], v,
+        ["let", [[p0, [first, path]]],
+          [assoc, data, p0, ["assoc-in", [get, data, p0], [rest, path], v]]]]]
+  , coreNs)
+
+  let codeUpdateIn = genCirru(
+    [defn, "update-in", [data, path, f],
+      ["if", ["empty?", path], [f, data],
+        ["let", [[p0, [first, path]]],
+          [assoc, data, p0, ["update-in", [get, data, p0], [rest, path], f]]]]]
+  , coreNs)
+
+  let codeDissocIn = genCirru(
+    [defn, "dissoc-in", [data, path],
+      [cond,
+        [["empty?", path], "nil"],
+        [["&=", 1, [count, path]], [dissoc, data, [first, path]]],
+        [true,
+          ["let", [[p0, [first, path]]],
+            [assoc, data, p0, ["dissoc-in", [get, data, p0], [rest, path]]]]],
+        ]]
+  , coreNs)
+
+  let codeInc = genCirru(
+    [defn, inc, [x], ["&+", x, 1]]
+  , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
@@ -625,3 +650,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["fn"] = codeFn
   programCode[coreNs].defs["assert="] = codeAssertEqual
   programCode[coreNs].defs["swap!"] = codeSwapBang
+  programCode[coreNs].defs["assoc-in"] = codeAssocIn
+  programCode[coreNs].defs["update-in"] = codeUpdateIn
+  programCode[coreNs].defs["dissoc-in"] = codeDissocIn
+  programCode[coreNs].defs["inc"] = codeInc
