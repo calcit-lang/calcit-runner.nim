@@ -8,7 +8,7 @@ src/cr
 tests/test_expr
 tests/run_calcit
 tests/prof
-test_gynienic
+tests/gynienic
 
 src/*.out
 
