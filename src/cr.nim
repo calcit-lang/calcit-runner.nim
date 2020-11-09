@@ -49,7 +49,7 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
           runEventListener(event)
     )
 
-    sleep(400)
+    sleep(180)
 
 var cliArgs = initOptParser(commandLineParams())
 var snapshotFile = "compact.cirru"
