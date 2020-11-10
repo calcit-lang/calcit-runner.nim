@@ -130,7 +130,6 @@
             log-title "|Testing thread macros"
             test-thread-macros
 
-            echo "|Finished running test"
             do true
 
       :proc $ quote ()
