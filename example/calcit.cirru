@@ -390,25 +390,6 @@
           |try-macro $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585319267)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585321879) (:text |defn)
-              |yq $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602124996713)
-                :data $ {}
-                  |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602124987054)
-                    :data $ {}
-                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602124995473) (:text |macroexpand)
-                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602125039144)
-                        :data $ {}
-                          |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602124998740)
-                            :data $ {}
-                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602124999723) (:text |apply)
-                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125000949) (:text |+)
-                              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602125001762)
-                                :data $ {}
-                                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125002665) (:text |1)
-                                  |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125002914) (:text |2)
-                                  |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125003173) (:text |3)
-                                  |x $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125003438) (:text |4)
-                          |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602125040436) (:text |quote)
-                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602124997515) (:text |echo)
               |yr $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1602090760126)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602090760683) (:text |echo)

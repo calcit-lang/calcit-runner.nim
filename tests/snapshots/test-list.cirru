@@ -186,6 +186,11 @@
             assert |divide $ = (/ 2 3) (/ 4 6)
             assert |divide $ = (/ 2 3 4) (/ 1 6)
 
+        |test-apply $ quote
+          defn test-apply ()
+            assert= 10 $ apply + $ [] 1 2 3 4
+            assert= 10 $ + & $ [] 1 2 3 4
+
         |log-title $ quote
           defn log-title (title)
             echo
@@ -206,6 +211,9 @@
 
             log-title "|Testing groups"
             test-groups
+
+            log-title "|Testing apply"
+            test-apply
 
             do true
 
