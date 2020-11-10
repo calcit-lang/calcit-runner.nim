@@ -594,37 +594,28 @@ proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("Cannot turn into string", (args))
 
 proc nativeRange(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len == 1:
-    let x = args[0]
-    if not x.isNumber:
-      raiseEvalError("Expects a number for range", args)
-    if x.numberVal <= 0:
-      let empty: seq[CirruData] = @[]
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList(empty))
-    else:
-      var ys: seq[CirruData] = @[]
-      var i: float = 0
-      while i < x.numberVal:
-        ys.add CirruData(kind: crDataNumber, numberVal: i)
-        i = i + 1
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
-  elif args.len == 2:
-    let base = args[0]
-    if not base.isNumber:
-      raiseEvalError("Expects a base number for range", args)
-    let maxValue = args[1]
-    if not maxValue.isNumber:
-      raiseEvalError("Expects a max number for range", args)
-    if base.numberVal >= maxValue.numberVal:
-      let empty: seq[CirruData] = @[]
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList(empty))
-    else:
-      var ys: seq[CirruData] = @[]
-      var i = base.numberVal
-      while i < maxValue.numberVal:
-        ys.add CirruData(kind: crDataNumber, numberVal: i)
-        i = i + 1
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  var base = 0.0
+  var bound = 1.0
+  var step = 1.0
+  if args.len < 1 or args.len > 3: raiseEvalError("Expects 1~3 arguments for range", args)
+  if args.len >= 1:
+    let a0 = args[0]
+    if a0.kind != crDataNumber: raiseEvalError("Expects a base number for range", args)
+    bound = a0.numberVal
+  if args.len >= 2:
+    let a1 = args[1]
+    if a1.kind != crDataNumber: raiseEvalError("Expects a bound number for range", args)
+    base = bound
+    bound = a1.numberVal
+  if args.len >= 3:
+    let a2 = args[2]
+    if a2.kind != crDataNumber: raiseEvalError("Expects a step number for range", args)
+    step = a2.numberVal
+  var ys: seq[CirruData] = @[]
+  while base < bound:
+    ys.add CirruData(kind: crDataNumber, numberVal: base)
+    base = base + step
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
 
 proc nativeStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:

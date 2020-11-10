@@ -34,7 +34,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeWhen = genCirru(
     ["defmacro", "when", ["cond", "&", "body"],
-      ["quote-replace", ["if", ["~", cond], ["do", ["~@", "body"]], "nil"]]]
+      ["quote-replace", ["if", ["~", cond], ["do", ["~@", "body"]]]]]
   , coreNs)
 
   # use native foldl for performance
