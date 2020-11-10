@@ -1,7 +1,6 @@
 
 import macros
 import strformat
-import options
 import json
 import sequtils
 
@@ -11,7 +10,7 @@ import ./types
 import ./data
 
 proc toCirruData(x: string, ns: string): CirruData =
-  return parseLiteral(x, ns, none(CirruDataScope))
+  return parseLiteral(x, ns)
 
 proc toCirruData(x: int): CirruData =
   CirruData(kind: crDataNumber, numberVal: x.float)
@@ -52,7 +51,7 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   of JBool:
     return CirruData(kind: crDataBool, boolVal: v.bval)
   of JString:
-    return parseLiteral(v.str, ns, none(CirruDataScope))
+    return parseLiteral(v.str, ns)
   of JInt:
     return CirruData(kind: crDataNumber, numberVal: v.num.float)
   of JFloat:
@@ -87,3 +86,14 @@ proc shortenCode*(code: string, n: int): string =
     code[0..<n] & "..."
   else:
     code
+
+proc generateMainCode*(code: CirruData, ns: string): CirruData =
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    CirruData(kind: crDataSymbol, symbolVal: "defn", ns: ns),
+    CirruData(kind: crDataSymbol, symbolVal: "main!", ns: ns),
+    CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[])),
+    CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+      CirruData(kind: crDataSymbol, symbolVal: "echo", ns: ns),
+      code,
+    ])),
+  ]))

@@ -70,4 +70,4 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
     for key, value in xs.mapVal:
       ys[key.toCirruData(ns, scope)] = value.toCirruData(ns, scope)
     CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
-  of crEdnQuotedCirru: xs.quotedVal.toCirruData(ns, scope)
+  of crEdnQuotedCirru: xs.quotedVal.toCirruData(ns)

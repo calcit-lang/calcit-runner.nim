@@ -277,7 +277,7 @@
       :proc $ quote ()
       :configs $ {}
     |app.draw $ {}
-      :ns $ quote (ns app.draw)
+      :ns $ quote (ns app.draw $ :require)
       :defs $ {}
         |try-redraw-canvas $ quote
           defn try-redraw-canvas ()
@@ -289,7 +289,7 @@
                 :stroke-color $ [] 200 90 80 1
               {} (:type :touch-area) (:x 100) (:y 100) (:radius 20) (:path "\"inc") (:events $ [] :touch-down)
         |try-canvas $ quote
-          defn try-canvas ()
+          defn try-canvas () (echo "\"init" "\"canvas")
             init-canvas $ {} (:title "\"DEMO") (:width 1200) (:height 800)
             try-redraw-canvas
         |*control-point $ quote

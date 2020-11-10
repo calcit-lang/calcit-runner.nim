@@ -17,7 +17,7 @@ proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] =
     echo "current node: ", v
     raise newException(ValueError, "Unexpected quoted cirru node")
 
-  return v.quotedVal.toCirruData(ns, scope)
+  return v.quotedVal.toCirruData(ns)
 
 proc extractDefs(defs: CirruEdnValue, ns: string): Table[string, CirruData] =
   result = initTable[string, CirruData]()
@@ -232,3 +232,7 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
         dict[defName.symbolVal] = ImportInfo(kind: importDef, ns: nsPart.symbolVal, def: defName.symbolVal)
 
   return dict
+
+proc parseEvalMain*(code: string, ns: string): CirruData =
+  let tree = parseCirru(code)
+  tree.toCirruData(ns)

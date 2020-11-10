@@ -11,7 +11,9 @@ import ./calcit_runner/canvas
 import ./calcit_runner/watcher
 import ./calcit_runner/errors
 
-var runOnce* = false
+var runOnce = false
+var evalOnce = false
+var evalOnceCode: string
 
 registerCoreProc("init-canvas", nativeInitCanvas)
 registerCoreProc("draw-canvas", nativeDrawCanvas)
@@ -64,6 +66,10 @@ while true:
       if cliArgs.val == "" or cliArgs.val == "true":
         runOnce = true
         dimEcho "Runner: watching mode disabled."
+    if cliArgs.key == "e":
+      evalOnce = true
+      evalOnceCode = cliArgs.val
+      break
   of cmdLongOption:
     if cliArgs.key == "once":
       if cliArgs.val == "" or cliArgs.val == "true":
@@ -74,8 +80,12 @@ while true:
     incrementFile = cliArgs.key.replace("compact", ".compact-inc")
     dimEcho "Runner: specifying files", snapshotFile, incrementFile
 
+if evalOnce:
+  discard evalSnippet(evalOnceCode)
+elif runOnce:
   discard runProgram(snapshotFile)
-
-  if not runOnce:
-    setControlCHook(handleControl)
-    watchFile(snapshotFile, incrementFile)
+else:
+  discard runProgram(snapshotFile)
+  # watch mode by default
+  setControlCHook(handleControl)
+  watchFile(snapshotFile, incrementFile)

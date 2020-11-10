@@ -2399,6 +2399,9 @@
           :data $ {}
             |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812556876) (:text |ns)
             |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812556876) (:text |app.draw)
+            |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604984347300)
+              :data $ {}
+                |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604984347991) (:text |:require)
         :defs $ {}
           |try-redraw-canvas $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604160771998)
             :data $ {}
@@ -2537,6 +2540,11 @@
               |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604160801199)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604247751080) (:text |try-redraw-canvas)
+              |t $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604984283311)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604984284307) (:text |echo)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604984285389) (:text "|\"init")
+                  |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604984367412) (:text "|\"canvas")
           |*control-point $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604812656306)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812658872) (:text |defatom)
