@@ -34,3 +34,6 @@ task tg, "test gynienic macro":
 
 task ct, "Runs calcit tests":
   exec "nim c -r --hints:off --threads:on tests/run_calcit.nim"
+
+task e, "eval some code":
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='echo 1'"

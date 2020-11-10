@@ -23,6 +23,7 @@ import calcit_runner/gen_data
 import calcit_runner/evaluate
 import calcit_runner/eval_util
 import calcit_runner/to_json
+import calcit_runner/gen_code
 
 # slots for dynamic registering GUI functions
 var onLoadPluginProcs: Table[string, FnInData]
@@ -119,7 +120,7 @@ proc reloadProgram(snapshotFile: string): void =
 
   discard runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
-let handleFileChange* = proc (snapshotFile: string, incrementFile: string): void =
+proc handleFileChange*(snapshotFile: string, incrementFile: string): void =
   sleep 150
   coloredEcho fgYellow, "\n-------- file change --------\n"
   loadChanges(incrementFile, programCode)
@@ -137,3 +138,23 @@ let handleFileChange* = proc (snapshotFile: string, incrementFile: string): void
     coloredEcho fgRed, "Failed to run command"
     echo e.msg
 
+proc evalSnippet*(code: string): CirruData =
+
+  programCode[coreNs] = FileSource()
+  programData[coreNs] = ProgramFile()
+
+  loadCoreDefs(programData, interpret)
+  loadCoreSyntax(programData, interpret)
+  loadCoreFuncs(programCode)
+
+  programCode["app.main"] = FileSource()
+  programData["app.main"] = ProgramFile()
+
+  let lines = parseEvalMain(code, "app.main")
+  if lines.kind != crDatalist:
+    raise newException(ValueError, "expects a list")
+  let body = lines.listVal[0]
+  let mainCode = generateMainCode(body, "app.main")
+  programCode["app.main"].defs["main!"] = mainCode
+
+  runCode("app.main", "main!", CirruData(kind: crDataNil), true)

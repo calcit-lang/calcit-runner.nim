@@ -50,6 +50,9 @@ nimble watch
 
 # just run once
 nimble once
+
+# demo of eval from CLI
+nimble e
 ```
 
 If you build `cr` with `nimble build`, just
@@ -58,6 +61,8 @@ If you build `cr` with `nimble build`, just
 cr compact.cirru # run and wath
 
 cr compact.cirru --once # run only once
+
+cr -e="echo $ range 100" # eval from CLI
 ```
 
 _Not ready for a release yet_

@@ -139,7 +139,7 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
   let toB =  xs.len - fromTo.b.int
   xs[fromA .. toB]
 
-proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): CirruData =
+proc parseLiteral*(token: string, ns: string): CirruData =
   if token == "":
     raise newException(ValueError, "Unknown empty symbol")
 
@@ -165,13 +165,13 @@ proc parseLiteral*(token: string, ns: string, scope: Option[CirruDataScope]): Ci
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
 
-proc toCirruData*(xs: CirruNode, ns: string, scope: Option[CirruDataScope]): CirruData =
+proc toCirruData*(xs: CirruNode, ns: string): CirruData =
   if xs.kind == cirruString:
-    parseLiteral(xs.text, ns, scope)
+    parseLiteral(xs.text, ns)
   else:
     var list = initTernaryTreeList[CirruData](@[])
     for x in xs:
-      list = list.append x.toCirruData(ns, scope)
+      list = list.append x.toCirruData(ns)
     CirruData(kind: crDataList, listVal: list)
 
 proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
