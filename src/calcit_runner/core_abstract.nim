@@ -92,10 +92,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
   , coreNs)
 
-  # TODO might be wrong at some cases, need research
   let codeApply = genCirru(
-    ["defmacro", "apply", ["f", "args"],
-      ["quote-replace", ["~", ["prepend", "args", "f"]]]]
+    [defn, apply, [f, args],
+      [f, "&", args]]
   , coreNs)
 
   let codeListQuestion = genCirru(

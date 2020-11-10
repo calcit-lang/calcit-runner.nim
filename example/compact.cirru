@@ -60,8 +60,6 @@
             println "\"inserting:" $ insert-x 1 2 (3 4 5 $ + 7 8)
             echo $ macroexpand (quote $ gen-num 1 3 4)
             echo $ macroexpand
-              quote $ apply + (1 2 3 4)
-            echo $ macroexpand
               quote $ -> a b (c d) (e f g)
             echo $ macroexpand
               quote $ ->> a b (c d) (e f g)
