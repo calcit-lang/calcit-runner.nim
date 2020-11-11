@@ -178,7 +178,7 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
 
 
 # originally from clojure `(ns app.lib (:require [a.b :as a] [a.c :refer [b]]))`
-# not in Cirru vectors, a little different, but `:as` and `:refer` are copied
+# not in Cirru vectors, a little different, but `:as` and `:refer` are used
 proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   var dict: Table[string, ImportInfo]
 
@@ -187,8 +187,11 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   let nsNode = exprNode[0]
   if nsNode.kind != crDataSymbol:
     raiseEvalError("Expects an ns form", exprNode)
-  if exprNode.len != 3:
-    raiseEvalError("Expects ns form in length 3, currently...", exprNode)
+
+  # requires nothing
+  if exprNode.len < 3:
+    return dict
+
   let requireArea = exprNode[2]
   if requireArea.kind != crDataList:
     raiseEvalError("Expects require list in ns form", exprNode)

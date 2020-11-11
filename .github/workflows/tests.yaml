@@ -14,5 +14,8 @@ jobs:
     - uses: jiro4989/setup-nim-action@v1
       with:
         nim-version: "1.4.0"
-    - name: Test command
+    - name: Tests
       run: nimble test --threads:on --verbose -y
+
+    - name: Test eval with CLI
+      run: nimble e

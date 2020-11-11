@@ -11,7 +11,7 @@ binDir        = "out/"
 
 # Dependencies
 
-requires "nim >= 0.20.0"
+requires "nim >= 1.2.8"
 requires "libfswatch"
 requires "https://github.com/Cirru/cirru-edn.nim#v0.3.4"
 requires "ternary_tree >= 0.1.27"
@@ -36,4 +36,4 @@ task ct, "Runs calcit tests":
   exec "nim c -r --hints:off --threads:on tests/run_calcit.nim"
 
 task e, "eval some code":
-  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='echo 1'"
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='range 10'"
