@@ -19,8 +19,8 @@ import ./errors
 
 proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
 proc isList*(x: CirruData): bool = x.kind == crDataList
-proc isSymbol*(x: CirruData): bool =  x.kind == crDataSymbol
-proc isMap*(x: CirruData): bool =  x.kind == crDataMap
+proc isSymbol*(x: CirruData): bool = x.kind == crDataSymbol
+proc isMap*(x: CirruData): bool = x.kind == crDataMap
 proc isString*(x: CirruData): bool = x.kind == crDataString
 proc isKeyword*(x: CirruData): bool = x.kind == crDataKeyword
 proc isNil*(x: CirruData): bool = x.kind == crDataNil
@@ -136,7 +136,7 @@ proc `[]`*(xs: CirruData, fromTo: HSlice[int, BackwardsIndex]): seq[CirruData] =
     raiseEvalError("Cannot create iterator on data", xs)
 
   let fromA = fromTo.a
-  let toB =  xs.len - fromTo.b.int
+  let toB = xs.len - fromTo.b.int
   xs[fromA .. toB]
 
 proc parseLiteral*(token: string, ns: string): CirruData =

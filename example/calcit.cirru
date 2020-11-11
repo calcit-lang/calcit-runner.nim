@@ -2380,9 +2380,6 @@
           :data $ {}
             |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812556876) (:text |ns)
             |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812556876) (:text |app.draw)
-            |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604984347300)
-              :data $ {}
-                |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604984347991) (:text |:require)
         :defs $ {}
           |try-redraw-canvas $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604160771998)
             :data $ {}

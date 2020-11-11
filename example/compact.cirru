@@ -275,7 +275,7 @@
       :proc $ quote ()
       :configs $ {}
     |app.draw $ {}
-      :ns $ quote (ns app.draw $ :require)
+      :ns $ quote (ns app.draw)
       :defs $ {}
         |try-redraw-canvas $ quote
           defn try-redraw-canvas ()

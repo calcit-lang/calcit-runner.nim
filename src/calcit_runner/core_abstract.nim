@@ -532,7 +532,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                        ["do",
                           ["echo"],
                           ["echo", "|Wanted:", va],
+                          ["echo", "|       ", [quote, ["~", a]]],
                           ["echo", "|Got:   ", vb],
+                          ["echo", "|       ", [quote, ["~", b]]],
                           ["raise-at", "|Not equal!", ["~", b]]],
                         "nil"]]]]
   , coreNs)
@@ -569,6 +571,16 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeInc = genCirru(
     [defn, inc, [x], ["&+", x, 1]]
+  , coreNs)
+
+  let codeStartsWithQuestion = genCirru(
+    [defn, "starts-with?", [x, y],
+      ["&=", 0, ["str-find", x, y]]]
+  , coreNs)
+
+  let codeEndsWithQuestion = genCirru(
+    [defn, "ends-with?", [x, y],
+      ["&=", ["&-", [count, x], [count, y]], ["str-find", x, y]]]
   , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
@@ -653,3 +665,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["update-in"] = codeUpdateIn
   programCode[coreNs].defs["dissoc-in"] = codeDissocIn
   programCode[coreNs].defs["inc"] = codeInc
+  programCode[coreNs].defs["starts-with?"] = codeStartsWithQuestion
+  programCode[coreNs].defs["ends-with?"] = codeEndsWithQuestion

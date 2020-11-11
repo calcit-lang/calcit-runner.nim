@@ -39,7 +39,7 @@ Install dependency:
 
 ```bash
 brew install fswatch sdl2 cairo
-nimble test -y
+nimble test --threads:on -y
 ```
 
 Run in dev mode:
@@ -55,7 +55,7 @@ nimble once
 nimble e
 ```
 
-If you build `cr` with `nimble build`, just
+If you build `cr` with `nimble build --threads:on`, just
 
 ```bash
 cr compact.cirru # run and wath
