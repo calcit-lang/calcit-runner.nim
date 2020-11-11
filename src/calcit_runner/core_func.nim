@@ -122,6 +122,8 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
   of crDataSet:
     return CirruData(kind: crDataNumber, numberVal: a.setVal.len.float)
+  of crDataString:
+    return CirruData(kind: crDataNumber, numberVal: a.stringVal.len.float)
   else:
     raiseEvalError("Cannot count data", a)
 
@@ -484,6 +486,9 @@ proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope:
     return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(key) >= 0)
   of crDataSet:
     return CirruData(kind: crDataBool, boolVal: base.setVal.contains(key))
+  of crDataString:
+    if key.kind != crDataString: raiseEvalError("expects string for detecting", args)
+    return CirruData(kind: crDataBool, boolVal: base.stringVal.contains(key.stringVal))
   else:
     raiseEvalError("contains requires a map", args)
 
@@ -900,6 +905,53 @@ proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
   removeAtomWatcher(a.atomNs, a.atomDef, k.keywordVal[])
 
+proc nativeSubstr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 2: raiseEvalError("substr expects 2~3 arguments", args)
+  let origin = args[0]
+  if origin.kind != crDataString: raiseEvalError("expects a string for substr", args)
+  let startIdx = args[1]
+  var endPos = origin.stringVal.len
+  if startIdx.kind != crDataNumber: raiseEvalError("expects a number", args)
+  if startIdx.numberVal.int >= endPos:
+    return CirruData(kind: crDataString, stringVal: "")
+
+  if args.len >= 3:
+    let endIdx = args[2]
+    endPos = endIdx.numberVal.int
+  if endPos <= startIdx.numberVal.int:
+    return CirruData(kind: crDataString, stringVal: "")
+
+  return CirruData(kind: crDataString, stringVal: origin.stringVal[startIdx.numberVal.int..<endPos])
+
+proc nativeStrFind(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("str-find expects 2 arguments", args)
+  let origin = args[0]
+  if origin.kind != crDataString: raiseEvalError("str-find expects string", args)
+  let target = args[1]
+  if target.kind != crDataString: raiseEvalError("str-find expects string", args)
+  return CirruData(kind: crDataNumber, numberVal: origin.stringVal.find(target.stringVal).float)
+
+proc nativeParseFloat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("parse-float expects 1 argument", args)
+  let origin = args[0]
+  if origin.kind != crDataString: raiseEvalError("parse-float expects string", args)
+  let v = origin.stringVal.parseFloat
+  if v == NAN:
+    return CirruData(kind: crDataNil)
+  return CirruData(kind: crDataNumber, numberVal: v)
+
+proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 1 or args.len > 2: raiseEvalError("trim expects 1~2 arguments", args)
+  var spaceChars: set[char] = {' '}
+  let origin = args[0]
+  if origin.kind != crDataString: raiseEvalError("trim expects string", args)
+  if args.len >= 2:
+    let target = args[1]
+    if target.kind != crDataString: raiseEvalError("trim expects string", args)
+    for x in target.stringVal:
+      spaceChars.incl(x)
+  return CirruData(kind: crDataString, stringVal: origin.stringVal.strip(chars = spaceChars))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -977,3 +1029,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["reset!"] = CirruData(kind: crDataProc, procVal: nativeResetBang)
   programData[coreNs].defs["add-watch"] = CirruData(kind: crDataProc, procVal: nativeAddWatch)
   programData[coreNs].defs["remove-watch"] = CirruData(kind: crDataProc, procVal: nativeRemoveWatch)
+  programData[coreNs].defs["substr"] = CirruData(kind: crDataProc, procVal: nativeSubstr)
+  programData[coreNs].defs["str-find"] = CirruData(kind: crDataProc, procVal: nativeStrFind)
+  programData[coreNs].defs["parse-float"] = CirruData(kind: crDataProc, procVal: nativeParseFloat)
+  programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
