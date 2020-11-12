@@ -44,6 +44,9 @@
             log-title "|Testing hole series"
             test-hole-series
 
+            ; set-trace-fn! |app.main |hole-series
+            ; echo (hole-series 100)
+
             do true
 
       :proc $ quote ()
