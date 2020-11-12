@@ -57,7 +57,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if fnName.kind != crDataSymbol: raiseEvalError("Expects fnName to be string", exprList)
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
-  return CirruData(kind: crDataFn, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
+  return CirruData(kind: crDataFn, fnNs: ns, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var letScope = scope

@@ -1,5 +1,6 @@
 
 import lists
+import strutils
 
 import ternary_tree
 
@@ -40,3 +41,17 @@ proc showStack*(): void =
     echo item.ns, "/", item.def
     dimEcho $item.code
     dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
+
+var traceFnNs: string
+var traceFnName: string
+var traceStackSize* = 0
+
+proc matchesTraceFn*(ns: string, def: string): bool =
+  traceFnNs == ns and traceFnName == def
+
+proc setTraceFn*(ns: string, def: string) =
+  traceFnNs = ns
+  traceFnName = def
+
+proc getTraceIndentation*(): string =
+  repeat("  ", traceStackSize)
