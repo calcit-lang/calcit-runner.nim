@@ -962,6 +962,9 @@ proc nativeSetTraceFnBang(args: seq[CirruData], interpret: FnInterpret, scope: C
   setTraceFn(nsPart.stringVal, defPart.stringVal)
   CirruData(kind: crDataNil)
 
+proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1044,3 +1047,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-float"] = CirruData(kind: crDataProc, procVal: nativeParseFloat)
   programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
   programData[coreNs].defs["set-trace-fn!"] = CirruData(kind: crDataProc, procVal: nativeSetTraceFnBang)
+  programData[coreNs].defs["&[]"] = CirruData(kind: crDataProc, procVal: nativeList)

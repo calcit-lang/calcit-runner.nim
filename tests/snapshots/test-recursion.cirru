@@ -41,12 +41,12 @@
 
         |test-loop $ quote
           fn ()
-            echo $ apply
+            assert= 55 $ apply
               defn add-range (acc from to)
                 if (> from to) acc
                   recur (&+ acc from) (inc from) to
               [] 0 1 10
-            echo $ loop
+            assert= 55 $ loop
                 acc 0
                 from 1
                 to 10

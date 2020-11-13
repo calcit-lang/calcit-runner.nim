@@ -13,15 +13,6 @@ import ./errors
 import ./gen_code
 import ./atoms
 
-proc nativeList(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  var args = initTernaryTreeList[CirruData](@[])
-  for node in exprList:
-    # commas in body are considered as nothing
-    if node.kind == crDataSymbol and node.symbolVal == ",":
-      continue
-    args = args.append interpret(node, scope, ns)
-  return CirruData(kind: crDataList, listVal: args)
-
 proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len < 2):
     raiseEvalError(fmt"No arguments for if", exprList)
@@ -187,7 +178,6 @@ proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: Cirr
   CirruData(kind: crDataAtom, atomNs: name.ns, atomDef: name.symbolVal)
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
-  programData[coreNs].defs["[]"] = CirruData(kind: crDataSyntax, syntaxVal: nativeList)
   programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert)
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
