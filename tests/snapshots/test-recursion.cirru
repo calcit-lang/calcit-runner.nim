@@ -39,6 +39,20 @@
             assert "|hole series numbers" $ = (map hole-series (range 1 20))
               [] 0 1 0 1 2 3 2 1 0 1 2 3 4 5 6 7 8 9 8
 
+        |test-loop $ quote
+          fn ()
+            echo $ apply
+              defn add-range (acc from to)
+                if (> from to) acc
+                  recur (&+ acc from) (inc from) to
+              [] 0 1 10
+            echo $ loop
+                acc 0
+                from 1
+                to 10
+              if (> from to) acc
+                recur (&+ acc from) (inc from) to
+
         |main! $ quote
           defn main! ()
             log-title "|Testing hole series"
@@ -46,6 +60,9 @@
 
             ; set-trace-fn! |app.main |hole-series
             ; echo (hole-series 100)
+
+            log-title "|Testing loop"
+            test-loop
 
             do true
 

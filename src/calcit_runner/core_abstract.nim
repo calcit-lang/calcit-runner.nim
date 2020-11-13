@@ -233,15 +233,15 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeFind = genCirru(
     ["defn", "find", ["f", "xs"],
-      ["let",
-        [["idx", ["&find-index", 0, "f", "xs"]]],
+      ["&let",
+        ["idx", ["&find-index", 0, "f", "xs"]],
         ["if", ["nil?", "idx"], "nil", ["get", "xs", "idx"]]]]
   , coreNs)
 
   let codeThreadFirst = genCirru(
     ["defmacro", "->", ["base", "&", "xs"],
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
-        ["let", [["x0", ["first", "xs"]]],
+        ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
             ["recur", ["&concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
                       "&", ["rest", "xs"]],
@@ -251,7 +251,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeThreadLast = genCirru(
     ["defmacro", "->>", ["base", "&", "xs"],
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
-        ["let", [["x0", ["first", "xs"]]],
+        ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
             ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
             ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
@@ -481,7 +481,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["assert", "|expects a list for frequencies", ["list?", xs0]],
       [loop,
         [[acc, ["{}"]], [xs, xs0]],
-        ["let", [[x0, [first, xs]]],
+        ["&let", [x0, [first, xs]],
           ["if", ["empty?", xs], acc,
             [recur,
               ["if", ["contains?", acc, [first, xs]],
@@ -506,15 +506,15 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   # nested list creation that allows emitting second level `[]`s
   let codeListList = genCirru(
     [defmacro, "[][]", ["&", xs],
-      ["let",
-        [[items, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]],
-                        xs]]],
+      ["&let",
+        [items, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]],
+                xs]],
         ["quote-replace", ["[]", ["~@", items]]]]]
     , coreNs)
 
   let codeMapSyntax = genCirru(
     [defmacro, "{}", ["&", xs],
-      ["let", [[ys, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]], xs]]],
+      ["&let", [ys, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]], xs]],
         ["quote-replace", ["&{}", ["~@", ys]]]]]
   , coreNs)
 
@@ -554,7 +554,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeUpdateIn = genCirru(
     [defn, "update-in", [data, path, f],
       ["if", ["empty?", path], [f, data],
-        ["let", [[p0, [first, path]]],
+        ["&let", [p0, [first, path]],
           [assoc, data, p0, ["update-in", [get, data, p0], [rest, path], f]]]]]
   , coreNs)
 
@@ -564,7 +564,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         [["empty?", path], "nil"],
         [["&=", 1, [count, path]], [dissoc, data, [first, path]]],
         [true,
-          ["let", [[p0, [first, path]]],
+          ["&let", [p0, [first, path]],
             [assoc, data, p0, ["dissoc-in", [get, data, p0], [rest, path]]]]],
         ]]
   , coreNs)
@@ -581,6 +581,46 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeEndsWithQuestion = genCirru(
     [defn, "ends-with?", [x, y],
       ["&=", ["&-", [count, x], [count, y]], ["str-find", x, y]]]
+  , coreNs)
+
+  let codeLoop = genCirru(
+    [defmacro, loop, [pairs, "&", body],
+      ["assert", "|loops requires pairs", ["list?", pairs]],
+      ["assert", "|loops requires pairs in pairs",
+        ["every?", [defn, "detect-pairs", [x], ["&and", ["list?", x], ["=", 2, [count, x]]]], pairs]],
+      ["let", [
+          [args, [map, first, pairs]],
+          [values, [map, last, pairs]],
+        ],
+        ["assert", "|loop requires symbols in pairs", ["every?", "symbol?", args]],
+        ["quote-replace", [apply,
+                            [defn, "generated-loop", ["~", args], ["~@", body]],
+                            ["[]", ["~@", values]]]]]]
+  , coreNs)
+
+  let codeLet = genCirru(
+    [defmacro, "let", [pairs, "&", body],
+      ["assert", "|expects pairs in list for let", ["list?", pairs]],
+      ["if", ["&=", 1, [count, pairs]],
+        ["quote-replace", ["&let", ["~", [first, pairs]], ["~@", body]]],
+        ["if", ["empty?", pairs],
+          ["quote-replace", ["do", ["~@", body]]],
+          ["quote-replace", ["&let", ["~", [first, pairs]],
+                                     ["let", ["~", [rest, pairs]], ["~@", body]]]]]]]
+  , coreNs)
+
+  let codeLetThread = genCirru(
+    [defmacro, "let->", ["&", body],
+      ["if", ["empty?", body], [quote, "nil"],
+        ["if", ["&=", 1, [count, body]],
+          ["do",
+            ["assert", "|unexpected let in last item of body", ["/=", "'let", [first, body]]],
+            [first, body]],
+          ["&let", [target, [first, body]],
+            ["if", ["&=", "'let", [first, target]],
+              ["quote-replace", ["&let", ["~", [rest, [first, body]]], ["let->", ["~@", [rest, body]]]]],
+              ["quote-replace", ["do", ["~", [first, body]], ["let->", ["~@", [rest, body]]]]],
+              ]]]]]
   , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
@@ -667,3 +707,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["inc"] = codeInc
   programCode[coreNs].defs["starts-with?"] = codeStartsWithQuestion
   programCode[coreNs].defs["ends-with?"] = codeEndsWithQuestion
+  programCode[coreNs].defs["loop"] = codeLoop
+  programCode[coreNs].defs["let"] = codeLet
+  programCode[coreNs].defs["let->"] = codeLetThread
