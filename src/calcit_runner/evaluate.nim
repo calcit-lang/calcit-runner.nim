@@ -286,7 +286,7 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
           return code
         of "defn", "defmacro":
           return processDefn(code, localDefs, preprocessHelper, ns)
-        of "let", "loop":
+        of "let":
           return processBinding(code, localDefs, preprocessHelper, ns)
         of "[]", "if", "assert", "do", "quote-replace":
           return processAll(code, localDefs, preprocessHelper, ns)

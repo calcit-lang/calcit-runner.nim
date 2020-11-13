@@ -81,38 +81,6 @@ proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   for child in body:
     result = interpret(child, letScope, ns)
 
-proc nativeLoop(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  var loopScope = scope
-  if exprList.len < 1: raiseEvalError("No enough code for loop, too short", exprList)
-  let pairs = exprList[0]
-  let body = exprList[1..^1]
-  if not pairs.isList: raiseEvalError("Expect bindings in a list", pairs)
-  for pair in pairs:
-    if not pair.isList: raiseEvalError("Expect binding in a list", pair)
-    if pair.len != 2: raiseEvalError("Expect binding in length 2", pair)
-    let name = pair[0]
-    let value = pair[1]
-    if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
-    loopScope = loopScope.assoc(name.symbolVal, interpret(value, loopScope, ns))
-  var ret = CirruData(kind: crDataNil)
-  for child in body:
-    ret = interpret(child, loopScope, ns)
-  while ret.isRecur:
-    if ret.recurArgs.len != pairs.len:
-      raiseEvalError(fmt"recur args {ret.recurArgs.len} != {pairs.len}", exprList)
-    var idx = 0
-    for pair in pairs:
-      if not pair.isList: raiseEvalError("Expect binding in a list", pair)
-      if pair.len != 2: raiseEvalError("Expect binding in length 2", pair)
-      let name = pair[0]
-      if not name.isSymbol: raiseEvalError("Expecting binding name in string", name)
-      loopScope = loopScope.assoc(name.symbolVal, ret.recurArgs[idx])
-      idx = idx + 1
-
-    for child in body:
-      ret = interpret(child, loopScope, ns)
-  ret
-
 proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   result = CirruData(kind: crDataNil)
   for child in exprList:
@@ -232,5 +200,4 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnI
   programData[coreNs].defs["defn"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefn)
   programData[coreNs].defs["let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet)
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
-  programData[coreNs].defs["loop"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLoop)
   programData[coreNs].defs["defatom"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefAtom)

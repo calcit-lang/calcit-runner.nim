@@ -583,6 +583,21 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["&=", ["&-", [count, x], [count, y]], ["str-find", x, y]]]
   , coreNs)
 
+  let codeLoop = genCirru(
+    [defmacro, loop, [pairs, "&", body],
+      ["assert", "|loops requires pairs", ["list?", pairs]],
+      ["assert", "|loops requires pairs in pairs",
+        ["every?", [defn, "detect-pairs", [x], ["&and", ["list?", x], ["=", 2, [count, x]]]], pairs]],
+      ["let", [
+          [args, [map, first, pairs]],
+          [values, [map, last, pairs]],
+        ],
+        ["assert", "|loop requires symbols in pairs", ["every?", "symbol?", args]],
+        ["quote-replace", [apply,
+                            [defn, "generated-loop", ["~", args], ["~@", body]],
+                            ["[]", ["~@", values]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -667,3 +682,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["inc"] = codeInc
   programCode[coreNs].defs["starts-with?"] = codeStartsWithQuestion
   programCode[coreNs].defs["ends-with?"] = codeEndsWithQuestion
+  programCode[coreNs].defs["loop"] = codeLoop # TODO
