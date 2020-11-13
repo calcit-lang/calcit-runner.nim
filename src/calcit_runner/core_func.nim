@@ -165,13 +165,12 @@ proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   else:
     raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
-proc nativeRaiseAt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native raise-at")
+proc nativeRaise(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: coreFnError("Expected 1 argument1 in native raise")
   let a = args[0]
-  let b = args[1]
   if a.kind != crDataString:
     raiseEvalError("Expect message in string", a)
-  raiseEvalError(a.stringVal, b)
+  raiseEvalError(a.stringVal, args)
 
 proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: coreFnError("type gets 1 argument")
@@ -962,6 +961,9 @@ proc nativeSetTraceFnBang(args: seq[CirruData], interpret: FnInterpret, scope: C
   setTraceFn(nsPart.stringVal, defPart.stringVal)
   CirruData(kind: crDataNil)
 
+proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -978,7 +980,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["count"] = CirruData(kind: crDataProc, procVal: nativeCount)
   programData[coreNs].defs["get"] = CirruData(kind: crDataProc, procVal: nativeGet)
   programData[coreNs].defs["rest"] = CirruData(kind: crDataProc, procVal: nativeRest)
-  programData[coreNs].defs["raise-at"] = CirruData(kind: crDataProc, procVal: nativeRaiseAt)
+  programData[coreNs].defs["raise"] = CirruData(kind: crDataProc, procVal: nativeRaise)
   programData[coreNs].defs["type-of"] = CirruData(kind: crDataProc, procVal: nativeTypeOf)
   programData[coreNs].defs["read-file"] = CirruData(kind: crDataProc, procVal: nativeReadFile)
   programData[coreNs].defs["write-file"] = CirruData(kind: crDataProc, procVal: nativeWriteFile)
@@ -1044,3 +1046,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-float"] = CirruData(kind: crDataProc, procVal: nativeParseFloat)
   programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
   programData[coreNs].defs["set-trace-fn!"] = CirruData(kind: crDataProc, procVal: nativeSetTraceFnBang)
+  programData[coreNs].defs["&[]"] = CirruData(kind: crDataProc, procVal: nativeList)
