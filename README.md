@@ -13,6 +13,7 @@ Dependent modules:
 - [Cirru Parser](https://github.com/Cirru/parser.nim) for indentation-based syntax parsing.
 - [Cirru EDN](https://github.com/Cirru/cirru-edn.nim) for `compact.cirru` file parsing.
 - [Ternary Tree](https://github.com/Cirru/ternary-tree) for persistent list and map structure.
+- [JSON Paint](https://github.com/Quamolit/json-paint.nim) for drawing shapes with canvas.
 
 A `compact.cirru` file can be:
 
