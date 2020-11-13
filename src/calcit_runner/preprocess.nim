@@ -53,45 +53,41 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
 
   return CirruData(kind: crDataList, listVal: ys)
 
-proc processBinding*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
+proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len < 3:
     raiseEvalError("Expects len >=3", xs)
 
   let head = xs[0]
-  let bindings = xs[1]
+  let pair = xs[1]
   let body = xs.listVal.slice(2, xs.len)
   var newDefs = localDefs
 
   var ys = initTernaryTreeList[CirruData](@[head])
 
   var bindingBuffer = initTernaryTreeList[CirruData](@[])
-  if bindings.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
-  for pair in bindings.listVal:
-    if pair.kind != crDataList:
-      raiseEvalError("Expects a list", pair)
-    if pair.len != 2:
-      raiseEvalError("Expects len =2", pair)
 
-    let defName = pair[0]
-    let detail = pair[1]
+  if pair.kind != crDataList:
+    raiseEvalError("Expects a list", pair)
+  if pair.len != 2:
+    raiseEvalError("Expects len =2", pair)
 
-    let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
-      defName,
-      preprocess(detail, newDefs, ns)
-    ]))
+  let defName = pair[0]
+  let detail = pair[1]
 
-    if defName.kind != crDataSymbol:
-      raiseEvalError("Expects a symbol", defName)
+  let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    defName,
+    preprocess(detail, newDefs, ns)
+  ]))
 
-    if defName.symbolVal != "&":
-      newDefs.incl(defName.symbolVal)
+  if defName.kind != crDataSymbol:
+    raiseEvalError("Expects a symbol", defName)
 
-    bindingBuffer = bindingBuffer.append newPair
+  if defName.symbolVal != "&":
+    newDefs.incl(defName.symbolVal)
 
-  ys = ys.append CirruData(kind: crDataList, listVal: bindingBuffer)
+  ys = ys.append newPair
 
   for item in body:
     ys = ys.append preprocess(item, newDefs, ns)
