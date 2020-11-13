@@ -609,6 +609,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                                      ["let", ["~", [rest, pairs]], ["~@", body]]]]]]]
   , coreNs)
 
+  let codeLetThread = genCirru(
+    [defmacro, "let->", ["&", body],
+      ["if", ["empty?", body], [quote, "nil"],
+        ["if", ["&=", 1, [count, body]],
+          ["do",
+            ["assert", "|unexpected let in last item of body", ["/=", "'let", [first, body]]],
+            [first, body]],
+          ["&let", [target, [first, body]],
+            ["if", ["&=", "'let", [first, target]],
+              ["quote-replace", ["&let", ["~", [rest, [first, body]]], ["let->", ["~@", [rest, body]]]]],
+              ["quote-replace", ["do", ["~", [first, body]], ["let->", ["~@", [rest, body]]]]],
+              ]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -695,3 +709,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["ends-with?"] = codeEndsWithQuestion
   programCode[coreNs].defs["loop"] = codeLoop
   programCode[coreNs].defs["let"] = codeLet
+  programCode[coreNs].defs["let->"] = codeLetThread

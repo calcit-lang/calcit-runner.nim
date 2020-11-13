@@ -192,15 +192,15 @@ proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruD
   # echo "\nPreprocess: ", code
   case code.kind
   of crDataSymbol:
+    if code.dynamic:
+      return code
+
     if localDefs.contains(code.symbolVal):
       return code
     elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@":
       return code
     else:
       var sym = code
-
-      if sym.dynamic:
-        return sym
 
       let coreDefs = programData[coreNs].defs
       if coreDefs.contains(sym.symbolVal):

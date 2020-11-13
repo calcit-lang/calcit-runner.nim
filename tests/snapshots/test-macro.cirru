@@ -116,6 +116,14 @@
               macroexpand $ quote $ \ + x % %2
               quote $ defn generated-fn (% %2) (+ x % %2)
 
+        |test-let $ quote
+          fn ()
+            assert= 3
+              let->
+                let a 1
+                let b 2
+                + b a
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -129,6 +137,9 @@
 
             log-title "|Testing thread macros"
             test-thread-macros
+
+            log-title "|Testing let thread"
+            test-let
 
             do true
 
