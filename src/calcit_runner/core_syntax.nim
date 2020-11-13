@@ -154,18 +154,6 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: Cir
   if argsList.kind != crDataList: raiseEvalError("Expects macro args to be a list", exprList)
   return CirruData(kind: crDataMacro, macroName: macroName.symbolVal, macroArgs: argsList.listVal, macroCode: exprList[2..^1])
 
-proc nativeAssert(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if exprList.len != 2:
-    raiseEvalError("assert expects 2 arguments", exprList)
-  let message = interpret(exprList[0], scope, ns)
-  if message.kind != crDataString:
-    raiseEvalError("Expected assert message in string", exprList[0])
-  let target = interpret(exprList[1], scope, ns)
-  if target.kind != crDataBool:
-    raiseEvalError("Expected assert target in bool", exprList[1])
-  if not target.boolVal:
-    raiseEvalError(message.stringVal, exprList)
-
 proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 2:
     raiseEvalError("assert expects 2 arguments", exprList)
@@ -178,7 +166,6 @@ proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: Cirr
   CirruData(kind: crDataAtom, atomNs: name.ns, atomDef: name.symbolVal)
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
-  programData[coreNs].defs["assert"] = CirruData(kind: crDataSyntax, syntaxVal: nativeAssert)
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
   programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment)

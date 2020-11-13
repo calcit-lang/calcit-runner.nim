@@ -5,7 +5,7 @@ import calcit_runner
 
 let t1 = now()
 
-main()
+discard runProgram("tests/snapshots/fibo.cirru")
 
 let t2 = now()
 

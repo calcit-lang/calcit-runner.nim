@@ -449,7 +449,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
          ["if", ["has-index?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
         [["map?", x],
          ["if", ["contains?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
-        [true, ["raise-at", "|Cannot update key on item:", x]]]]
+        [true, ["raise", [str, "|Cannot update key on item: ", x]]]]]
   , coreNs)
 
   let codeGroupBy = genCirru(
@@ -535,7 +535,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                           ["echo", "|       ", [quote, ["~", a]]],
                           ["echo", "|Got:   ", vb],
                           ["echo", "|       ", [quote, ["~", b]]],
-                          ["raise-at", "|Not equal!", ["~", b]]],
+                          ["raise", "|Not equal!"]],
                         "nil"]]]]
   , coreNs)
 
@@ -629,6 +629,14 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace", ["&[]", ["~@", xs]]]]]
   , coreNs)
 
+  let codeAssert = genCirru(
+    [defmacro, "assert", [message, xs],
+      ["quote-replace", ["if", ["~", xs], "nil",
+                               ["do",
+                                ["echo", "|Failed assertion:", [quote, ["~", xs]]],
+                                ["raise", ["~", message]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -717,3 +725,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["let"] = codeLet
   programCode[coreNs].defs["let->"] = codeLetThread
   programCode[coreNs].defs["[]"] = codeList
+  programCode[coreNs].defs["assert"] = codeAssert

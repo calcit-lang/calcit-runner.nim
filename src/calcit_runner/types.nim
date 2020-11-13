@@ -122,22 +122,22 @@ const coreNs* = "calcit.core"
 
 # formatting for CirruData
 
-proc toString*(val: CirruData, details: bool = false): string
+proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string
 
-proc fromListToString(children: seq[CirruData]): string =
-  return "(" & children.mapIt(toString(it, true)).join(" ") & ")"
+proc fromListToString(children: seq[CirruData], symbolDetail: bool): string =
+  return "(" & children.mapIt(toString(it, true, symbolDetail)).join(" ") & ")"
 
-proc fromSetToString(children: HashSet[CirruData]): string =
-  return "#{" & children.mapIt(toString(it, true)).join(" ") & "}"
+proc fromSetToString(children: HashSet[CirruData], symbolDetail: bool): string =
+  return "#{" & children.mapIt(toString(it, true, symbolDetail)).join(" ") & "}"
 
-proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData]): string =
+proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData], symbolDetail: bool): string =
   let size = children.len()
   if size > 100:
     return "{...(100)...}"
   var tableStr = "{"
   var counted = 0
   for k, child in pairs(children):
-    tableStr = tableStr & toString(k, true) & " " & toString(child, true)
+    tableStr = tableStr & toString(k, true, symbolDetail) & " " & toString(child, true, symbolDetail)
     counted = counted + 1
     if counted < children.len:
       tableStr = tableStr & ", "
@@ -151,7 +151,7 @@ proc toString*(children: CirruDataScope): string =
   var tableStr = "{"
   var counted = 0
   for k, child in pairs(children):
-    tableStr = tableStr & k & " " & toString(child)
+    tableStr = tableStr & k & " " & $child
     counted = counted + 1
     if counted < children.len:
       tableStr = tableStr & ", "
@@ -167,7 +167,7 @@ proc escapeString(x: string): string =
   else:
     "|" & x
 
-proc toString*(val: CirruData, details: bool = false): string =
+proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
   case val.kind:
     of crDataBool:
       if val.boolVal:
@@ -180,13 +180,13 @@ proc toString*(val: CirruData, details: bool = false): string =
       else:
         $(val.numberVal)
     of crDataString:
-      if details:
+      if stringDetail:
         val.stringVal.escapeString
       else:
         val.stringVal
-    of crDataList: fromListToString(val.listVal.toSeq)
-    of crDataSet: fromSetToString(val.setVal)
-    of crDataMap: fromMapToString(val.mapVal)
+    of crDataList: fromListToString(val.listVal.toSeq, symbolDetail)
+    of crDataSet: fromSetToString(val.setVal, symbolDetail)
+    of crDataMap: fromMapToString(val.mapVal, symbolDetail)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal[]
     of crDataProc: "<Proc>"
@@ -196,10 +196,10 @@ proc toString*(val: CirruData, details: bool = false): string =
       "<Macro: " & val.macroName & " " & $val.macroArgs.toSeq & " " & $val.macroCode & ">"
     of crDataSyntax: "<Syntax>"
     of crDataRecur:
-      let content = val.recurArgs.mapIt(it.toString).join(" ")
+      let content = val.recurArgs.mapIt(it.toString(stringDetail, symbolDetail)).join(" ")
       fmt"<Recur: {content}>"
     of crDataSymbol:
-      if details:
+      if symbolDetail:
         val.ns & "/" & escapeString(val.symbolVal)
       else:
         val.symbolVal
@@ -207,7 +207,7 @@ proc toString*(val: CirruData, details: bool = false): string =
       "<Atom " & val.atomNs & "/" & val.atomDef & " >"
 
 proc `$`*(v: CirruData): string =
-  v.toString(false)
+  v.toString(false, false)
 
 # mutual recursion
 proc hash*(value: CirruData): Hash

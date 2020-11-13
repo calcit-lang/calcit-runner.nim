@@ -33,7 +33,7 @@
               echo "\"reloaded... 7" a
         |hole-series $ quote
           defn hole-series (x)
-            if (&<= x 0) (raise-at "\"unexpected small number" x)
+            if (&<= x 0) (raise "\"unexpected small number")
               if (&= x 1) (, 0)
                 if (&= x 2) (, 1)
                   let
