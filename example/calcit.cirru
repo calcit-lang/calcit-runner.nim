@@ -241,8 +241,7 @@
                       |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601428929049) (:text |0)
                   |P $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1601428932116)
                     :data $ {}
-                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601428934949) (:text |raise-at)
-                      |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601428957932) (:text |x)
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605351252299) (:text |raise)
                       |b $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601428993534) (:text "|\"unexpected small number")
                   |R $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1601428995517)
                     :data $ {}
@@ -718,7 +717,7 @@
               |yvT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585355117)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585359363) (:text |try-func)
-                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1602555501561) (:text |;)
+                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605351219591) (:text |;)
               |yw $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585312108)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585316717) (:text |try-macro)
@@ -1902,12 +1901,37 @@
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585388413) (:text |lib/show-info)
                   |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585388413) (:text |2)
-              |yT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585392367)
+              |yT $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348994199)
                 :data $ {}
-                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |pr-str)
-                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |1)
-                  |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text "|\"2")
-                  |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |true)
+                  |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600585392367)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |pr-str)
+                      |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |1)
+                      |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text "|\"2")
+                      |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600585392367) (:text |true)
+                      |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348717019)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348717019) (:text |{})
+                          |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348717019)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348717019) (:text |:a)
+                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348717019) (:text "|\"1")
+                      |t $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348854622) (:text "|\"3 4")
+                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348998911) (:text |println)
+              |yj $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348702508)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348703973) (:text |println)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348706675) (:text |1)
+                  |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348856587) (:text "|\"2")
+                  |v $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348708558) (:text |true)
+                  |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348709763)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348710122) (:text |{})
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605348710959)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348711876) (:text |:a)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348713649) (:text "|\"1")
+                  |t $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605348858699) (:text "|\"3 4")
           |try-foldl $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600772931447)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600772932635) (:text |defn)

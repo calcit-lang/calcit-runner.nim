@@ -637,6 +637,36 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                                 ["raise", ["~", message]]]]]]
   , coreNs)
 
+  let codePrintln = genCirru(
+    [defn, println, ["&", xs],
+      [print, "&", xs],
+      [print, "|\n"]]
+  , coreNs)
+
+  let codeJoinStr = genCirru(
+    [defn, "join-str", [sep, xs0],
+      [apply, [fn, [acc, xs, "beginning?"],
+                ["if", ["empty?", xs], acc,
+                       [recur,
+                          ["&str-concat",
+                            ["if", "beginning?", acc, ["&str-concat", acc, sep]],
+                            [first, xs]],
+                          [rest, xs], false]]],
+        ["&[]", "|", xs0, true]]]
+  , coreNs)
+
+  let codeJoin = genCirru(
+    [defn, join, [sep, xs0],
+      [apply,
+        [fn, [acc, xs, "beginning?"],
+             ["if", ["empty?", xs], acc,
+                    [recur, [append,
+                              ["if", "beginning?", acc, [append, acc, sep]],
+                              [first, xs]],
+                            [rest, xs], false]]],
+        ["&[]", ["&[]"], xs0, true]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -726,3 +756,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["let->"] = codeLetThread
   programCode[coreNs].defs["[]"] = codeList
   programCode[coreNs].defs["assert"] = codeAssert
+  programCode[coreNs].defs["println"] = codePrintln
+  programCode[coreNs].defs["echo"] = codePrintln # alias for println
+  programCode[coreNs].defs["join-str"] = codeJoinStr
+  programCode[coreNs].defs["join"] = codeJoin

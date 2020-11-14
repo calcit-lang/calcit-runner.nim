@@ -191,6 +191,13 @@
             assert= 10 $ apply + $ [] 1 2 3 4
             assert= 10 $ + & $ [] 1 2 3 4
 
+        |test-join $ quote
+          fn ()
+            echo $ join-str |- $ [] 1 2 3 4
+            echo $ join-str |- $ []
+            echo $ join 10 $ [] 1 2 3 4
+            echo $ join 10 $ []
+
         |log-title $ quote
           defn log-title (title)
             echo
@@ -214,6 +221,9 @@
 
             log-title "|Testing apply"
             test-apply
+
+            log-title "|Testing join"
+            test-join
 
             do true
 
