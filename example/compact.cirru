@@ -225,7 +225,9 @@
         |try-fibo $ quote
           defn try-fibo () (echo "\"fibo result:" $ fibo 11)
         |try-func $ quote
-          defn try-func () (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2) (pr-str 1 "\"2" true)
+          defn try-func () (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2)
+            println $ pr-str 1 "\"2" "\"3 4" true ({} $ :a "\"1")
+            println 1 "\"2" "\"3 4" true $ {} (:a "\"1")
         |try-foldl $ quote
           defn try-foldl ()
             ; echo $ get ([] 1 2 3) (, 0)

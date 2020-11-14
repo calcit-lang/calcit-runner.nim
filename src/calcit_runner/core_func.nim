@@ -1,4 +1,5 @@
 
+import os
 import tables
 import json
 import math
@@ -259,18 +260,13 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
   return quoted
 
-proc nativePrintln(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  echo args.map(`$`).join(" ")
+proc nativePrint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  stdout.write args.map(`$`).join(" ")
+  stdout.flushFile
   return CirruData(kind: crDataNil)
 
 proc nativePrStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  echo args.map(proc (x: CirruData): string =
-    if x.kind == crDataSymbol:
-      return escape(x.symbolVal)
-    else:
-      return $x
-  ).join(" ")
-  return CirruData(kind: crDataNil)
+  return CirruData(kind: crDataString, stringVal: args.mapIt(it.toString(true, true)).join(" "))
 
 proc nativePrepend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
@@ -312,6 +308,8 @@ proc nativeEmptyQuestion(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   case base.kind
   of crDataNil:
     return CirruData(kind: crDataBool, boolVal: true)
+  of crDataString:
+    return CirruData(kind: crDataBool, boolVal: base.stringVal.len == 0)
   of crDataList:
     return CirruData(kind: crDataBool, boolVal: base.listVal.len == 0)
   of crDataMap:
@@ -582,9 +580,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   else:
     raiseEvalError("Cannot turn into symbol", (args))
 
-proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
-    raiseEvalError("turn-string requires 1 arg", (args))
+    raiseEvalError("turn-str requires 1 arg", (args))
   let x = args[0]
   case x.kind
   of crDataKeyword:
@@ -987,8 +985,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-json"] = CirruData(kind: crDataProc, procVal: nativeParseJson)
   programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataProc, procVal: nativeStringifyJson)
   programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataProc, procVal: nativeMacroexpand)
-  programData[coreNs].defs["println"] = CirruData(kind: crDataProc, procVal: nativePrintln)
-  programData[coreNs].defs["echo"] = CirruData(kind: crDataProc, procVal: nativePrintln)
+  programData[coreNs].defs["print"] = CirruData(kind: crDataProc, procVal: nativePrint)
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)
   programData[coreNs].defs["append"] = CirruData(kind: crDataProc, procVal: nativeAppend)
@@ -997,7 +994,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataProc, procVal: nativeButlast)
   programData[coreNs].defs["reverse"] = CirruData(kind: crDataProc, procVal: nativeReverse)
-  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataProc, procVal: nativeTurnString)
+  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnStr)
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataProc, procVal: nativeTurnSymbol)
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataProc, procVal: nativeTurnKeyword)
   programData[coreNs].defs["identical?"] = CirruData(kind: crDataProc, procVal: nativeIdenticalQuestion)
