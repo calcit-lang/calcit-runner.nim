@@ -37,7 +37,7 @@ proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
   # mutual recursion
 proc getEvaluatedByPath*(ns: string, def: string, scope: CirruDataScope): CirruData
 proc loadImportDictByNs(ns: string): Table[string, ImportInfo]
-proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruData
+proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): CirruData
 proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData
 
 proc nativeEval(item: CirruData, interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
@@ -188,7 +188,7 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
 proc preprocessHelper(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
   preprocess(code, localDefs, ns)
 
-proc preprocess(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
+proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
   # echo "\nPreprocess: ", code
   case code.kind
   of crDataSymbol:
