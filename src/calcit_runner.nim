@@ -104,8 +104,14 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
 proc runEventListener*(event: JsonNode) =
+  let ns = codeConfigs.initFn.split('/')[0]
+  let def = "on-window-event"
 
-  discard runCode(codeConfigs.pkg & ".main", "on-window-event", event.toCirruData)
+  if programCode.hasKey(ns).not or programCode[ns].defs.hasKey(def).not:
+    echo "Warning: " & ns & "/" & def & "does not exist"
+    return
+
+  discard runCode(ns, def, event.toCirruData)
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
