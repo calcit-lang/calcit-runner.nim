@@ -9,6 +9,8 @@ import ternary_tree
 import ./types
 import ./data
 
+var genSymIndex* = 0
+
 proc toCirruData(x: string, ns: string): CirruData =
   return parseLiteral(x, ns)
 

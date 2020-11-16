@@ -101,19 +101,19 @@
                 [] 2 |2
 
             assert "|expand lambda" $ =
-              macroexpand $ quote (\ + 2 %)
+              macroexpand-all $ quote (\ + 2 %)
               quote $ defn generated-fn (%) (+ 2 %)
 
             assert "|expand lambda" $ =
-              macroexpand $ quote $ \ x
+              macroexpand-all $ quote $ \ x
               quote $ defn generated-fn (%) (x)
 
             assert "|expand lambda" $ =
-              macroexpand $ quote $ \ + x %
+              macroexpand-all $ quote $ \ + x %
               quote $ defn generated-fn (%) (+ x %)
 
             assert "|expand lambda" $ =
-              macroexpand $ quote $ \ + x % %2
+              macroexpand-all $ quote $ \ + x % %2
               quote $ defn generated-fn (% %2) (+ x % %2)
 
             assert=
@@ -146,6 +146,12 @@
                 let b 2
                 + b a
 
+        |test-gensym $ quote
+          fn ()
+            echo $ gensym
+            echo $ gensym 'a
+            echo $ gensym |a
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -162,6 +168,9 @@
 
             log-title "|Testing let thread"
             test-let
+
+            log-title "|Testing gensym"
+            test-gensym
 
             do true
 

@@ -10,8 +10,6 @@ import ./types
 import ./data
 import ./errors
 
-var currentPackage*: string
-
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:
     echo "current node: ", v
@@ -69,6 +67,11 @@ proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
     if reloadFn.kind == crEdnString:
       codeConfigs.reloadFn = reloadFn.stringVal
 
+  let package = initialData.get(crEdn("package", true))
+  if package.kind != crEdnString:
+    raise newException(ValueError, "expects a string")
+  codeConfigs.pkg = package.stringVal
+
   return codeConfigs
 
 proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource], configs: CodeConfigs] =
@@ -78,11 +81,6 @@ proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource]
 
   if initialData.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
-
-  let package = initialData.get(crEdn("package", true))
-  if package.kind != crEdnString:
-    raise newException(ValueError, "expects a string")
-  currentPackage = package.stringVal
 
   let files = initialData.get(crEdn("files", true))
 

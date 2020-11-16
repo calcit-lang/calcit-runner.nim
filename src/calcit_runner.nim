@@ -30,7 +30,7 @@ var onLoadPluginProcs: Table[string, FnInData]
 
 export CirruData, CirruDataKind, `==`, crData
 
-var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
+var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
 
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
@@ -104,8 +104,14 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
 proc runEventListener*(event: JsonNode) =
+  let ns = codeConfigs.initFn.split('/')[0]
+  let def = "on-window-event"
 
-  discard runCode("app.main", "on-window-event", event.toCirruData)
+  if programCode.hasKey(ns).not or programCode[ns].defs.hasKey(def).not:
+    echo "Warning: " & ns & "/" & def & "does not exist"
+    return
+
+  discard runCode(ns, def, event.toCirruData)
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]

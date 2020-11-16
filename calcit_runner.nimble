@@ -15,7 +15,7 @@ requires "nim >= 1.2.8"
 requires "libfswatch"
 requires "https://github.com/Cirru/cirru-edn.nim#v0.3.4"
 requires "ternary_tree >= 0.1.27"
-requires "https://github.com/Quamolit/json-paint.nim#v0.0.8"
+requires "https://github.com/Quamolit/json-paint.nim#v0.0.10"
 
 task watch, "run and watch":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr example/compact.cirru"

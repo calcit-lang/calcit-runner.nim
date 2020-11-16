@@ -282,13 +282,13 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         if head.kind != crDataSymbol:
           raiseEvalError("Expected syntax head", code)
         case head.symbolVal
-        of ";":
+        of ";", "quote-replace":
           return code
         of "defn", "defmacro":
           return processDefn(code, localDefs, preprocessHelper, ns)
         of "&let":
           return processNativeLet(code, localDefs, preprocessHelper, ns)
-        of "if", "assert", "do", "quote-replace":
+        of "if", "assert", "do":
           return processAll(code, localDefs, preprocessHelper, ns)
         of "quote":
           return processQuote(code, localDefs, preprocessHelper, ns)
