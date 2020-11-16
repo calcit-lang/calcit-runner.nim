@@ -110,6 +110,7 @@ type ProgramFile* = object
   states*: Table[string, CirruData]
 
 type CodeConfigs* = object
+  pkg*: string
   initFn*: string
   reloadFn*: string
 

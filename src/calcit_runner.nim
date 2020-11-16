@@ -30,7 +30,7 @@ var onLoadPluginProcs: Table[string, FnInData]
 
 export CirruData, CirruDataKind, `==`, crData
 
-var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!")
+var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
 
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
@@ -105,7 +105,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
 
 proc runEventListener*(event: JsonNode) =
 
-  discard runCode("app.main", "on-window-event", event.toCirruData)
+  discard runCode(codeConfigs.pkg & ".main", "on-window-event", event.toCirruData)
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
