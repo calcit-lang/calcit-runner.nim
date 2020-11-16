@@ -120,6 +120,7 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
     raiseEvalError("Unknown data in expr", exprList)
 
 proc nativeQuoteReplace(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  # echo "Calling replace for ", exprList
   if exprList.len != 1:
     raiseEvalError(fmt"quote-replace expects 1 argument, got {exprList.len}", exprList)
 

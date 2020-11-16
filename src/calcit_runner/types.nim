@@ -144,23 +144,6 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData], symbolDetai
   tableStr = tableStr & "}"
   return tableStr
 
-proc toString*(children: CirruDataScope): string =
-  let size = children.len()
-  if size > 100:
-    return "{...(100)...}"
-  var tableStr = "{"
-  var counted = 0
-  for k, child in pairs(children):
-    tableStr = tableStr & k & " " & $child
-    counted = counted + 1
-    if counted < children.len:
-      tableStr = tableStr & ", "
-  tableStr = tableStr & "}"
-  return tableStr
-
-proc `$`*(children: CirruDataScope): string =
-  children.toString
-
 proc escapeString(x: string): string =
   if x.contains("\"") or x.contains(' '):
     escape("|" & x)
@@ -208,6 +191,26 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
 
 proc `$`*(v: CirruData): string =
   v.toString(false, false)
+
+proc toString*(children: CirruDataScope): string =
+  let size = children.len()
+  if size > 100:
+    return "{...(100)...}"
+  var tableStr = "{"
+  var counted = 0
+  for k, child in pairs(children):
+    tableStr = tableStr & k & " " & $child
+    counted = counted + 1
+    if counted < children.len:
+      tableStr = tableStr & ", "
+  tableStr = tableStr & "}"
+  return tableStr
+
+proc `$`*(children: CirruDataScope): string =
+  children.toString
+
+proc `$`*(xs: seq[CirruData]): string =
+  return "@[" & xs.map(`$`).join(" ") & "]"
 
 # mutual recursion
 proc hash*(value: CirruData): Hash

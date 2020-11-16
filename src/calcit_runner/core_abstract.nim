@@ -525,18 +525,19 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeAssertEqual = genCirru(
     [defmacro, "assert=", [a, b],
-      ["quote-replace",
-        ["let", [[va, ["~", a]],
-                 [vb, ["~", b]]],
-                ["if", ["/=", va, vb],
-                       ["do",
-                          ["echo"],
-                          ["echo", "|Wanted:", va],
-                          ["echo", "|       ", [quote, ["~", a]]],
-                          ["echo", "|Got:   ", vb],
-                          ["echo", "|       ", [quote, ["~", b]]],
-                          ["raise", "|Not equal!"]],
-                        "nil"]]]]
+      ["let", [[va, [gensym, "|va"]], [vb, [gensym, "|vb"]]],
+        ["quote-replace",
+          ["let", [[["~", va], ["~", a]],
+                   [["~", vb], ["~", b]]],
+                  ["if", ["/=", ["~", va], ["~", vb]],
+                         ["do",
+                            ["echo"],
+                            ["echo", "|Wanted:", ["~", va]],
+                            ["echo", "|       ", [quote, ["~", a]]],
+                            ["echo", "|Got:   ", ["~", vb]],
+                            ["echo", "|       ", [quote, ["~", b]]],
+                            ["raise", "|Not equal!"]],
+                          "nil"]]]]]
   , coreNs)
 
   let codeSwapBang = genCirru(
