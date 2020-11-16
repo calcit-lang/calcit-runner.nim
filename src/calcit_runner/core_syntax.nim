@@ -74,29 +74,10 @@ proc nativeDo*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   for child in exprList:
     result = interpret(child, scope, ns)
 
-# TODO, symbols in macros refers to define scope
-proc attachScope(exprList: CirruData, scope: CirruDataScope): CirruData =
-  case exprList.kind
-  of crDataSymbol:
-    return CirruData(kind: crDataSymbol, symbolVal: exprList.symbolVal, ns: exprList.ns)
-  of crDataList:
-    var list = initTernaryTreeList[CirruData](@[])
-    for item in exprList:
-      list = list.append attachScope(item, scope)
-    return CirruData(kind: crDataList, listVal: list)
-  of crDataNil: return exprList
-  of crDataBool: return exprList
-  of crDataNumber: return exprList
-  of crDataKeyword: return exprList
-  of crDataString: return exprList
-  else:
-    raiseEvalError("Unexpected data for attaching", exprList)
-
 proc nativeQuote(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 1:
     raiseEvalError("quote expects 1 argument", exprList)
-  let code = attachScope(exprList[0], scope)
-  return code
+  return exprList[0]
 
 proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   case exprList.kind
@@ -142,7 +123,7 @@ proc nativeQuoteReplace(exprList: seq[CirruData], interpret: FnInterpret, scope:
   if exprList.len != 1:
     raiseEvalError(fmt"quote-replace expects 1 argument, got {exprList.len}", exprList)
 
-  let ret = replaceExpr(attachScope(exprList[0], scope), interpret, scope, ns)
+  let ret = replaceExpr(exprList[0], interpret, scope, ns)
   if not checkExprStructure(ret):
     raiseEvalError("Unexpected structure from quote-replace", ret)
   ret
