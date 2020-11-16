@@ -20,6 +20,7 @@ import ./to_json
 import ./gen_data
 import ./gen_code
 import ./eval_util
+import ./evaluate
 import ./atoms
 import ./stack
 
@@ -243,12 +244,11 @@ proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   return CirruData(kind: crDataString, stringVal: jsonString)
 
 proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1:
-    raiseEvalError("load-json requires relative path to json file", args)
+  if args.len != 1: raiseEvalError("macroexpand requires 1 argument", args)
 
   let code = args[0]
   # echo "macroexpanding: ", code
-  if code.isList.not or checkExprStructure(code).not or code.len == 0:
+  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
     raiseEvalError(fmt"Unexpected structure from macroexpand", code)
 
   let value = interpret(code[0], scope, ns)
@@ -259,6 +259,23 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   let quoted = evaluteMacroData(value, xs, interpret, ns)
 
   return quoted
+
+proc nativeMacroexpandAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("macroexpand-all requires 1 argument", args)
+
+  let code = args[0]
+  # echo "macroexpanding: ", code
+  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
+    raiseEvalError(fmt"Unexpected structure from macroexpand-all", code)
+
+  let value = interpret(code[0], scope, ns)
+  if value.kind != crDataMacro:
+    raiseEvalError("Expected a macro in the expression", code)
+
+  let xs = code[1..^1]
+  let quoted = evaluteMacroData(value, xs, interpret, ns)
+
+  return preprocess(quoted, HashSet[string](), ns)
 
 proc nativePrint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   stdout.write args.map(`$`).join(" ")
@@ -985,6 +1002,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-json"] = CirruData(kind: crDataProc, procVal: nativeParseJson)
   programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataProc, procVal: nativeStringifyJson)
   programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataProc, procVal: nativeMacroexpand)
+  programData[coreNs].defs["macroexpand-all"] = CirruData(kind: crDataProc, procVal: nativeMacroexpandAll)
   programData[coreNs].defs["print"] = CirruData(kind: crDataProc, procVal: nativePrint)
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)

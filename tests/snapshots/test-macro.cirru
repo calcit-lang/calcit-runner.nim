@@ -116,6 +116,28 @@
               macroexpand $ quote $ \ + x % %2
               quote $ defn generated-fn (% %2) (+ x % %2)
 
+            assert=
+              macroexpand-all $ quote
+                case (+ 1 2)
+                  1 |one
+                  2 |two
+                  3 |three
+              quote
+                if (&= (+ 1 2) 1) |one
+                  if (&= (+ 1 2) 2) |two
+                    if (&= (+ 1 2) 3) |three nil
+            assert=
+              macroexpand $ quote
+                case (+ 1 2)
+                  1 |one
+                  2 |two
+                  3 |three
+              quote
+                if (&= (+ 1 2) 1) |one
+                  case (+ 1 2)
+                    2 |two
+                    3 |three
+
         |test-let $ quote
           fn ()
             assert= 3
