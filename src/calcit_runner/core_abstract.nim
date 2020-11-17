@@ -520,7 +520,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeFn = genCirru(
     [defmacro, fn, [args, "&", body],
-      ["quote-replace", [defn, "generated-fn", ["~", args], ["~@", body]]]]
+      ["quote-replace", [defn, "f%", ["~", args], ["~@", body]]]]
   , coreNs)
 
   let codeAssertEqual = genCirru(
@@ -625,7 +625,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   let codeListComma = genCirru(
-    [defmacro, "[]", ["&", body],
+    [defmacro, "[,]", ["&", body],
       ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
         ["quote-replace", ["[]", ["~@", xs]]]]]
   , coreNs)

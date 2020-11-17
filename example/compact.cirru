@@ -16,7 +16,10 @@
               echo $ stringify-json new-data
               write-file "\"codes-new.json" (stringify-json new-data) 
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (draw/try-canvas) (; try-atom)
+          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (echo [,])
+            echo $ fn (a) 1
+            draw/try-canvas
+            ; try-atom
         |try-hygienic $ quote
           defn try-hygienic ()
             let

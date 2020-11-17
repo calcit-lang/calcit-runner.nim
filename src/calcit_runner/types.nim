@@ -123,6 +123,9 @@ const coreNs* = "calcit.core"
 
 # formatting for CirruData
 
+# recursion
+proc `$`*(xs: seq[CirruData]): string
+
 proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string
 
 proc fromListToString(children: seq[CirruData], symbolDetail: bool): string =
@@ -173,22 +176,22 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
     of crDataMap: fromMapToString(val.mapVal, symbolDetail)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal[]
-    of crDataProc: "<Proc>"
+    of crDataProc: "(:&proc)"
     of crDataFn:
-      "<Function: " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ">"
+      "(:&function " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ")"
     of crDataMacro:
-      "<Macro: " & val.macroName & " " & $val.macroArgs.toSeq & " " & $val.macroCode & ">"
-    of crDataSyntax: "<Syntax>"
+      "(:&macro " & val.macroName & " " & $val.macroArgs.toSeq & " " & $val.macroCode & ")"
+    of crDataSyntax: "(:&syntax)"
     of crDataRecur:
       let content = val.recurArgs.mapIt(it.toString(stringDetail, symbolDetail)).join(" ")
-      fmt"<Recur: {content}>"
+      "(:&recur " & content & " )"
     of crDataSymbol:
       if symbolDetail:
         val.ns & "/" & escapeString(val.symbolVal)
       else:
         val.symbolVal
     of crDataAtom:
-      "<Atom " & val.atomNs & "/" & val.atomDef & " >"
+      "(&atom " & val.atomNs & "/" & val.atomDef & " )"
 
 proc `$`*(v: CirruData): string =
   v.toString(false, false)
@@ -211,7 +214,7 @@ proc `$`*(children: CirruDataScope): string =
   children.toString
 
 proc `$`*(xs: seq[CirruData]): string =
-  return "@[" & xs.map(`$`).join(" ") & "]"
+  return "(:&seq " & xs.map(`$`).join(" ") & ")"
 
 # mutual recursion
 proc hash*(value: CirruData): Hash
