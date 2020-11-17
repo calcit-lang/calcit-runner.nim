@@ -12,8 +12,8 @@ import ./errors
 
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:
-    echo "current node: ", v
-    raise newException(ValueError, "Unexpected quoted cirru node")
+    echo "current node: ", v.kind, " ", v
+    raise newException(ValueError, "expected quoted cirru node")
 
   return v.quotedVal.toCirruData(ns)
 
@@ -95,6 +95,7 @@ proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource]
 
 proc extractStringSet(xs: CirruEdnValue): HashSet[string] =
   if xs.kind != crEdnSet:
+    echo "received value: ", xs.kind, " ", xs
     raise newException(ValueError, "parameter is not a EDN set, can't extract")
 
   let values = xs.map(proc (x: CirruEdnValue): string =
