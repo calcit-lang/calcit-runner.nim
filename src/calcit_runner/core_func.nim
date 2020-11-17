@@ -237,10 +237,15 @@ proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     raiseEvalError("Failed to parse file", args[0])
 
 proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1:
-    raiseEvalError("formar-json requires 1 argument", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+  if args.len < 1 or args.len > 2:
+    raiseEvalError("format-json requires 1~2 argument", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
 
-  let jsonString = args[0].toJson().pretty()
+  var addColon = false
+  if args.len >= 2:
+    if args[1].kind != crDataBool: raiseEvalError("expects boolean for addColon option", args)
+    addColon = args[1].boolVal
+
+  let jsonString = args[0].toJson(addColon).pretty()
   return CirruData(kind: crDataString, stringVal: jsonString)
 
 proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =

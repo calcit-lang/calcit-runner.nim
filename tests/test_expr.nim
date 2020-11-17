@@ -39,3 +39,6 @@ test "Lens tests":
 
 test "String tests":
   check (runProgram("tests/snapshots/test-string.cirru") == crData(true))
+
+test "JSON tests":
+  check (runProgram("tests/snapshots/test-json.cirru") == crData(true))
