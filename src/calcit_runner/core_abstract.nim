@@ -668,6 +668,26 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["&[]", ["&[]"], xs0, true]]]
   , coreNs)
 
+  let codeRepeat = genCirru(
+    [defn, repeat, [n0, x],
+      [apply,
+        [fn, [acc, n],
+          ["if", ["&<=", n, 0], acc, [recur, [append, acc, x], ["&-", n, 1]]]],
+        ["&[]", ["&[]"], n0]]]
+  , coreNs)
+
+  let codeInterleave = genCirru(
+    [defn, interleave, [xs0, ys0],
+      [apply,
+        [fn, [acc, xs, ys],
+          ["if", ["&or", ["empty?", xs], ["empty?", ys]], acc,
+            [recur,
+              ["->", acc, [append, [first, xs]], [append, [first, ys]]],
+              [rest, xs],
+              [rest, ys]]]],
+        ["&[]", ["&[]"], xs0, ys0]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -761,3 +781,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["echo"] = codePrintln # alias for println
   programCode[coreNs].defs["join-str"] = codeJoinStr
   programCode[coreNs].defs["join"] = codeJoin
+  programCode[coreNs].defs["repeat"] = codeRepeat
+  programCode[coreNs].defs["interleave"] = codeInterleave
