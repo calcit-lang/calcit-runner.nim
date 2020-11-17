@@ -193,10 +193,21 @@
 
         |test-join $ quote
           fn ()
-            echo $ join-str |- $ [] 1 2 3 4
-            echo $ join-str |- $ []
-            echo $ join 10 $ [] 1 2 3 4
-            echo $ join 10 $ []
+            assert= |1-2-3-4 $ join-str |- $ [] 1 2 3 4
+            assert= | $ join-str |- $ []
+            assert=
+              &[] 1 10 2 10 3 10 4
+              join 10 $ [] 1 2 3 4
+            assert= ([]) $ join 10 $ []
+
+        |test-repeat $ quote
+          fn ()
+            assert=
+              repeat 5 :a
+              [] :a :a :a :a :a
+            assert=
+              interleave ([] :a :b :c :d) ([] 1 2 3 4 5)
+              [] :a 1 :b 2 :c 3 :d 4
 
         |log-title $ quote
           defn log-title (title)
@@ -224,6 +235,9 @@
 
             log-title "|Testing join"
             test-join
+
+            log-title "|Testing repeat"
+            test-repeat
 
             do true
 
