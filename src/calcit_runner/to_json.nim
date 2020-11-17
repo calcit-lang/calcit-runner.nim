@@ -7,7 +7,7 @@ import ternary_tree
 
 import ./types
 
-proc toJson*(x: CirruData): JsonNode =
+proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   case x.kind:
   of crDataNil:
     return JsonNode(kind: JNull)
@@ -18,25 +18,31 @@ proc toJson*(x: CirruData): JsonNode =
   of crDataString:
     return JsonNode(kind: JString, str: x.stringVal)
   of crDataKeyword:
-    return JsonNode(kind: JString, str: x.keywordVal[])
+    if keywordColon:
+      return JsonNode(kind: JString, str: ":" & x.keywordVal[])
+    else:
+      return JsonNode(kind: JString, str: x.keywordVal[])
   of crDataList:
     var elems: seq[JsonNode] = @[]
     for i, child in x.listVal:
-      elems.add toJson(child)
+      elems.add toJson(child, keywordColon)
     return JsonNode(kind: JArray, elems: elems)
   of crDataSet:
     var elems: seq[JsonNode] = @[]
     for child in x.setVal.items:
-      elems.add toJson(child)
+      elems.add toJson(child, keywordColon)
     return JsonNode(kind: JArray, elems: elems)
   of crDataMap:
     var fields: OrderedTable[string, JsonNode]
     for k, v in x.mapVal:
       case k.kind:
       of crDataString:
-        fields[k.stringVal] = toJson(v)
+        fields[k.stringVal] = toJson(v, keywordColon)
       of crDataKeyword:
-        fields[k.keywordVal[]] = toJson(v)
+        if keywordColon:
+          fields[":" & k.keywordVal[]] = toJson(v, keywordColon)
+        else:
+          fields[k.keywordVal[]] = toJson(v, keywordColon)
       else:
         raise newException(ValueError, "required string keys in JObject")
     return JsonNode(kind: JObject, fields: fields)
@@ -55,7 +61,10 @@ proc toJson*(x: CirruData): JsonNode =
 proc toCirruData*(v: JsonNode): CirruData =
   case v.kind
   of JString:
-    return CirruData(kind: crDataString, stringVal: v.str)
+    if v.str.len > 0 and v.str[0] == ':':
+      return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(v.str[1..^1]))
+    else:
+      return CirruData(kind: crDataString, stringVal: v.str)
   of JInt:
     return CirruData(kind: crDataNumber, numberVal: v.to(float))
   of JFloat:
@@ -72,7 +81,11 @@ proc toCirruData*(v: JsonNode): CirruData =
   of JObject:
     var table = initTable[CirruData, CirruData]()
     for key, value in v:
-      let keyContent = CirruData(kind: crDataString, stringVal: key)
+      let keyContent =
+        if key.len > 0 and key[0] == ':':
+          CirruData(kind: crDataKeyword, keywordVal: loadKeyword(key[1..^1]))
+        else:
+          CirruData(kind: crDataString, stringVal: key)
       let value = toCirruData(value)
       table[keyContent] = value
     return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
