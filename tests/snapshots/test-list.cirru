@@ -148,7 +148,7 @@
         |test-comma $ quote
           assert "|allow commas in lists" $ =
             [] 1 2 3 4
-            [] 1 , 2 , 3 , 4
+            [,] 1 , 2 , 3 , 4
 
         |test-every $ quote
           defn test-every ()
@@ -196,7 +196,7 @@
             assert= |1-2-3-4 $ join-str |- $ [] 1 2 3 4
             assert= | $ join-str |- $ []
             assert=
-              &[] 1 10 2 10 3 10 4
+              [] 1 10 2 10 3 10 4
               join 10 $ [] 1 2 3 4
             assert= ([]) $ join 10 $ []
 
