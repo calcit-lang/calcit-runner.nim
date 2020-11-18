@@ -826,6 +826,30 @@
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812665843) (:text |:y)
                       |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812667015) (:text |400)
+          |g $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605672518638)
+            :data $ {}
+              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672520555) (:text |defn)
+              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672518638) (:text |g)
+              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605672518638)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672526792) (:text |props)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672529915) (:text |&)
+                  |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672530976) (:text |children)
+              |v $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605673051428)
+                :data $ {}
+                  |T $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605672531747)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672532100) (:text |{})
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605672532345)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672533588) (:text |:type)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672534377) (:text |:group)
+                      |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605672534914)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672538450) (:text |:children)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605672540081) (:text |children)
+                  |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605673052511) (:text |merge)
+                  |L $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605673053185) (:text |props)
         :proc $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604812556876) (:data $ {})
         :configs $ {}
   :configs $ {} (:output |src) (:port 6001) (:extension |.cljs) (:storage-key |calcit.cirru) (:compact-output? true) (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)

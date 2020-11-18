@@ -27,6 +27,12 @@
             assert "|function" $ fn? &=
             assert "|function" $ macro? cond
 
+            assert= 1 (either nil 1)
+            assert= 2 (either 2 1)
+            assert= nil (either nil nil)
+
+            assert= 2 (def x 2)
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"
