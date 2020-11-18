@@ -498,11 +498,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
           [recur, [append, acc, [take, n, xs]], [drop, n, xs]]]]]
   , coreNs)
 
-  let codeG = genCirru(
-    [defn, g, [options, "&", xs],
-      [merge, options, ["{}", [":type", ":group"], [":children", xs]]]]
-  , coreNs)
-
   # nested list creation that allows emitting second level `[]`s
   let codeListList = genCirru(
     [defmacro, "[][]", ["&", xs],
@@ -694,6 +689,15 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["->>", dict, ["to-pairs"], [map, [fn, [pair], [f, [first, pair], [last, pair]]]]]]
   , coreNs)
 
+  let codeEither = genCirru(
+    ["defn", "either", [x, y], ["if", ["nil?", x], y, x]]
+  , coreNs)
+
+  # to be compatible in Calcit Editor, name is useless here
+  let codeDef = genCirru(
+    [defmacro, "def", [name, x], x]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -766,7 +770,6 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["vals"] = codeVals
   programCode[coreNs].defs["frequencies"] = codeFrequencies
   programCode[coreNs].defs["section-by"] = codeSectionBy
-  programCode[coreNs].defs["g"] = codeG
   programCode[coreNs].defs["[][]"] = codeListList
   programCode[coreNs].defs["{}"] = codeMapSyntax
   programCode[coreNs].defs["fn"] = codeFn
@@ -790,3 +793,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["repeat"] = codeRepeat
   programCode[coreNs].defs["interleave"] = codeInterleave
   programCode[coreNs].defs["map-kv"] = codeMapKv
+  programCode[coreNs].defs["either"] = codeEither
+  programCode[coreNs].defs["def"] = codeDef

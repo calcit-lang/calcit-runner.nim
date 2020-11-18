@@ -76,7 +76,10 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
     for child in macroValue.macroCode:
       quoted = interpret(child, loopScope, macroValue.macroNs)
 
-  if quoted.isList.not and quoted.isRecur.not and quoted.isSymbol.not:
-    raiseEvalError("Expected list or recur from defmacro", quoted)
+  case quoted.kind
+  of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool:
+    discard
+  else:
+    raiseEvalError("expects a list or a liternal from defmacro", quoted)
 
   return quoted

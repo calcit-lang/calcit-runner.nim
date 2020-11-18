@@ -105,5 +105,8 @@
             try-redraw-canvas
         |*control-point $ quote
           defatom *control-point $ {} (:x 400) (:y 400)
+        |g $ quote
+          defn g (props & children)
+            merge props $ {} (:type :group) (:children children)
       :proc $ quote ()
       :configs $ {}
