@@ -41,38 +41,47 @@
                     :d 4
                 {} (:a 1) (:b 2) (:c 3) (:d 4)
 
-              assert |pair-map $ =
-                pair-map $ []
-                  [] :a 1
-                  [] :b 2
-                {} (:a 1) (:b 2)
-
-              assert |zipmap $ =
-                zipmap
-                  [] :a :b :c
-                  [] 1 2 3
-                {}
-                  :a 1
-                  :b 2
-                  :c 3
-
-              assert |to-pairs $ =
-                to-pairs $ {}
-                  :a 1
-                  :b 2
-                []
-                  [] :a 1
-                  [] :b 2
-
               assert |vals $ =
                 vals $ {} (:a 1) (:b 2) (:c 2)
                 [] 2 1 2
+
+        |test-pairs $ quote
+          fn ()
+
+            assert |pairs-map $ =
+              pairs-map $ []
+                [] :a 1
+                [] :b 2
+              {} (:a 1) (:b 2)
+
+            assert |zipmap $ =
+              zipmap
+                [] :a :b :c
+                [] 1 2 3
+              {}
+                :a 1
+                :b 2
+                :c 3
+
+            assert |to-pairs $ =
+              to-pairs $ {}
+                :a 1
+                :b 2
+              []
+                [] :a 1
+                [] :b 2
+
+            assert=
+              map-kv
+                fn (k v) ([] k (+ v 1))
+                {} (:a 1) (:b 2)
+              [][] (:a 2) (:b 3)
 
         |test-native-map-syntax $  quote
           defn test-native-map-syntax ()
             assert "|internally {} is a macro" $ =
               macroexpand $ quote $ {} (:a 1)
-              quote $ &{} (&[] :a 1)
+              quote $ &{} ([] :a 1)
 
         |log-title $ quote
           defn log-title (title)
@@ -85,6 +94,9 @@
 
             log-title "|Testing maps"
             test-maps
+
+            log-title "|Testing map pairs"
+            test-pairs
 
             log-title "|Testing map syntax"
             test-native-map-syntax

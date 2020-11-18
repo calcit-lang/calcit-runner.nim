@@ -152,7 +152,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["foldl",
         ["fn", ["acc", "x"],
           ["append", "acc", ["f", "x"]]],
-        "xs", ["&[]"]]]
+        "xs", ["[]"]]]
   , coreNs)
 
   let codeTake = genCirru(
@@ -243,9 +243,9 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
         ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
-            ["recur", ["&concat", ["&[]", ["first", "x0"], "base"], ["rest", "x0"]],
+            ["recur", ["&concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
                       "&", ["rest", "xs"]],
-            ["recur", ["&[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
+            ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
   , coreNs)
 
   let codeThreadLast = genCirru(
@@ -254,7 +254,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
             ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
-            ["recur", ["&[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
+            ["recur", ["[]", "x0", "base"], "&", ["rest", "xs"]]]]]]
   , coreNs)
 
   let codeCond = genCirru(
@@ -357,7 +357,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeMapIndexed = genCirru(
     [defn, "map-indexed", [f, xs],
       [loop,
-        [[acc, ["&[]"]], [idx, 0], [ys, xs]],
+        [[acc, ["[]"]], [idx, 0], [ys, xs]],
         ["if", ["empty?", ys], acc,
              [recur, [append, acc, [f, idx, [first, ys]]],
                      ["&+", idx, 1],
@@ -372,7 +372,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                   [append, acc, x],
                   acc]],
         xs,
-        ["&[]"]]]
+        ["[]"]]]
   , coreNs)
 
   let codeFilterNot = genCirru(
@@ -383,11 +383,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                   [append, acc, x],
                   acc]],
         xs,
-        ["&[]"]]]
+        ["[]"]]]
   , coreNs)
 
-  let codePairMap = genCirru(
-    [defn, "pair-map", [xs],
+  let codePairsMap = genCirru(
+    [defn, "pairs-map", [xs],
       [foldl, [fn, [acc, pair],
                    ["assert", "|expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
                    [assoc, acc, [first, pair], [last, pair]]],
@@ -462,7 +462,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                      [key, [f, x0]]],
                     [recur, ["if", ["contains?", acc, key],
                         [update, acc, key, ["\\", append, "%", x0]],
-                        [assoc, acc, key, ["&[]", x0]]], [rest, xs]]]]]
+                        [assoc, acc, key, ["[]", x0]]], [rest, xs]]]]]
       ]
   , coreNs)
 
@@ -492,7 +492,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeSectionBy = genCirru(
     [defn, "section-by", [n, xs0],
-      [loop, [[acc, ["&[]"]], [xs, xs0]],
+      [loop, [[acc, ["[]"]], [xs, xs0]],
         ["if", ["&<=", [count, xs], n],
           [append, acc, xs],
           [recur, [append, acc, [take, n, xs]], [drop, n, xs]]]]]
@@ -507,20 +507,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeListList = genCirru(
     [defmacro, "[][]", ["&", xs],
       ["&let",
-        [items, [map, [fn, [x], ["quote-replace", ["&[]", ["~@", x]]]],
+        [items, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]],
                 xs]],
-        ["quote-replace", ["&[]", ["~@", items]]]]]
+        ["quote-replace", ["[]", ["~@", items]]]]]
     , coreNs)
 
   let codeMapSyntax = genCirru(
     [defmacro, "{}", ["&", xs],
-      ["&let", [ys, [map, [fn, [x], ["quote-replace", ["&[]", ["~@", x]]]], xs]],
+      ["&let", [ys, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]], xs]],
         ["quote-replace", ["&{}", ["~@", ys]]]]]
   , coreNs)
 
   let codeFn = genCirru(
     [defmacro, fn, [args, "&", body],
-      ["quote-replace", [defn, "generated-fn", ["~", args], ["~@", body]]]]
+      ["quote-replace", [defn, "f%", ["~", args], ["~@", body]]]]
   , coreNs)
 
   let codeAssertEqual = genCirru(
@@ -596,7 +596,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["assert", "|loop requires symbols in pairs", ["every?", "symbol?", args]],
         ["quote-replace", [apply,
                             [defn, "generated-loop", ["~", args], ["~@", body]],
-                            ["&[]", ["~@", values]]]]]]
+                            ["[]", ["~@", values]]]]]]
   , coreNs)
 
   let codeLet = genCirru(
@@ -624,10 +624,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
               ]]]]]
   , coreNs)
 
-  let codeList = genCirru(
-    [defmacro, "[]", ["&", body],
+  let codeListComma = genCirru(
+    [defmacro, "[,]", ["&", body],
       ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
-        ["quote-replace", ["&[]", ["~@", xs]]]]]
+        ["quote-replace", ["[]", ["~@", xs]]]]]
   , coreNs)
 
   let codeAssert = genCirru(
@@ -653,7 +653,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                             ["if", "beginning?", acc, ["&str-concat", acc, sep]],
                             [first, xs]],
                           [rest, xs], false]]],
-        ["&[]", "|", xs0, true]]]
+        ["[]", "|", xs0, true]]]
   , coreNs)
 
   let codeJoin = genCirru(
@@ -665,7 +665,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                               ["if", "beginning?", acc, [append, acc, sep]],
                               [first, xs]],
                             [rest, xs], false]]],
-        ["&[]", ["&[]"], xs0, true]]]
+        ["[]", ["[]"], xs0, true]]]
   , coreNs)
 
   let codeRepeat = genCirru(
@@ -673,7 +673,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       [apply,
         [fn, [acc, n],
           ["if", ["&<=", n, 0], acc, [recur, [append, acc, x], ["&-", n, 1]]]],
-        ["&[]", ["&[]"], n0]]]
+        ["[]", ["[]"], n0]]]
   , coreNs)
 
   let codeInterleave = genCirru(
@@ -685,7 +685,13 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
               ["->", acc, [append, [first, xs]], [append, [first, ys]]],
               [rest, xs],
               [rest, ys]]]],
-        ["&[]", ["&[]"], xs0, ys0]]]
+        ["[]", ["[]"], xs0, ys0]]]
+  , coreNs)
+
+  let codeMapKv = genCirru(
+    [defn, "map-kv", [f, dict],
+      ["assert", "|expects a map", ["map?", dict]],
+      ["->>", dict, ["to-pairs"], [map, [fn, [pair], [f, [first, pair], [last, pair]]]]]]
   , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
@@ -747,7 +753,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["map-indexed"] = codeMapIndexed
   programCode[coreNs].defs["filter"] = codeFilter
   programCode[coreNs].defs["filter-not"] = codeFilterNot
-  programCode[coreNs].defs["pair-map"] = codePairMap
+  programCode[coreNs].defs["pairs-map"] = codePairsMap
   programCode[coreNs].defs["zipmap"] = codeZipmap
   programCode[coreNs].defs["rand-nth"] = codeRandNth
   programCode[coreNs].defs["some?"] = codeSomeQuestion
@@ -775,7 +781,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["loop"] = codeLoop
   programCode[coreNs].defs["let"] = codeLet
   programCode[coreNs].defs["let->"] = codeLetThread
-  programCode[coreNs].defs["[]"] = codeList
+  programCode[coreNs].defs["[,]"] = codeListComma
   programCode[coreNs].defs["assert"] = codeAssert
   programCode[coreNs].defs["println"] = codePrintln
   programCode[coreNs].defs["echo"] = codePrintln # alias for println
@@ -783,3 +789,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["join"] = codeJoin
   programCode[coreNs].defs["repeat"] = codeRepeat
   programCode[coreNs].defs["interleave"] = codeInterleave
+  programCode[coreNs].defs["map-kv"] = codeMapKv

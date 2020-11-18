@@ -1083,5 +1083,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-float"] = CirruData(kind: crDataProc, procVal: nativeParseFloat)
   programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
   programData[coreNs].defs["set-trace-fn!"] = CirruData(kind: crDataProc, procVal: nativeSetTraceFnBang)
-  programData[coreNs].defs["&[]"] = CirruData(kind: crDataProc, procVal: nativeList)
+  programData[coreNs].defs["[]"] = CirruData(kind: crDataProc, procVal: nativeList)
   programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGenSym)
