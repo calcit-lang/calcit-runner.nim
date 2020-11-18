@@ -386,8 +386,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["[]"]]]
   , coreNs)
 
-  let codePairMap = genCirru(
-    [defn, "pair-map", [xs],
+  let codePairsMap = genCirru(
+    [defn, "pairs-map", [xs],
       [foldl, [fn, [acc, pair],
                    ["assert", "|expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
                    [assoc, acc, [first, pair], [last, pair]]],
@@ -688,6 +688,12 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["[]", ["[]"], xs0, ys0]]]
   , coreNs)
 
+  let codeMapKv = genCirru(
+    [defn, "map-kv", [f, dict],
+      ["assert", "|expects a map", ["map?", dict]],
+      ["->>", dict, ["to-pairs"], [map, [fn, [pair], [f, [first, pair], [last, pair]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -747,7 +753,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["map-indexed"] = codeMapIndexed
   programCode[coreNs].defs["filter"] = codeFilter
   programCode[coreNs].defs["filter-not"] = codeFilterNot
-  programCode[coreNs].defs["pair-map"] = codePairMap
+  programCode[coreNs].defs["pairs-map"] = codePairsMap
   programCode[coreNs].defs["zipmap"] = codeZipmap
   programCode[coreNs].defs["rand-nth"] = codeRandNth
   programCode[coreNs].defs["some?"] = codeSomeQuestion
@@ -783,3 +789,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["join"] = codeJoin
   programCode[coreNs].defs["repeat"] = codeRepeat
   programCode[coreNs].defs["interleave"] = codeInterleave
+  programCode[coreNs].defs["map-kv"] = codeMapKv
