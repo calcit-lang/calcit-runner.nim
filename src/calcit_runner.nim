@@ -110,8 +110,11 @@ proc runEventListener*(event: JsonNode) =
   if programCode.hasKey(ns).not or programCode[ns].defs.hasKey(def).not:
     echo "Warning: " & ns & "/" & def & "does not exist"
     return
+  try:
+    discard runCode(ns, def, event.toCirruData)
 
-  discard runCode(ns, def, event.toCirruData)
+  except ValueError as e:
+    coloredEcho fgRed, "Failed to handle event: ", e.msg
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
