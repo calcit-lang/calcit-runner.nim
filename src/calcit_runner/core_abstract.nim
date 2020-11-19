@@ -543,8 +543,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeAssocIn = genCirru(
     [defn, "assoc-in", [data, path, v],
       ["if", ["empty?", path], v,
-        ["let", [[p0, [first, path]]],
-          [assoc, data, p0, ["assoc-in", [get, data, p0], [rest, path], v]]]]]
+        ["let", [
+            [p0, [first, path]],
+            [d, [either, data, ["&{}"]]]
+          ],
+          [assoc, d, p0, ["assoc-in", [get, d, p0], [rest, path], v]]]]]
   , coreNs)
 
   let codeUpdateIn = genCirru(

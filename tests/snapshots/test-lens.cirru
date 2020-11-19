@@ -60,6 +60,10 @@
                 [] :a 1
               , 2
 
+            assert=
+              assoc-in nil ([] :a :b :c) 10
+              {} $ :a $ {} $ :b $ {} $ :c 10
+
         |main! $ quote
           defn main! ()
 
