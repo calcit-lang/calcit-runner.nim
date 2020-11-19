@@ -698,6 +698,27 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defmacro, "def", [name, x], x]
   , coreNs)
 
+  let codeAnd = genCirru(
+    [defn, "and", ["&", xs0],
+      ["if", ["empty?", xs0], false,
+        [apply,
+          [fn, [xs],
+            ["if", ["empty?", xs], true,
+              ["&let", [x0, [first, xs]],
+                ["if", x0, [recur, [rest, xs]], false]]]],
+          ["[]", xs0]]]]
+  , coreNs)
+
+  let codeOr = genCirru(
+    [defn, "or", ["&", xs0],
+      [apply,
+        [fn, [xs],
+          ["if", ["empty?", xs], false,
+            ["&let", [x0, [first, xs]],
+              ["if", x0, true, [recur, [rest, xs]]]]]],
+        ["[]", xs0]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -795,3 +816,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["map-kv"] = codeMapKv
   programCode[coreNs].defs["either"] = codeEither
   programCode[coreNs].defs["def"] = codeDef
+  programCode[coreNs].defs["and"] = codeAnd
+  programCode[coreNs].defs["or"] = codeOr
