@@ -56,9 +56,9 @@ proc runCode(ns: string, def: string, data: CirruData, dropArg: bool = false): C
     return ret
 
   except CirruEvalError as e:
+    showStack()
     echo ""
     coloredEcho fgRed, e.msg, " ", $e.code
-    showStack()
     echo ""
     raise e
 

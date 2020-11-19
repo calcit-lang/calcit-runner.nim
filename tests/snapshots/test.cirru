@@ -33,6 +33,17 @@
 
             assert= 2 (def x 2)
 
+            assert= false $ and
+            assert= false $ or
+
+            assert= false $ and true true false
+            assert= false $ and true false true
+            assert= true $ and true true true
+
+            assert= false $ or false false false
+            assert= true $ or false true false
+            assert= true $ or false false true
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"

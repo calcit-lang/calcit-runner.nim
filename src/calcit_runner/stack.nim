@@ -36,8 +36,8 @@ proc popDefStack*(): void =
   defStack.remove defStack.tail
 
 proc showStack*(): void =
-  let errorStack = reversed(defStack)
-  for item in errorStack:
+  # let errorStack = reversed(defStack)
+  for item in defStack:
     echo item.ns, "/", item.def
     dimEcho $item.code
     dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
