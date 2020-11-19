@@ -272,16 +272,24 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ]
   , coreNs)
 
-  let codeCase = genCirru(
-    ["defmacro", "case", ["item", "pattern", "&", "else"],
+  let codeNativeCase = genCirru(
+    [defmacro, "&case", [item, pattern, "&", others],
       ["assert", "|pattern is a pair",
-        ["&and", ["list?", "pattern"], ["&=", "2", ["count", "pattern"]]]],
-      ["let", [["expr", ["first", "pattern"]],
-               ["branch", ["last", "pattern"]]],
+        ["&and", ["list?", pattern], ["&=", 2, [count, pattern]]]],
+      ["let", [[x, [first, pattern]],
+               [branch, [last, pattern]]],
         ["quote-replace",
-          ["if", ["&=", ["~", "item"], ["~", "expr"]], ["~", "branch"],
-            ["~", ["if", ["empty?", "else"], "nil",
-                    ["quote-replace", ["case", ["~", "item"], ["~@", "else"]]]]]]]]]
+          ["if", ["&=", ["~", item], ["~", x]], ["~", branch],
+            ["~", ["if", ["empty?", others], "nil",
+                    ["quote-replace", ["&case", ["~", item], ["~@", others]]]]]]]]]
+  , coreNs)
+
+  let codeCase = genCirru(
+    [defmacro, "case", [item, "&", patterns],
+      ["&let", [v, [gensym, "|v"]],
+        ["quote-replace",
+          ["&let", [["~", v], ["~", item]],
+            ["&case", ["~", v], ["~@", patterns]]]]]]
   , coreNs)
 
   let codeGetIn = genCirru(
@@ -766,6 +774,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["->"] = codeThreadFirst
   programCode[coreNs].defs["->>"] = codeThreadLast
   programCode[coreNs].defs["cond"] = codeCond
+  programCode[coreNs].defs["&case"] = codeNativeCase
   programCode[coreNs].defs["case"] = codeCase
   programCode[coreNs].defs["get-in"] = codeGetIn
   programCode[coreNs].defs["&max"] = codeNativeMax

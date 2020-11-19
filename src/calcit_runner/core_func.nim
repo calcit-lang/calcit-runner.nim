@@ -984,7 +984,7 @@ proc nativeSetTraceFnBang(args: seq[CirruData], interpret: FnInterpret, scope: C
 proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
 
-proc nativeGenSym(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   genSymIndex = genSymIndex + 1
   case args.len
   of 0:
@@ -993,13 +993,18 @@ proc nativeGenSym(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     let item = args[0]
     case item.kind
     of crDataSymbol:
-      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.symbolVal & "__" & $genSymIndex & "__auto__")
+      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.symbolVal & "__" & $genSymIndex)
     of crDataString:
-      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.stringVal & "__" & $genSymIndex & "__auto__")
+      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.stringVal & "__" & $genSymIndex)
     else:
       raiseEvalError("gensym expects a symbol or a string", args)
   else:
     raiseEvalError("gensym expects 0~1 argument", args)
+
+# TODO this should only be used for testing macros internally
+proc nativeResetGensymIndexBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  genSymIndex = 0
+  CirruData(kind: crDataNil)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1084,4 +1089,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
   programData[coreNs].defs["set-trace-fn!"] = CirruData(kind: crDataProc, procVal: nativeSetTraceFnBang)
   programData[coreNs].defs["[]"] = CirruData(kind: crDataProc, procVal: nativeList)
-  programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGenSym)
+  programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGensym)
+  programData[coreNs].defs["&reset-gensym-index!"] = CirruData(kind: crDataProc, procVal: nativeResetGensymIndexBang)
