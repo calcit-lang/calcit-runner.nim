@@ -31,6 +31,9 @@
             assert= 2 (either 2 1)
             assert= nil (either nil nil)
 
+            assert= 2 $ either 2
+              raise "|should not be called"
+
             assert= 2 (def x 2)
 
             assert= false $ and
