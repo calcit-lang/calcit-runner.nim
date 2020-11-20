@@ -69,6 +69,13 @@ proc runCode(ns: string, def: string, data: CirruData, dropArg: bool = false): C
     echo ""
     raise e
 
+  except ValueError as e:
+    echo ""
+    coloredEcho fgRed, e.msg
+    showStack()
+    echo ""
+    raise e
+
   except Defect as e:
     coloredEcho fgRed, "Failed to run command"
     echo e.msg

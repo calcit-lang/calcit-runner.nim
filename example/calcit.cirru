@@ -780,6 +780,10 @@
                                 :data $ {}
                                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812494579) (:text |[])
                                   |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812498334) (:text |:touch-down)
+                          |yj $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1605858300246)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605858302255) (:text |:action)
+                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605858302920) (:text |:demo)
           |try-canvas $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604160750344)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604160750344) (:text |defn)

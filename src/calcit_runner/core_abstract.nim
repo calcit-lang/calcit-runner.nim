@@ -701,7 +701,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   let codeEither = genCirru(
-    ["defn", "either", [x, y], ["if", ["nil?", x], y, x]]
+    ["defmacro", "either", [x, y],
+      ["quote-replace", ["if", ["nil?", ["~", x]], ["~", y], ["~", x]]]]
   , coreNs)
 
   # to be compatible in Calcit Editor, name is useless here
