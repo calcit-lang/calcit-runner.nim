@@ -42,7 +42,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData
 
 proc nativeEval(item: CirruData, interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var code = interpret(item, scope, ns)
-  code = preprocess(item, toHashset[string](@[]), ns)
+  code = preprocess(item, toHashset[string](scope.keys), ns)
   if not checkExprStructure(code):
     raiseEvalError("Expected cirru expr in eval(...)", code)
   dimEcho("eval: ", $code)
@@ -197,7 +197,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
 
     if localDefs.contains(code.symbolVal):
       return code
-    elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@":
+    elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@" or code.symbolVal == "eval":
       return code
     else:
       var sym = code
@@ -290,7 +290,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
           return processNativeLet(code, localDefs, preprocessHelper, ns)
         of "if", "assert", "do":
           return processAll(code, localDefs, preprocessHelper, ns)
-        of "quote":
+        of "quote", "eval":
           return processQuote(code, localDefs, preprocessHelper, ns)
         of "defatom":
           return processDefAtom(code, localDefs, preprocessHelper, ns)
@@ -299,8 +299,13 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
 
         return code
       else:
-        return code
+        # could be dynamically passed functions
+        var xs = initTernaryTreeList[CirruData](@[originalValue])
+        for child in code.listVal.rest:
+          xs = xs.append preprocess(child, localDefs, ns)
+        return CirruData(kind: crDataList, listVal: xs)
   else:
+    # TODO supposed to be literals
     return code
 
 proc getEvaluatedByPath*(ns: string, def: string, scope: CirruDataScope): CirruData =

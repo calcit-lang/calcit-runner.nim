@@ -116,6 +116,8 @@
               macroexpand-all $ quote $ \ + x % %2
               quote $ defn f% (% %2) (+ x % %2)
 
+            &reset-gensym-index!
+
             assert=
               macroexpand-all $ quote
                 case (+ 1 2)
@@ -123,9 +125,10 @@
                   2 |two
                   3 |three
               quote
-                if (&= (+ 1 2) 1) |one
-                  if (&= (+ 1 2) 2) |two
-                    if (&= (+ 1 2) 3) |three nil
+                &let (v__1 (+ 1 2))
+                  if (&= v__1 1) |one
+                    if (&= v__1 2) |two
+                      if (&= v__1 3) |three nil
             assert=
               macroexpand $ quote
                 case (+ 1 2)
@@ -133,8 +136,20 @@
                   2 |two
                   3 |three
               quote
-                if (&= (+ 1 2) 1) |one
-                  case (+ 1 2)
+                &let (v__2 (+ 1 2))
+                  &case v__2
+                    1 |one
+                    2 |two
+                    3 |three
+            assert=
+              macroexpand $ quote
+                &case v__2
+                  1 |one
+                  2 |two
+                  3 |three
+              quote
+                if (&= v__2 1) |one
+                  &case v__2
                     2 |two
                     3 |three
 
@@ -148,9 +163,14 @@
 
         |test-gensym $ quote
           fn ()
-            echo $ gensym
-            echo $ gensym 'a
-            echo $ gensym |a
+            &reset-gensym-index!
+            assert= (gensym) 'G__1
+            assert=
+              gensym 'a
+              , 'a__2
+            assert=
+              gensym |a
+              , 'a__3
 
         |main! $ quote
           defn main! ()
