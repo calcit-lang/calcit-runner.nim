@@ -1041,6 +1041,9 @@ proc nativeFormatTime(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   if args[1].kind != crDataString: raiseEvalError("format-time use a string format", args)
   CirruData(kind: crDataString, stringVal: args[0].numberVal.fromUnixFloat.format(args[1].stringVal))
 
+proc nativeNowBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataNumber, numberVal: now().toTime.toUnixFloat)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1129,3 +1132,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["generate-id!"] = CirruData(kind: crDataProc, procVal: nativeGenerateIdBang)
   programData[coreNs].defs["parse-time"] = CirruData(kind: crDataProc, procVal: nativeParseTime)
   programData[coreNs].defs["format-time"] = CirruData(kind: crDataProc, procVal: nativeFormatTime)
+  programData[coreNs].defs["now!"] = CirruData(kind: crDataProc, procVal: nativeNowBang)
