@@ -9,6 +9,7 @@ import strutils
 import options
 import sets
 import random
+import nanoid
 
 import ternary_tree
 import cirru_edn
@@ -1001,10 +1002,28 @@ proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   else:
     raiseEvalError("gensym expects 0~1 argument", args)
 
-# TODO this should only be used for testing macros internally
+# this should only be used for testing macros internally
 proc nativeResetGensymIndexBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   genSymIndex = 0
   CirruData(kind: crDataNil)
+
+# TODO nanoid has outdated file structure, should change in future
+proc nativeGenerateIdBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len == 0:
+    return CirruData(kind: crDataString, stringVal: generate())
+  elif args.len == 1:
+    if args[0].kind != crDataNumber:
+      raiseEvalError("expects a number as length", args)
+    let alphabet = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return CirruData(kind: crDataString, stringVal: generate(alphabet, args[0].numberVal.int))
+  elif args.len == 2:
+    if args[0].kind != crDataNumber:
+      raiseEvalError("expects a number as length", args)
+    if args[1].kind != crDataString:
+      raiseEvalError("expects a string for alphabet", args)
+    return CirruData(kind: crDataString, stringVal: generate(args[1].stringVal, args[0].numberVal.int))
+  else:
+    raiseEvalError("nanoid! takes 0~2 arguments", args)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1091,3 +1110,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["[]"] = CirruData(kind: crDataProc, procVal: nativeList)
   programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGensym)
   programData[coreNs].defs["&reset-gensym-index!"] = CirruData(kind: crDataProc, procVal: nativeResetGensymIndexBang)
+  programData[coreNs].defs["generate-id!"] = CirruData(kind: crDataProc, procVal: nativeGenerateIdBang)
