@@ -52,6 +52,14 @@
             assert= true $ or false true false
             assert= true $ or false false true
 
+        |test-time $ quote
+          fn ()
+            assert= 1605024000 $ parse-time |2020-11-11
+            assert= "|2020-11-11 00:01:40 000000"
+              format-time 1605024100 "|yyyy-MM-dd HH:mm:ss ffffff"
+            assert= "|2020-11-11 00:01:40 123399"
+              format-time 1605024100.1234 "|yyyy-MM-dd HH:mm:ss ffffff"
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"
@@ -62,6 +70,9 @@
 
             log-title "|Testing id"
             test-id
+
+            log-title "|Testing time"
+            test-time
 
             do true
 

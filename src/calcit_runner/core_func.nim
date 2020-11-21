@@ -10,6 +10,7 @@ import options
 import sets
 import random
 import nanoid
+import times
 
 import ternary_tree
 import cirru_edn
@@ -1025,6 +1026,21 @@ proc nativeGenerateIdBang(args: seq[CirruData], interpret: FnInterpret, scope: C
   else:
     raiseEvalError("nanoid! takes 0~2 arguments", args)
 
+proc nativeParseTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 1: raiseEvalError("parse-time requires string", args)
+  if args[0].kind != crDataString: raiseEvalError("parse-time requires string", args)
+  var format = "yyyy-MM-dd"
+  if args.len >= 2:
+    if args[1].kind != crDataString: raiseEvalError("parse-time requires format in string", args)
+    format = args[1].stringVal
+  CirruData(kind: crDataNumber, numberVal: parse(args[0].stringVal, format.initTimeFormat).toTime.toUnixFloat)
+
+proc nativeFormatTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("format-time expects 2 arguments", args)
+  if args[0].kind != crDataNumber: raiseEvalError("format-time use number as time", args)
+  if args[1].kind != crDataString: raiseEvalError("format-time use a string format", args)
+  CirruData(kind: crDataString, stringVal: args[0].numberVal.fromUnixFloat.format(args[1].stringVal))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1111,3 +1127,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGensym)
   programData[coreNs].defs["&reset-gensym-index!"] = CirruData(kind: crDataProc, procVal: nativeResetGensymIndexBang)
   programData[coreNs].defs["generate-id!"] = CirruData(kind: crDataProc, procVal: nativeGenerateIdBang)
+  programData[coreNs].defs["parse-time"] = CirruData(kind: crDataProc, procVal: nativeParseTime)
+  programData[coreNs].defs["format-time"] = CirruData(kind: crDataProc, procVal: nativeFormatTime)
