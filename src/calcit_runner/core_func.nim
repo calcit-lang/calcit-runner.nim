@@ -11,6 +11,7 @@ import sets
 import random
 import nanoid
 import times
+import algorithm
 
 import ternary_tree
 import cirru_edn
@@ -1044,6 +1045,25 @@ proc nativeFormatTime(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
 proc nativeNowBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   CirruData(kind: crDataNumber, numberVal: now().toTime.toUnixFloat)
 
+proc nativeFormatNumber(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("format-number expects 2 arguments", args)
+  if args[0].kind != crDataNumber: raiseEvalError("format-number expects number", args)
+  if args[1].kind != crDataNumber: raiseEvalError("format-number expects length", args)
+  CirruData(kind: crDataString, stringVal: args[0].numberVal.formatBiggestFloat(ffDecimal, args[1].numberVal.int))
+
+proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("sort expects 2 arguments", args)
+  if args[0].kind != crDataFn: raiseEvalError("sort expects a function", args)
+  if args[1].kind != crDataList: raiseEvalError("sort expects a list", args)
+  var xs = args[1].listVal.toSeq()
+  xs.sort(proc(a, b: CirruData): int =
+    let ret = evaluteFnData(args[0], @[a, b], interpret, ns)
+    if ret.kind != crDataNumber: raiseEvalError("expects a number returned as comparator", ret)
+    echo "result:", a, " ", b, " ", ret
+    return ret.numberVal.int
+  )
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1133,3 +1153,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["parse-time"] = CirruData(kind: crDataProc, procVal: nativeParseTime)
   programData[coreNs].defs["format-time"] = CirruData(kind: crDataProc, procVal: nativeFormatTime)
   programData[coreNs].defs["now!"] = CirruData(kind: crDataProc, procVal: nativeNowBang)
+  programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
+  programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)
