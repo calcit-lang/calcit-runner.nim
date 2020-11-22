@@ -17,6 +17,7 @@ var evalOnceCode: string
 
 registerCoreProc("init-canvas", nativeInitCanvas)
 registerCoreProc("draw-canvas", nativeDrawCanvas)
+registerCoreProc("draw-error-message", nativeDrawErrorMessage)
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
@@ -62,10 +63,6 @@ while true:
   case cliArgs.kind
   of cmdEnd: break
   of cmdShortOption:
-    if cliArgs.key == "1":
-      if cliArgs.val == "" or cliArgs.val == "true":
-        runOnce = true
-        dimEcho "Runner: watching mode disabled."
     if cliArgs.key == "e":
       evalOnce = true
       evalOnceCode = cliArgs.val
