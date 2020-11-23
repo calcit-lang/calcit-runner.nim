@@ -64,6 +64,8 @@
           defn reload! () (println "\"Reloaded..." $ inc10 4) (; main!) (draw/try-redraw-canvas) (; reload-atom)
         |var-fn $ quote
           defn var-fn (a & xs) (echo a xs)
+        |on-error $ quote
+          defn on-error (message) (draw-error-message message)
         |try-func $ quote
           defn try-func () (echo "\"Running demo" $ demo 1 4) (show-info 1) (lib/show-info 2)
             println $ pr-str 1 "\"2" "\"3 4" true ({} $ :a "\"1")

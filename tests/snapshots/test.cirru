@@ -21,6 +21,11 @@
               :a nil
               , nil
 
+        |test-id $ quote
+          fn ()
+            assert= 9 $ count $ generate-id! 9
+            assert= |aaaaa $ generate-id! 5 |a
+
         |test-detects $ quote
           defn test-detects ()
             assert "|function" $ fn? $ fn () 1
@@ -47,6 +52,15 @@
             assert= true $ or false true false
             assert= true $ or false false true
 
+        |test-time $ quote
+          fn ()
+            assert= 1605024000 $ parse-time |2020-11-11
+            assert= "|2020-11-11 00:01:40 000000"
+              format-time 1605024100 "|yyyy-MM-dd HH:mm:ss ffffff"
+            assert= "|2020-11-11 00:01:40 123399"
+              format-time 1605024100.1234 "|yyyy-MM-dd HH:mm:ss ffffff"
+            echo $ format-time (now!) "|yyyy-MM-dd HH:mm:ss ffffff"
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"
@@ -54,6 +68,13 @@
 
             log-title "|Testing detects"
             test-detects
+
+            log-title "|Testing id"
+            test-id
+
+            log-title "|Testing time"
+            ; "|skipped since CI uses a different timezone"
+            ; test-time
 
             do true
 

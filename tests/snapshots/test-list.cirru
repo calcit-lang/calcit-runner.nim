@@ -209,6 +209,14 @@
               interleave ([] :a :b :c :d) ([] 1 2 3 4 5)
               [] :a 1 :b 2 :c 3 :d 4
 
+        |test-sort $ quote
+          fn ()
+            assert=
+              sort
+                \ &- % %2
+                [] 4 3 2 1
+              [] 1 2 3 4
+
         |log-title $ quote
           defn log-title (title)
             echo
@@ -238,6 +246,9 @@
 
             log-title "|Testing repeat"
             test-repeat
+
+            log-title "|Testing sort"
+            test-sort
 
             do true
 

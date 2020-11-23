@@ -9,6 +9,9 @@ import strutils
 import options
 import sets
 import random
+import nanoid
+import times
+import algorithm
 
 import ternary_tree
 import cirru_edn
@@ -1001,10 +1004,65 @@ proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   else:
     raiseEvalError("gensym expects 0~1 argument", args)
 
-# TODO this should only be used for testing macros internally
+# this should only be used for testing macros internally
 proc nativeResetGensymIndexBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   genSymIndex = 0
   CirruData(kind: crDataNil)
+
+# TODO nanoid has outdated file structure, should change in future
+proc nativeGenerateIdBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len == 0:
+    return CirruData(kind: crDataString, stringVal: generate())
+  elif args.len == 1:
+    if args[0].kind != crDataNumber:
+      raiseEvalError("expects a number as length", args)
+    let alphabet = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return CirruData(kind: crDataString, stringVal: generate(alphabet, args[0].numberVal.int))
+  elif args.len == 2:
+    if args[0].kind != crDataNumber:
+      raiseEvalError("expects a number as length", args)
+    if args[1].kind != crDataString:
+      raiseEvalError("expects a string for alphabet", args)
+    return CirruData(kind: crDataString, stringVal: generate(args[1].stringVal, args[0].numberVal.int))
+  else:
+    raiseEvalError("nanoid! takes 0~2 arguments", args)
+
+proc nativeParseTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 1: raiseEvalError("parse-time requires string", args)
+  if args[0].kind != crDataString: raiseEvalError("parse-time requires string", args)
+  var format = "yyyy-MM-dd"
+  if args.len >= 2:
+    if args[1].kind != crDataString: raiseEvalError("parse-time requires format in string", args)
+    format = args[1].stringVal
+  CirruData(kind: crDataNumber, numberVal: parse(args[0].stringVal, format.initTimeFormat).toTime.toUnixFloat)
+
+proc nativeFormatTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("format-time expects 2 arguments", args)
+  if args[0].kind != crDataNumber: raiseEvalError("format-time use number as time", args)
+  if args[1].kind != crDataString: raiseEvalError("format-time use a string format", args)
+  CirruData(kind: crDataString, stringVal: args[0].numberVal.fromUnixFloat.format(args[1].stringVal))
+
+proc nativeNowBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataNumber, numberVal: now().toTime.toUnixFloat)
+
+proc nativeFormatNumber(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("format-number expects 2 arguments", args)
+  if args[0].kind != crDataNumber: raiseEvalError("format-number expects number", args)
+  if args[1].kind != crDataNumber: raiseEvalError("format-number expects length", args)
+  CirruData(kind: crDataString, stringVal: args[0].numberVal.formatBiggestFloat(ffDecimal, args[1].numberVal.int))
+
+proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("sort expects 2 arguments", args)
+  if args[0].kind != crDataFn: raiseEvalError("sort expects a function", args)
+  if args[1].kind != crDataList: raiseEvalError("sort expects a list", args)
+  var xs = args[1].listVal.toSeq()
+  xs.sort(proc(a, b: CirruData): int =
+    let ret = evaluteFnData(args[0], @[a, b], interpret, ns)
+    if ret.kind != crDataNumber: raiseEvalError("expects a number returned as comparator", ret)
+    echo "result:", a, " ", b, " ", ret
+    return ret.numberVal.int
+  )
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1091,3 +1149,9 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["[]"] = CirruData(kind: crDataProc, procVal: nativeList)
   programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGensym)
   programData[coreNs].defs["&reset-gensym-index!"] = CirruData(kind: crDataProc, procVal: nativeResetGensymIndexBang)
+  programData[coreNs].defs["generate-id!"] = CirruData(kind: crDataProc, procVal: nativeGenerateIdBang)
+  programData[coreNs].defs["parse-time"] = CirruData(kind: crDataProc, procVal: nativeParseTime)
+  programData[coreNs].defs["format-time"] = CirruData(kind: crDataProc, procVal: nativeFormatTime)
+  programData[coreNs].defs["now!"] = CirruData(kind: crDataProc, procVal: nativeNowBang)
+  programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
+  programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)

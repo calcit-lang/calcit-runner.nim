@@ -35,43 +35,51 @@ var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/relo
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
 
-proc runCode(ns: string, def: string, data: CirruData, dropArg: bool = false): CirruData =
+proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): CirruData =
   let scope = CirruDataScope()
+  preprocessSymbolByPath(ns, def)
+  let entry = getEvaluatedByPath(ns, def, scope)
 
+  if entry.kind != crDataFn:
+    raise newException(ValueError, "expects a function at " & ns & "/" & def)
+
+  let mainCode = programCode[ns].defs[def]
+  defStack = initDoublyLinkedList[StackInfo]()
+  pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
+
+  let args = if dropArg: @[] else: @[data]
+  let ret = evaluteFnData(entry, args, interpret, ns)
+  popDefStack()
+  return ret
+
+proc displayErrorMessage(message: string) =
+  coloredEcho fgRed, message
+
+  let ns = codeConfigs.initFn.split('/')[0]
+  let def = "on-error"
+  discard evaluateDefCode(ns, def, CirruData(kind: crDataString, stringVal: message), false)
+
+proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
   try:
-    preprocessSymbolByPath(ns, def)
-    let entry = getEvaluatedByPath(ns, def, scope)
-
-    if entry.kind != crDataFn:
-      raise newException(ValueError, "expects a function at " & ns & "/" & def)
-
-    let mainCode = programCode[ns].defs[def]
-    defStack = initDoublyLinkedList[StackInfo]()
-    pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
-
-    let args = if dropArg: @[] else: @[data]
-    let ret = evaluteFnData(entry, args, interpret, ns)
-    popDefStack()
-
-    return ret
+    return evaluateDefCode(ns, def, argData, dropArg)
 
   except CirruEvalError as e:
     showStack()
     echo ""
-    coloredEcho fgRed, e.msg, " ", $e.code
+    displayErrorMessage(e.msg & " " & $e.code)
     echo ""
     raise e
 
   except CirruCoreError as e:
     echo ""
-    coloredEcho fgRed, e.msg, " ", $e.data
+    displayErrorMessage(e.msg & " " & $e.data)
     showStack()
     echo ""
     raise e
 
   except ValueError as e:
     echo ""
-    coloredEcho fgRed, e.msg
+    displayErrorMessage(e.msg)
     showStack()
     echo ""
     raise e
@@ -148,10 +156,6 @@ proc handleFileChange*(snapshotFile: string, incrementFile: string): void =
 
   except CirruParseError as e:
     coloredEcho fgRed, "\nError: failed to parse"
-    echo e.msg
-
-  except CirruCommandError as e:
-    coloredEcho fgRed, "Failed to run command"
     echo e.msg
 
 proc evalSnippet*(code: string): CirruData =

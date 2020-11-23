@@ -1,7 +1,8 @@
 
-import json_paint
+import json
 import options
 
+import json_paint
 import ternary_tree
 
 import ./types
@@ -29,3 +30,16 @@ proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   renderCanvas(data.toJson)
 
   return CirruData(kind: crDataBool, boolVal: true)
+
+proc nativeDrawErrorMessage*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 1 or args[0].kind != crDataString: raiseEvalError("Expects a string message", args)
+  renderCanvas(%* {
+    "type": "text",
+    "text": args[0].stringVal,
+    "align": "left",
+    "color": [0, 90, 60],
+    "font-size": 16,
+    "x": 20,
+    "y": 20,
+  })
+  return CirruData(kind: crDataNil)

@@ -23,8 +23,6 @@ proc loadKeyword*(content: string): RefKeyword =
 
   return keywordRegistry[content]
 
-type CirruCommandError* = ValueError
-
 type ImportKind* = enum
   importNs, importDef
 type ImportInfo* = object
