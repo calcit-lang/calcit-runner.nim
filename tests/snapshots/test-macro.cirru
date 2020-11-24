@@ -172,6 +172,22 @@
               gensym |a
               , 'a__3
 
+        |test-with-log $ quote
+          fn ()
+            log-title "|Testing with-log"
+
+            &reset-gensym-index!
+
+            assert=
+              macroexpand $ quote $ with-log $ + 1 2
+              quote $ &let
+                v__1 $ + 1 2
+                echo (quote $ + 1 2) |=> v__1
+                , v__1
+            assert=
+              with-log $ + 1 2
+              , 3
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -191,6 +207,8 @@
 
             log-title "|Testing gensym"
             test-gensym
+
+            test-with-log
 
             do true
 

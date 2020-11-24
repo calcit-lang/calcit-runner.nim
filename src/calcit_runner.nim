@@ -57,7 +57,8 @@ proc displayErrorMessage(message: string) =
 
   let ns = codeConfigs.initFn.split('/')[0]
   let def = "on-error"
-  discard evaluateDefCode(ns, def, CirruData(kind: crDataString, stringVal: message), false)
+  if programCode[ns].defs.hasKey(def):
+    discard evaluateDefCode(ns, def, CirruData(kind: crDataString, stringVal: message), false)
 
 proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
   try:

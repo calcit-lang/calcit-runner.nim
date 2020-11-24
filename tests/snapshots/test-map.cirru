@@ -77,7 +77,7 @@
                 {} (:a 1) (:b 2)
               [][] (:a 2) (:b 3)
 
-        |test-native-map-syntax $  quote
+        |test-native-map-syntax $ quote
           defn test-native-map-syntax ()
             assert "|internally {} is a macro" $ =
               macroexpand $ quote $ {} (:a 1)
@@ -88,6 +88,16 @@
             echo
             echo title
             echo
+
+        |test-map-comma $ quote
+          fn ()
+            log-title "|Testing {,}"
+            assert=
+              macroexpand $ quote $ {,} :a 1 , :b 2 , :c 3
+              quote $ pairs-map $ section-by 2 $ [] :a 1 :b 2 :c 3
+            assert=
+              {,} :a 1 , :b 2 , :c 3
+              {} (:a 1) (:b 2) (:c 3)
 
         |main! $ quote
           defn main! ()
@@ -100,6 +110,8 @@
 
             log-title "|Testing map syntax"
             test-native-map-syntax
+
+            test-map-comma
 
             do true
 
