@@ -111,6 +111,7 @@ type CodeConfigs* = object
   pkg*: string
   initFn*: string
   reloadFn*: string
+  modules*: seq[string]
 
 type FileSource* = object
   ns*: CirruData

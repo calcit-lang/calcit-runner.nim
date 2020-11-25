@@ -57,7 +57,7 @@ proc displayErrorMessage(message: string) =
 
   let ns = codeConfigs.initFn.split('/')[0]
   let def = "on-error"
-  if programCode[ns].defs.hasKey(def):
+  if programCode.hasKey(ns) and programCode[ns].defs.hasKey(def):
     discard evaluateDefCode(ns, def, CirruData(kind: crDataString, stringVal: message), false)
 
 proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
@@ -89,9 +89,22 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
     coloredEcho fgRed, "Failed to run command"
     echo e.msg
 
+# only load code of modules, ignore recursive deps
+proc loadModules(modulePath: string) =
+  echo "Loading modules from path: ", modulePath
+  let snapshotInfo = loadSnapshot(modulePath)
+
+  for fileNs, file in snapshotInfo.files:
+    programCode[fileNs] = file
+
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
   let snapshotInfo = loadSnapshot(snapshotFile)
-  programCode = snapshotInfo.files
+
+  for modulePath in snapshotInfo.configs.modules:
+    loadModules(modulePath)
+
+  for fileNs, file in snapshotInfo.files:
+    programCode[fileNs] = file
   codeConfigs = snapshotInfo.configs
 
   programData.clear
@@ -131,11 +144,14 @@ proc runEventListener*(event: JsonNode) =
 
   except ValueError as e:
     coloredEcho fgRed, "Failed to handle event: ", e.msg
+    raise e
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
-  programCode = loadSnapshot(snapshotFile).files
-  clearProgramDefs(programData)
+  let snapshotInfo = loadSnapshot(snapshotFile)
+  for fileNs, file in snapshotInfo.files:
+    programCode[fileNs] = file
+  clearProgramDefs(programData) # TODO tell different ns
   programCode[coreNs] = previousCoreSource
   let pieces = codeConfigs.reloadFn.split('/')
 
