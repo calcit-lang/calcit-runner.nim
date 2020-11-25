@@ -731,6 +731,21 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["[]", xs0]]]
   , coreNs)
 
+  let codeWithLog = genCirru(
+    [defmacro, "with-log", [x],
+      ["&let", [v, [gensym, "|v"]],
+        ["quote-replace",
+          ["&let", [["~", v], ["~", x]],
+            ["echo", [quote, ["~", x]], "|=>", ["~", v]],
+            ["~", v]]]]]
+  , coreNs)
+
+  let codeMapComma = genCirru(
+    [defmacro, "{,}", ["&", body],
+      ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
+        ["quote-replace", ["pairs-map", ["section-by", 2, ["[]", ["~@", xs]]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -831,3 +846,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["def"] = codeDef
   programCode[coreNs].defs["and"] = codeAnd
   programCode[coreNs].defs["or"] = codeOr
+  programCode[coreNs].defs["with-log"] = codeWithLog
+  programCode[coreNs].defs["{,}"] = codeMapComma
