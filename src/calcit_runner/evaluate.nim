@@ -176,6 +176,8 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     programData[ns] = newFile
 
   if not programData[ns].defs.hasKey(def):
+    if programCode.hasKey(ns).not:
+      raise newException(ValueError, "No code for such ns: " & ns)
     if programCode[ns].defs.hasKey(def).not:
       raise newException(ValueError, "No such definition: " & def)
     var code = programCode[ns].defs[def]

@@ -70,6 +70,17 @@ proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
   let package = initialData.get(crEdn("package", true))
   if package.kind != crEdnString:
     raise newException(ValueError, "expects a string")
+
+  if configs.contains(crEdn("modules", true)):
+    let modulesList = configs.get(crEdn("modules", true))
+    if modulesList.kind != crEdnVector:
+      raise newException(ValueError, "expects a vector")
+
+    for item in modulesList.vectorVal:
+      if item.kind != crEdnString:
+        raise newException(ValueError, "expects string")
+      codeConfigs.modules.add item.stringVal
+
   codeConfigs.pkg = package.stringVal
 
   return codeConfigs
