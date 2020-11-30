@@ -14,6 +14,7 @@ Dependent modules:
 - [Cirru EDN](https://github.com/Cirru/cirru-edn.nim) for `compact.cirru` file parsing.
 - [Ternary Tree](https://github.com/Cirru/ternary-tree) for persistent list and map structure.
 - [JSON Paint](https://github.com/Quamolit/json-paint.nim) for drawing shapes with canvas.
+- [Dual Balanced Ternary](https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim).
 
 A `compact.cirru` file can be:
 

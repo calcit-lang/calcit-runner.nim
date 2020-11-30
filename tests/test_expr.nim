@@ -42,3 +42,6 @@ test "String tests":
 
 test "JSON tests":
   check (runProgram("tests/snapshots/test-json.cirru") == crData(true))
+
+test "Ternary tests":
+  check (runProgram("tests/snapshots/test-ternary.cirru") == crData(true))

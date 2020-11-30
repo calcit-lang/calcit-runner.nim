@@ -13,6 +13,7 @@ import strformat
 import cirru_parser
 import cirru_edn
 import ternary_tree
+import dual_balanced_ternary
 
 import ./types
 import ./errors
@@ -152,6 +153,8 @@ proc parseLiteral*(token: string, ns: string): CirruData =
 
   elif match(token, re"-?\d+(\.\d+)?"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
+  elif match(token, re"&\d+(\.\d+)?") or match(token, re"&\.\d+"):
+    return CirruData(kind: crDataTernary, ternaryVal: parseTernary(token))
   elif token == "true":
     return CirruData(kind: crDataBool, boolVal: true)
   elif token == "false":

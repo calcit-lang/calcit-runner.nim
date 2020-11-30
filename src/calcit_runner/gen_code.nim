@@ -75,6 +75,7 @@ proc checkExprStructure*(exprList: CirruData): bool =
   of crDataNil: return true
   of crDataString: return true
   of crDataKeyword: return true
+  of crDataTernary: return true
   of crDataList:
     for item in exprList:
       if not checkExprStructure(item):

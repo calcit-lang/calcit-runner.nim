@@ -15,6 +15,7 @@ import algorithm
 
 import ternary_tree
 import cirru_edn
+import dual_balanced_ternary
 
 import ./types
 import ./data
@@ -34,6 +35,8 @@ proc nativeAdd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   if args.len != 2: coreFnError("Expected 2 arguments in native add")
   let a = args[0]
   let b = args[1]
+  if a.kind == crDataTernary and b.kind == crDataTernary:
+    return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal + b.ternaryVal)
   if a.kind != crDataNumber: coreFnError("Required number for adding", a)
   if b.kind != crDataNumber: coreFnError("Required number for adding", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal + b.numberVal)
@@ -42,6 +45,8 @@ proc nativeMinus(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if args.len != 2: coreFnError("Expected 2 arguments in native minus")
   let a = args[0]
   let b = args[1]
+  if a.kind == crDataTernary and b.kind == crDataTernary:
+    return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal - b.ternaryVal)
   if a.kind != crDataNumber: coreFnError("Required number for minus", a)
   if b.kind != crDataNumber: coreFnError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
@@ -50,6 +55,8 @@ proc nativeMultiply(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if args.len != 2: coreFnError("Expected 2 arguments in native multiply")
   let a = args[0]
   let b = args[1]
+  if a.kind == crDataTernary and b.kind == crDataTernary:
+    return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal * b.ternaryVal)
   if a.kind != crDataNumber: coreFnError("Required number for multiply", a)
   if b.kind != crDataNumber: coreFnError("Required number for multiply", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal * b.numberVal)
@@ -58,6 +65,8 @@ proc nativeDivide(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   if args.len != 2: coreFnError("Expected 2 arguments in native divide")
   let a = args[0]
   let b = args[1]
+  if a.kind == crDataTernary and b.kind == crDataTernary:
+    return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal / b.ternaryVal)
   if a.kind != crDataNumber: coreFnError("Required number for divide", a)
   if b.kind != crDataNumber: coreFnError("Required number for divide", b)
   if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
@@ -196,6 +205,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     of crDataRecur: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("recur"))
     of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("symbol"))
     of crDataAtom: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("atom"))
+    of crDataTernary: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("ternary"))
 
 proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -414,6 +424,10 @@ proc nativeIdenticalQuestion(args: seq[CirruData], interpret: FnInterpret, scope
     return CirruData(kind: crDataBool, boolVal: cast[pointer](a.symbolVal) == cast[pointer](b.symbolVal))
   of crDataBool:
     return CirruData(kind: crDataBool, boolVal: a.boolVal == b.boolVal)
+  of crDataNumber:
+    return CirruData(kind: crDataBool, boolVal: a.numberVal == b.numberVal)
+  of crDataTernary:
+    return CirruData(kind: crDataBool, boolVal: a.ternaryVal == b.ternaryVal)
   else:
     # TODO hard to detect
     return CirruData(kind: crDataBool, boolVal: false)
@@ -618,6 +632,8 @@ proc nativeTurnStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     return CirruData(kind: crDataString, stringVal: x.symbolVal)
   of crDataNumber:
     return CirruData(kind: crDataString, stringVal: $(x.numberVal))
+  of crDataTernary:
+    return CirruData(kind: crDataString, stringVal: $(x.ternaryVal))
   else:
     raiseEvalError("Cannot turn into string", (args))
 
@@ -706,10 +722,20 @@ proc nativeCeil(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.ceil)
 
 proc nativeRound(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("round requires 1 arg", args)
+  if args.len < 1: raiseEvalError("round requires 1 arg", args)
   let item = args[0]
-  if not item.isNumber: raiseEvalError("round expects a number", args)
-  return CirruData(kind: crDataNumber, numberVal: item.numberVal.round)
+  if item.kind == crDataNumber:
+    return CirruData(kind: crDataNumber, numberVal: item.numberVal.round)
+  elif item.kind == crDataTernary:
+    if args.len >= 2:
+      let precision = args[1]
+      if precision.kind != crDataNumber:
+        raiseEvalError("expects a number for precision", args)
+      return CirruData(kind: crDataTernary, ternaryVal: item.ternaryVal.round(precision.numberVal.int))
+    else:
+      return CirruData(kind: crDataTernary, ternaryVal: item.ternaryVal.round)
+  else:
+    raiseEvalError("round expects a number", args)
 
 proc nativePow(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("pow requires 2 arg", args)
@@ -1064,6 +1090,25 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   )
   CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
+proc nativedDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("dual-balanced-ternary expects 2 arguments", args)
+  if args[0].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
+  if args[1].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
+  CirruData(
+    kind: crDataTernary,
+    ternaryVal: createDualBalancedTernary(args[0].numberVal, args[1].numberVal)
+  )
+
+proc nativedTernaryToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("ternary->point expects 1 arguments", args)
+  if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
+  let v = args[0].ternaryVal.toFloat()
+  let xs = @[
+    CirruData(kind: crDataNumber, numberVal: v.x),
+    CirruData(kind: crDataNumber, numberVal: v.y),
+  ]
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1155,3 +1200,5 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["now!"] = CirruData(kind: crDataProc, procVal: nativeNowBang)
   programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
   programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)
+  programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativedDualBalancedTernary)
+  programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativedTernaryToPoint)

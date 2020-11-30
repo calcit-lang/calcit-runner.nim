@@ -79,7 +79,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
 
 proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   case xs.kind
-  of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataProc, crDataFn:
+  of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataProc, crDataFn, crDataTernary:
     return xs
   of crDataSymbol:
     return interpretSymbol(xs, scope, ns)
@@ -105,6 +105,14 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   case value.kind
   of crDataString:
     raiseEvalError("String is not a function", xs)
+  of crDataNumber:
+    raiseEvalError("Number is not a function", xs)
+  of crDataTernary:
+    raiseEvalError("Ternary is not a function", xs)
+  of crDataBool:
+    raiseEvalError("Bool is not a function", xs)
+  of crDataNil:
+    raiseEvalError("nil is not a function", xs)
 
   of crDataProc:
     let f = value.procVal
