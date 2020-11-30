@@ -9,6 +9,7 @@ import math
 import strformat
 
 import ternary_tree
+import dual_balanced_ternary
 
 type
   RefKeyword* = ref string
@@ -53,6 +54,7 @@ type
     crDataSyntax,
     crDataRecur,
     crDataAtom,
+    crDataTernary,
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
@@ -96,6 +98,8 @@ type
     of crDataAtom:
       atomNs*: string
       atomDef*: string
+    of crDataTernary:
+      ternaryVal*: DualBalancedTernary
 
   RefCirruData* = ref CirruData
 
@@ -191,6 +195,8 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
         val.symbolVal
     of crDataAtom:
       "(&atom " & val.atomNs & "/" & val.atomDef & " )"
+    of crDataTernary:
+      $val.ternaryVal
 
 proc `$`*(v: CirruData): string =
   v.toString(false, false)
@@ -295,6 +301,11 @@ proc hash*(value: CirruData): Hash =
       result = result !& hash(value.atomDef)
       result = !$ result
 
+    of crDataTernary:
+      result = hash("atom:")
+      result = result !& hash($value.ternaryVal) # TODO better having a native one
+      result = !$ result
+
 proc `==`*(x, y: CirruData): bool =
   if x.kind != y.kind:
     return false
@@ -356,3 +367,6 @@ proc `==`*(x, y: CirruData): bool =
 
     of crDataAtom:
       return x.atomNs == y.atomNs and x.atomDef == y.atomDef
+
+    of crDataTernary:
+      return x.ternaryVal == y.ternaryVal

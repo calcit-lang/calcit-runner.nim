@@ -4,6 +4,7 @@ import sets
 import tables
 
 import ternary_tree
+import dual_balanced_ternary
 
 import ./types
 
@@ -56,6 +57,7 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   of crDataSyntax: return JsonNode(kind: JNull)
   of crDataRecur: return JsonNode(kind: JNull)
   of crDataAtom: return JsonNode(kind: JNull)
+  of crDataTernary: return JsonNode(kind: JString, str: $x.ternaryVal)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruData*(v: JsonNode): CirruData =

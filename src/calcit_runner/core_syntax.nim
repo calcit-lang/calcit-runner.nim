@@ -84,6 +84,7 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
   of crDataSymbol: return exprList
   of crDataString: return exprList
   of crDataNumber: return exprList
+  of crDataTernary: return exprList
   of crDataBool: return exprList
   of crDataKeyword: return exprList
   of crDataNil: return exprList
