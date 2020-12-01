@@ -210,7 +210,8 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   if requireArea.kind != crDataList:
     raiseEvalError("Expects require list in ns form", exprNode)
   let requireNode = requireArea[0]
-  if not requireNode.isKeyword or requireNode.keywordVal[] != "require":
+  let nodeText = requireNode.keywordVal[]
+  if not requireNode.isKeyword or nodeText != "require":
     raiseEvalError("Expects :require", requireNode)
   let requireList = requireArea[1..^1]
 
