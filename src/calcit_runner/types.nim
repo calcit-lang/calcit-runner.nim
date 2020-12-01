@@ -302,8 +302,8 @@ proc hash*(value: CirruData): Hash =
       result = !$ result
 
     of crDataTernary:
-      result = hash("atom:")
-      result = result !& hash($value.ternaryVal) # TODO better having a native one
+      result = hash("ternary:")
+      result = result !& hash(value.ternaryVal)
       result = !$ result
 
 proc `==`*(x, y: CirruData): bool =
