@@ -69,6 +69,18 @@ cr -e="echo $ range 100" # eval from CLI
 
 _Not ready for a release yet_
 
+
+### Modules
+
+```cirru
+:configs $ {}
+  :modules $ [] |phlox.caclit.nim/compact.cirru
+```
+
+Calcit Runner use `~/.config/calcit/modules/` as modules directory.
+Paths defined in `:modules` field are just loaded as files based on this directory,
+which is: `~/.config/calcit/modules/phlox.caclit.nim/compact.cirru`.
+
 ### License
 
 MIT
