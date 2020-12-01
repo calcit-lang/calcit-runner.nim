@@ -1,3 +1,4 @@
+import os
 import tables
 import sets
 import terminal
@@ -86,6 +87,9 @@ proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
   return codeConfigs
 
 proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource], configs: CodeConfigs] =
+  if not fileExists(snapshotFile):
+    raise newException(ValueError, "snapshot is not found: " & snapshotFile)
+
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
   var compactFiles = initTable[string, FileSource]()
@@ -206,7 +210,8 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   if requireArea.kind != crDataList:
     raiseEvalError("Expects require list in ns form", exprNode)
   let requireNode = requireArea[0]
-  if not requireNode.isKeyword or requireNode.keywordVal[] != "require":
+  let nodeText = requireNode.keywordVal[]
+  if not requireNode.isKeyword or nodeText != "require":
     raiseEvalError("Expects :require", requireNode)
   let requireList = requireArea[1..^1]
 

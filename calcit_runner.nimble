@@ -17,7 +17,7 @@ requires "https://github.com/Cirru/cirru-edn.nim#v0.3.5"
 requires "ternary_tree >= 0.1.27"
 requires "https://github.com/Quamolit/json-paint.nim#v0.0.20"
 requires "nanoid"
-requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.2"
+requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.3"
 
 task watch, "run and watch":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr example/compact.cirru"

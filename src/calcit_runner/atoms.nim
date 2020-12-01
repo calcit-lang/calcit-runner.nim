@@ -25,7 +25,6 @@ proc setAtomByPath*(ns: string, def: string, value: CirruData) =
     let details = AtomDetails(value: value)
     atomsTable[ns][def] = details
   else:
-    let oldValue = atomsTable[ns][def].value
     atomsTable[ns][def].value = value
 
 proc addAtomWatcher*(ns: string, def: string, k: string, f: CirruData) =
