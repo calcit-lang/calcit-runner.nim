@@ -1,3 +1,4 @@
+import os
 import tables
 import sets
 import terminal
@@ -86,6 +87,9 @@ proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
   return codeConfigs
 
 proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource], configs: CodeConfigs] =
+  if not fileExists(snapshotFile):
+    raise newException(ValueError, "snapshot is not found: " & snapshotFile)
+
   let content = readFile snapshotFile
   let initialData = parseEdnFromStr content
   var compactFiles = initTable[string, FileSource]()
