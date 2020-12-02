@@ -28,9 +28,10 @@ proc hasNsAndDef(ns: string, def: string): bool =
     return false
   return true
 
-proc clearProgramDefs*(programData: var Table[string, ProgramFile]): void =
+proc clearProgramDefs*(programData: var Table[string, ProgramFile], pkg: string): void =
   for ns, f in programData:
-    if not ns.startsWith("calcit."):
+    if ns.startsWith(pkg):
+      echo "clearing: ", ns
       programData[ns].ns = none(Table[string, ImportInfo])
       programData[ns].defs.clear
 

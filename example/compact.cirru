@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:modules nil) (:version nil)
   :files $ {}
     |app.main $ {}
       :ns $ quote
