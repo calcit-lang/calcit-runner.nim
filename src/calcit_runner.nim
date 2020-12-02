@@ -108,7 +108,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     programCode[fileNs] = file
   codeConfigs = snapshotInfo.configs
 
-  programData.clear
+  programData.clear()
 
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
@@ -152,7 +152,7 @@ proc reloadProgram(snapshotFile: string): void =
   let snapshotInfo = loadSnapshot(snapshotFile)
   for fileNs, file in snapshotInfo.files:
     programCode[fileNs] = file
-  clearProgramDefs(programData) # TODO tell different ns
+  clearProgramDefs(programData, codeConfigs.pkg)
   programCode[coreNs] = previousCoreSource
   let pieces = codeConfigs.reloadFn.split('/')
 
