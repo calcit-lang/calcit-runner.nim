@@ -115,8 +115,8 @@ proc nativeOr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScop
   if args.len != 2: coreFnError("Expected 2 arguments in native &or")
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataBool: coreFnError("Required bool for &or", a)
-  if b.kind != crDataBool: coreFnError("Required bool for &or", b)
+  if a.kind != crDataBool: coreFnError("Required bool for &or, got: " & $a, a)
+  if b.kind != crDataBool: coreFnError("Required bool for &or, got: " & $b, b)
   return CirruData(kind: crDataBool, boolVal: a.boolVal or b.boolVal)
 
 proc nativeNot(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
@@ -1090,7 +1090,7 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   )
   CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
-proc nativedDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("dual-balanced-ternary expects 2 arguments", args)
   if args[0].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
   if args[1].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
@@ -1099,8 +1099,8 @@ proc nativedDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, sc
     ternaryVal: createDualBalancedTernary(args[0].numberVal, args[1].numberVal)
   )
 
-proc nativedTernaryToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("ternary->point expects 1 arguments", args)
+proc nativeTernaryToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("ternary->point expects 1 argument", args)
   if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
   let v = args[0].ternaryVal.toFloat()
   let xs = @[
@@ -1108,6 +1108,11 @@ proc nativedTernaryToPoint(args: seq[CirruData], interpret: FnInterpret, scope: 
     CirruData(kind: crDataNumber, numberVal: v.y),
   ]
   CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+
+proc nativeQuit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("quit expects 1 argument", args)
+  if args[0].kind != crDataNumber: raiseEvalError("quit expects a number", args)
+  quit(args[0].numberVal.int)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1200,5 +1205,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["now!"] = CirruData(kind: crDataProc, procVal: nativeNowBang)
   programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
   programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)
-  programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativedDualBalancedTernary)
-  programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativedTernaryToPoint)
+  programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary)
+  programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativeTernaryToPoint)
+  programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
