@@ -25,7 +25,7 @@ proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       else:
         return CirruData(kind: crDataNil)
     else:
-      raiseEvalError("Not a bool in if", node)
+      raiseEvalError("Not a bool in if: " & $cond, node)
   elif (exprList.len == 3):
     let node = exprList[0]
     let cond = interpret(node, scope, ns)
@@ -35,7 +35,7 @@ proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       else:
         return interpret(exprList[2], scope, ns)
     else:
-      raiseEvalError("Not a bool in if", node)
+      raiseEvalError("Not a bool in if: " & $cond, node)
   else:
     raiseEvalError("Too many arguments for if", exprList)
 

@@ -165,6 +165,10 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     return CirruData(kind: crDataNumber, numberVal: PI)
   elif token == "&E":
     return CirruData(kind: crDataNumber, numberVal: E)
+  elif token == "&newline":
+    return CirruData(kind: crDataString, stringVal: "\n")
+  elif token == "&tab":
+    return CirruData(kind: crDataString, stringVal: "\t")
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
 
