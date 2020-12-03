@@ -334,7 +334,7 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     else:
       return base.listVal.first
   else:
-    raiseEvalError("first requires a list", args)
+    raiseEvalError("first requires a list but got " & $base.kind, args)
 
 proc nativeEmptyQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:

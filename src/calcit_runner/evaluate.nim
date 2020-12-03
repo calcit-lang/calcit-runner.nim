@@ -153,7 +153,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     let base = interpret(xs[1], scope, ns)
     if base.kind == crDataNil:
       return base
-    if base.kind != crDataMap: raiseEvalError("keyword function expects a map", xs)
+    if base.kind != crDataMap: raiseEvalError("keyword function expects a map but got " & $base.kind, xs)
     let ret = base.mapVal[value]
     if ret.isNone:
       return CirruData(kind: crDataNil)
@@ -191,7 +191,9 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
       raise newException(ValueError, "No such definition: " & def)
     var code = programCode[ns].defs[def]
     programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc)
+    pushDefStack(StackInfo(ns: ns, def: def, code: code, args: @[]))
     code = preprocess(code, toHashset[string](@[]), ns)
+    popDefStack()
     # echo "setting: ", ns, "/", def
     # echo "processed code: ", code
     programData[ns].defs[def] = interpret(code, CirruDataScope(), ns)

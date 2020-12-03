@@ -28,7 +28,7 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
   if xs.len <= 3:
-    raiseEvalError("Expects len >3", xs)
+    raiseEvalError("Expects len >3 for defn", xs)
 
   var ys = xs.listVal.slice(0,3)
   let args = xs[2]
@@ -40,7 +40,7 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
 
   for item in args:
     if item.kind != crDataSymbol:
-      raiseEvalError("Expects a symbol", item)
+      raiseEvalError("Expects a symbol in defn:", xs)
     if item.symbolVal != "&":
       newDefs.incl(item.symbolVal)
 
@@ -82,7 +82,7 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   ]))
 
   if defName.kind != crDataSymbol:
-    raiseEvalError("Expects a symbol", defName)
+    raiseEvalError("Expects a symbol in let:", xs)
 
   if defName.symbolVal != "&":
     newDefs.incl(defName.symbolVal)
