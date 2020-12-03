@@ -98,7 +98,7 @@ proc replaceExpr(exprList: CirruData, interpret: FnInterpret, scope: CirruDataSc
 
     var list = initTernaryTreeList[CirruData](@[])
     for item in exprList:
-      if item.kind == crDataList:
+      if item.kind == crDataList and item.listVal.len > 0:
         let head = item[0]
         if head.kind == crDataSymbol and head.symbolVal == "~":
           if item.len != 2:
