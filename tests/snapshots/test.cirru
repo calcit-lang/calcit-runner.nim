@@ -20,6 +20,9 @@
             assert "|keyword used at nil" $ =
               :a nil
               , nil
+            &let
+              base $ {} (:a 1)
+              assert= 1 $ base :a
 
         |test-id $ quote
           fn ()

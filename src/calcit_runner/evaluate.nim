@@ -159,6 +159,15 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     else:
       return ret.get
 
+  of crDataMap:
+    if xs.len != 2: raiseEvalError("map function expects 1 argument", xs)
+    let target = interpret(xs[1], scope, ns)
+    let ret = value.mapVal[target]
+    if ret.isNone:
+      return CirruData(kind: crDataNil)
+    else:
+      return ret.get
+
   of crDataMacro:
     echo "[warn] Found macros: ", xs
     raiseEvalError("Macros are supposed to be handled during preprocessing", xs)
