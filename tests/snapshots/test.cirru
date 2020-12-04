@@ -32,6 +32,8 @@
             assert "|function" $ fn? &=
             assert "|function" $ macro? cond
 
+            assert "|set" $ set? $ #{} 1 2 3
+
             assert= 1 (either nil 1)
             assert= 2 (either 2 1)
             assert= nil (either nil nil)
