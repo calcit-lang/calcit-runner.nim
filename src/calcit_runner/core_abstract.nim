@@ -139,6 +139,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
               ["&=", ["type-of", "x"], ":proc"]]]
   , coreNs)
 
+  let codeSetQuestion = genCirru(
+    ["defn", "list?", ["x"], ["&=", ["type-of", "x"], ":set"]]
+  , coreNs)
+
   let codeEach = genCirru(
     ["defn", "each", ["f", "xs"],
       ["if", ["not", ["empty?", "xs"]],
@@ -774,6 +778,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["nil?"] = codeNilQuestion
   programCode[coreNs].defs["fn?"] = codeFnQuestion
   programCode[coreNs].defs["macro?"] = codeMacroQuestion
+  programCode[coreNs].defs["set?"] = codeSetQuestion
   programCode[coreNs].defs["each"] = codeEach
   programCode[coreNs].defs["map"] = codeMap
   programCode[coreNs].defs["take"] = codeTake

@@ -199,6 +199,9 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
 proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
   var dict: Table[string, ImportInfo]
 
+  if exprNode.kind == crDataNil:
+    return dict
+
   if exprNode.kind != crDataList:
     raiseEvalError("Expects a list to extract", exprNode)
   let nsNode = exprNode[0]
