@@ -1114,6 +1114,11 @@ proc nativeQuit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   if args[0].kind != crDataNumber: raiseEvalError("quit expects a number", args)
   quit(args[0].numberVal.int)
 
+proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("get-env expects 1 argument", args)
+  if args[0].kind != crDataString: raiseEvalError("get-env expects a string", args)
+  CirruData(kind: crDataString, stringVal: getEnv(args[0].stringVal))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1208,3 +1213,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary)
   programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativeTernaryToPoint)
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
+  programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
