@@ -750,6 +750,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace", ["pairs-map", ["section-by", 2, ["[]", ["~@", xs]]]]]]]
   , coreNs)
 
+  let codeNativeDoseq = genCirru(
+    [defmacro, "&doseq", [pair, "&", body],
+      ["assert", "|doseq expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
+      ["let", [[name, [first, pair]], [xs0, [last, pair]]],
+        ["quote-replace",
+          [apply,
+            [defn, "doseq-fn%", [xs],
+              ["if", ["empty?", xs], "nil",
+                ["&let", [["~", name], [first, xs]],
+                  ["~@", body],
+                  [recur, [rest, xs]]]]],
+            ["[]", ["~", xs0]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -853,3 +867,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["or"] = codeOr
   programCode[coreNs].defs["with-log"] = codeWithLog
   programCode[coreNs].defs["{,}"] = codeMapComma
+  programCode[coreNs].defs["&doseq"] = codeNativeDoseq
