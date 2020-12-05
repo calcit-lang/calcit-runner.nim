@@ -1119,6 +1119,9 @@ proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   if args[0].kind != crDataString: raiseEvalError("get-env expects a string", args)
   CirruData(kind: crDataString, stringVal: getEnv(args[0].stringVal))
 
+proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataNumber, numberVal: cpuTime()) # cpuTime returns in seconds
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1214,3 +1217,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativeTernaryToPoint)
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
+  programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
