@@ -103,9 +103,6 @@ type
 
   RefCirruData* = ref CirruData
 
-  EdnEmptyError* = object of ValueError
-  EdnInvalidError* = object of ValueError
-
 type ProgramFile* = object
   ns*: Option[Table[string, ImportInfo]]
   defs*: Table[string, CirruData]
