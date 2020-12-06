@@ -869,8 +869,13 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
   if target.kind != crDataString: raiseEvalError("replace expects a string", args)
   var list = initTernaryTreeList[CirruData](@[])
-  for item in base.stringVal.split(target.stringVal):
-    list = list.append CirruData(kind: crDataString, stringVal: item)
+  # Nim splits with "" differently
+  if target.stringVal == "":
+    for c in base.stringVal:
+      list = list.append CirruData(kind: crDataString, stringVal: $c)
+  else:
+    for item in base.stringVal.split(target.stringVal):
+      list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
 
 proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
