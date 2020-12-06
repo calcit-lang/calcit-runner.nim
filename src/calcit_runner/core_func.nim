@@ -1155,6 +1155,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)
   programData[coreNs].defs["append"] = CirruData(kind: crDataProc, procVal: nativeAppend)
+  programData[coreNs].defs["conj"] = CirruData(kind: crDataProc, procVal: nativeAppend) # an alias
   programData[coreNs].defs["first"] = CirruData(kind: crDataProc, procVal: nativeFirst)
   programData[coreNs].defs["empty?"] = CirruData(kind: crDataProc, procVal: nativeEmptyQuestion)
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
