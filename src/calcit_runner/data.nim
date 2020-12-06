@@ -150,10 +150,11 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(token[1..^1]))
   elif token[0] == '\'':
     return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
-
-  elif match(token, re"-?\d+(\.\d+)?"):
+  elif token.startsWith("0x"):
+    return CirruData(kind: crDataNumber, numberVal: token.parseHexInt.float)
+  elif match(token, re"^-?\d+(\.\d+)?$"):
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
-  elif match(token, re"&\d+(\.\d+)?") or match(token, re"&\.\d+"):
+  elif match(token, re"^&\d+(\.\d+)?$") or match(token, re"^&\.\d+$"):
     return CirruData(kind: crDataTernary, ternaryVal: parseTernary(token))
   elif token == "true":
     return CirruData(kind: crDataBool, boolVal: true)
