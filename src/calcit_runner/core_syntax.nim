@@ -19,6 +19,8 @@ proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   elif (exprList.len == 2):
     let node = exprList[0]
     let cond = interpret(node, scope, ns)
+    if cond.kind == crDataNil:
+      return CirruData(kind: crDataNil)
     if cond.kind == crDataBool:
       if cond.boolVal:
         return interpret(exprList[1], scope, ns)
@@ -29,6 +31,8 @@ proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   elif (exprList.len == 3):
     let node = exprList[0]
     let cond = interpret(node, scope, ns)
+    if cond.kind == crDataNil:
+      return interpret(exprList[2], scope, ns)
     if cond.kind == crDataBool:
       if cond.boolVal:
         return interpret(exprList[1], scope, ns)

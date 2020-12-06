@@ -66,6 +66,12 @@
               format-time 1605024100.1234 "|yyyy-MM-dd HH:mm:ss ffffff"
             echo $ format-time (now!) "|yyyy-MM-dd HH:mm:ss ffffff"
 
+        |test-if $ quote
+          fn ()
+            log-title "|Testing if with nil"
+            assert= (if false 1) (if nil 1)
+            assert= (if false 1 2) (if nil 1 2)
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"
@@ -80,6 +86,8 @@
             log-title "|Testing time"
             ; "|skipped since CI uses a different timezone"
             ; test-time
+
+            test-if
 
             do true
 
