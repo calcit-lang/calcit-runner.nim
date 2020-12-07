@@ -5,7 +5,6 @@ import strutils
 import ternary_tree
 
 import ./types
-import ./errors
 
 type StackInfo* = object
   ns*: string
@@ -37,10 +36,15 @@ proc popDefStack*(): void =
 
 proc showStack*(): void =
   # let errorStack = reversed(defStack)
+  var details: string
+
   for item in defStack:
     echo item.ns, "/", item.def
-    dimEcho $item.code
-    dimEcho "args: ", $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
+    details = details & "\n" & item.ns & "/" & item.def & "\n" & $item.code & "\n" &
+      "args: " & $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
+
+  writeFile "./.calcit-error.cirru", details
+  echo "wrote error details to .calcit-error.cirru"
 
 var traceFnNs: string
 var traceFnName: string
