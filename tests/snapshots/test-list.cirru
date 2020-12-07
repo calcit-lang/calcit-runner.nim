@@ -223,6 +223,34 @@
             echo title
             echo
 
+        |*counted $ quote
+          defatom *counted 0
+
+        |test-doseq $ quote
+          fn ()
+            log-title "|Testing doseq"
+
+            =
+              macroexpand $ quote
+                &doseq (n (range 5))
+                  echo |doing: n
+                  swap! *counted &+ n
+              quote
+                apply
+                  defn doseq-fn% (xs)
+                    if (empty? xs) nil
+                      &let (n (first xs))
+                        echo |doing: n
+                        swap! *counted &+ n
+                        recur (rest xs)
+                  [] (range 5)
+
+
+            &doseq (n (range 5))
+              swap! *counted &+ n
+
+            assert= 10 (deref *counted)
+
         |main! $ quote
           defn main! ()
 
@@ -249,6 +277,8 @@
 
             log-title "|Testing sort"
             test-sort
+
+            test-doseq
 
             do true
 

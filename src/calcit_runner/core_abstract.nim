@@ -642,10 +642,14 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeAssert = genCirru(
     [defmacro, "assert", [message, xs],
-      ["quote-replace", ["if", ["~", xs], "nil",
-                               ["do",
-                                ["echo", "|Failed assertion:", [quote, ["~", xs]]],
-                                ["raise", ["~", message]]]]]]
+      ["quote-replace",
+        ["do",
+          ["if", ["not", ["string?", ["~", message]]],
+                 ["raise", [str, "|expects 1st argument to be string"]]],
+          ["if", ["~", xs], "nil",
+             ["do",
+              ["echo", "|Failed assertion:", [quote, ["~", xs]]],
+              ["raise", ["~", message]]]]]]]
   , coreNs)
 
   let codePrintln = genCirru(
@@ -748,6 +752,36 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defmacro, "{,}", ["&", body],
       ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
         ["quote-replace", ["pairs-map", ["section-by", 2, ["[]", ["~@", xs]]]]]]]
+  , coreNs)
+
+  let codeNativeDoseq = genCirru(
+    [defmacro, "&doseq", [pair, "&", body],
+      ["assert", "|doseq expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
+      ["let", [[name, [first, pair]], [xs0, [last, pair]]],
+        ["quote-replace",
+          [apply,
+            [defn, "doseq-fn%", [xs],
+              ["if", ["empty?", xs], "nil",
+                ["&let", [["~", name], [first, xs]],
+                  ["~@", body],
+                  [recur, [rest, xs]]]]],
+            ["[]", ["~", xs0]]]]]]
+  , coreNs)
+
+  let codeWithCpuTime = genCirru(
+    [defmacro, "with-cpu-time", [x],
+      ["let", [[started, [gensym, "|started"]],
+               [v, [gensym, "|v"]]],
+        ["quote-replace",
+          ["&let", [["~", started], ["cpu-time"]],
+            ["&let", [["~", v], ["~", x]],
+              ["echo", "|[cpu-time]",
+                       [quote, ["~", x]],
+                       "|=>",
+                       ["format-number", ["&*", 1000, ["&-", ["cpu-time"], ["~", started]]], 3],
+                       "|ms"
+              ],
+              ["~", v]]]]]]
   , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
@@ -853,3 +887,5 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["or"] = codeOr
   programCode[coreNs].defs["with-log"] = codeWithLog
   programCode[coreNs].defs["{,}"] = codeMapComma
+  programCode[coreNs].defs["&doseq"] = codeNativeDoseq
+  programCode[coreNs].defs["with-cpu-time"] = codeWithCpuTime

@@ -32,101 +32,101 @@ import ./stack
 randomize()
 
 proc nativeAdd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native add")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native add", args)
   let a = args[0]
   let b = args[1]
   if a.kind == crDataTernary and b.kind == crDataTernary:
     return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal + b.ternaryVal)
-  if a.kind != crDataNumber: coreFnError("Required number for adding", a)
-  if b.kind != crDataNumber: coreFnError("Required number for adding", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for adding", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for adding", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal + b.numberVal)
 
 proc nativeMinus(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native minus")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native minus", args)
   let a = args[0]
   let b = args[1]
   if a.kind == crDataTernary and b.kind == crDataTernary:
     return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal - b.ternaryVal)
-  if a.kind != crDataNumber: coreFnError("Required number for minus", a)
-  if b.kind != crDataNumber: coreFnError("Required number for minus", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for minus", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
 
 proc nativeMultiply(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native multiply")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native multiply", args)
   let a = args[0]
   let b = args[1]
   if a.kind == crDataTernary and b.kind == crDataTernary:
     return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal * b.ternaryVal)
-  if a.kind != crDataNumber: coreFnError("Required number for multiply", a)
-  if b.kind != crDataNumber: coreFnError("Required number for multiply", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for multiply", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for multiply", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal * b.numberVal)
 
 proc nativeDivide(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native divide")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native divide", args)
   let a = args[0]
   let b = args[1]
   if a.kind == crDataTernary and b.kind == crDataTernary:
     return CirruData(kind: crDataTernary, ternaryVal: a.ternaryVal / b.ternaryVal)
-  if a.kind != crDataNumber: coreFnError("Required number for divide", a)
-  if b.kind != crDataNumber: coreFnError("Required number for divide", b)
-  if b.numberVal == 0.0: coreFnError("Cannot divide by 0", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+  if a.kind != crDataNumber: raiseEvalError("Required number for divide", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for divide", b)
+  if b.numberVal == 0.0: raiseEvalError("Cannot divide by 0", args)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal / b.numberVal)
 
 proc nativeMod(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native mod")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native mod", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataNumber: coreFnError("Required number for mod", a)
-  if b.kind != crDataNumber: coreFnError("Required number for mod", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for mod", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for mod", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal.mod(b.numberVal))
 
 proc nativeLessThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native <")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native <", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataNumber: coreFnError("Required number for <", a)
-  if b.kind != crDataNumber: coreFnError("Required number for <", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for <", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for <", b)
   return CirruData(kind: crDataBool, boolVal: a.numberVal < b.numberVal)
 
 proc nativeGreaterThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native >")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native >", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataNumber: coreFnError("Required number for >", a)
-  if b.kind != crDataNumber: coreFnError("Required number for >", b)
+  if a.kind != crDataNumber: raiseEvalError("Required number for >", a)
+  if b.kind != crDataNumber: raiseEvalError("Required number for >", b)
   return CirruData(kind: crDataBool, boolVal: a.numberVal > b.numberVal)
 
 # should be working for all data types
 proc nativeEqual(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native =")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native =", args)
   let a = args[0]
   let b = args[1]
   return CirruData(kind: crDataBool, boolVal: a == b)
 
 proc nativeAnd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native &and")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native &and", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataBool: coreFnError("Required bool for &and", a)
-  if b.kind != crDataBool: coreFnError("Required bool for &and", b)
+  if a.kind != crDataBool: raiseEvalError("Required bool for &and", a)
+  if b.kind != crDataBool: raiseEvalError("Required bool for &and", b)
   return CirruData(kind: crDataBool, boolVal: a.boolVal and b.boolVal)
 
 proc nativeOr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native &or")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native &or", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataBool: coreFnError("Required bool for &or, got: " & $a, a)
-  if b.kind != crDataBool: coreFnError("Required bool for &or, got: " & $b, b)
+  if a.kind != crDataBool: raiseEvalError("Required bool for &or, got: " & $a, a)
+  if b.kind != crDataBool: raiseEvalError("Required bool for &or, got: " & $b, b)
   return CirruData(kind: crDataBool, boolVal: a.boolVal or b.boolVal)
 
 proc nativeNot(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: coreFnError("Expected 1 arguments in native not")
+  if args.len != 1: raiseEvalError("Expected 1 arguments in native not", args)
   let a = args[0]
-  if a.kind != crDataBool: coreFnError("Required bool for not", a)
+  if a.kind != crDataBool: raiseEvalError("Required bool for not", a)
   return CirruData(kind: crDataBool, boolVal: not a.boolVal)
 
 proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: coreFnError("Expected 1 arguments in native count")
+  if args.len != 1: raiseEvalError("Expected 1 arguments in native count", args)
   let a = args[0]
   case a.kind
   of crDataNil:
@@ -143,7 +143,7 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     raiseEvalError("Cannot count data", a)
 
 proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: coreFnError("Expected 2 arguments in native get")
+  if args.len != 2: raiseEvalError("Expected 2 arguments in native get", args)
   let a = args[0]
   let b = args[1]
   case a.kind
@@ -167,7 +167,7 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
     raiseEvalError("Cannot get from data of this type", a)
 
 proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: coreFnError("Expected 1 arguments in native rest")
+  if args.len != 1: raiseEvalError("Expected 1 arguments in native rest", args)
   let a = args[0]
   case a.kind
   of crDataNil:
@@ -180,14 +180,14 @@ proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
     raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
 proc nativeRaise(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: coreFnError("Expected 1 argument1 in native raise")
+  if args.len != 1: raiseEvalError("Expected 1 argument1 in native raise", args)
   let a = args[0]
   if a.kind != crDataString:
     raiseEvalError("Expect message in string", a)
   raiseEvalError(a.stringVal, args)
 
 proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: coreFnError("type gets 1 argument")
+  if args.len != 1: raiseEvalError("type gets 1 argument", args)
   let v = args[0]
   case v.kind
     of crDataNil: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nil"))
@@ -869,8 +869,13 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
   if target.kind != crDataString: raiseEvalError("replace expects a string", args)
   var list = initTernaryTreeList[CirruData](@[])
-  for item in base.stringVal.split(target.stringVal):
-    list = list.append CirruData(kind: crDataString, stringVal: item)
+  # Nim splits with "" differently
+  if target.stringVal == "":
+    for c in base.stringVal:
+      list = list.append CirruData(kind: crDataString, stringVal: $c)
+  else:
+    for item in base.stringVal.split(target.stringVal):
+      list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
 
 proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
@@ -1119,6 +1124,9 @@ proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   if args[0].kind != crDataString: raiseEvalError("get-env expects a string", args)
   CirruData(kind: crDataString, stringVal: getEnv(args[0].stringVal))
 
+proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  CirruData(kind: crDataNumber, numberVal: cpuTime()) # cpuTime returns in seconds
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1147,6 +1155,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)
   programData[coreNs].defs["append"] = CirruData(kind: crDataProc, procVal: nativeAppend)
+  programData[coreNs].defs["conj"] = CirruData(kind: crDataProc, procVal: nativeAppend) # an alias
   programData[coreNs].defs["first"] = CirruData(kind: crDataProc, procVal: nativeFirst)
   programData[coreNs].defs["empty?"] = CirruData(kind: crDataProc, procVal: nativeEmptyQuestion)
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
@@ -1214,3 +1223,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativeTernaryToPoint)
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
+  programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)

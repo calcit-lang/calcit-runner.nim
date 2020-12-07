@@ -121,9 +121,9 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
 
     # echo "HEAD: ", head, " ", xs
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
-    pushDefStack(head, CirruData(kind: crDataNil), args)
+    # pushDefStack(head, CirruData(kind: crDataNil), args)
     let ret = f(args, interpret, scope, ns)
-    popDefStack()
+    # popDefStack()
     return ret
 
   of crDataFn:
@@ -138,14 +138,13 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     # echo "HEAD: ", head, " ", xs
     pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
-
     let ret = evaluteFnData(value, args, interpret, ns)
+    popDefStack()
 
     if traceThis:
       traceStackSize = traceStackSize - 1
       echo getTraceIndentation(), "<- ", ret
 
-    popDefStack()
     return ret
 
   of crDataKeyword:
@@ -160,6 +159,15 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     else:
       return ret.get
 
+  of crDataMap:
+    if xs.len != 2: raiseEvalError("map function expects 1 argument", xs)
+    let target = interpret(xs[1], scope, ns)
+    let ret = value.mapVal[target]
+    if ret.isNone:
+      return CirruData(kind: crDataNil)
+    else:
+      return ret.get
+
   of crDataMacro:
     echo "[warn] Found macros: ", xs
     raiseEvalError("Macros are supposed to be handled during preprocessing", xs)
@@ -167,9 +175,9 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   of crDataSyntax:
     let f = value.syntaxVal
 
-    pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataNil), args: xs[1..^1]))
+    # pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataNil), args: xs[1..^1]))
     let quoted = f(xs[1..^1], interpret, scope, ns)
-    popDefStack()
+    # popDefStack()
     return quoted
 
   else:
@@ -196,7 +204,9 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     popDefStack()
     # echo "setting: ", ns, "/", def
     # echo "processed code: ", code
+    pushDefStack(StackInfo(ns: ns, def: def, code: code, args: @[]))
     programData[ns].defs[def] = interpret(code, CirruDataScope(), ns)
+    popDefStack()
 
 proc preprocessHelper(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
   preprocess(code, localDefs, ns)

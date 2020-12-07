@@ -56,6 +56,13 @@
 
             assert "|not equal" $ /= 1 2
 
+        |test-hex $ quote
+          fn ()
+            log-title "|Testing hex"
+
+            assert= 16 0x10
+            assert= 15 0xf
+
         |main! $ quote
           defn main! ()
             log-title "|Testing numbers"
@@ -66,6 +73,8 @@
 
             log-title "|Testing compare"
             test-compare
+
+            test-hex
 
             do true
 

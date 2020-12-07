@@ -15,7 +15,7 @@ requires "nim >= 1.2.8"
 requires "libfswatch"
 requires "https://github.com/Cirru/cirru-edn.nim#v0.3.5"
 requires "ternary_tree >= 0.1.27"
-requires "https://github.com/Quamolit/json-paint.nim#v0.0.23"
+requires "https://github.com/calcit-lang/json-paint#v0.0.23"
 requires "nanoid"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.3"
 

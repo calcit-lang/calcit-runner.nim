@@ -71,13 +71,6 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
     echo ""
     raise e
 
-  except CirruCoreError as e:
-    echo ""
-    displayErrorMessage(e.msg & " " & $e.data)
-    showStack()
-    echo ""
-    raise e
-
   except ValueError as e:
     echo ""
     displayErrorMessage(e.msg)

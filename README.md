@@ -12,8 +12,8 @@ Dependent modules:
 
 - [Cirru Parser](https://github.com/Cirru/parser.nim) for indentation-based syntax parsing.
 - [Cirru EDN](https://github.com/Cirru/cirru-edn.nim) for `compact.cirru` file parsing.
-- [Ternary Tree](https://github.com/Cirru/ternary-tree) for persistent list and map structure.
-- [JSON Paint](https://github.com/Quamolit/json-paint.nim) for drawing shapes with canvas.
+- [Ternary Tree](https://github.com/calcit-lang/ternary-tree) for persistent list and map structure.
+- [JSON Paint](https://github.com/calcit-lang/json-paint) for drawing shapes with canvas.
 - [Dual Balanced Ternary](https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim).
 
 A `compact.cirru` file can be:
@@ -33,7 +33,7 @@ A `compact.cirru` file can be:
       :proc $ quote ()
 ```
 
-Syntax implemented in Calcit Runner is mostly learning from Clojure. Browse current APIs at http://repo.cirru.org/calcit-runner-apis/ .
+Syntax implemented in Calcit Runner is mostly learning from Clojure. Browse current APIs at http://apis.calcit-lang.org/ .
 
 ### Usage
 

@@ -188,6 +188,31 @@
               with-log $ + 1 2
               , 3
 
+        |test-with-cpu-time $ quote
+          fn ()
+            log-title "|Testing with-cpu-time"
+
+            &reset-gensym-index!
+
+            assert=
+              macroexpand $ quote $ with-cpu-time $ + 1 2
+              quote $ &let
+                started__1 $ cpu-time
+                &let
+                  v__2 $ + 1 2
+                  echo |[cpu-time]
+                    quote $ + 1 2
+                    , |=>
+                    format-number (&* 1000 (&- (cpu-time) started__1)) 3
+                    , |ms
+                  , v__2
+            assert=
+              with-cpu-time $ + 1 2
+              , 3
+            assert=
+              with-cpu-time $ &+ 1 2
+              , 3
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -209,6 +234,8 @@
             test-gensym
 
             test-with-log
+
+            test-with-cpu-time
 
             do true
 

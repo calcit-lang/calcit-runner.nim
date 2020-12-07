@@ -9,9 +9,6 @@ import ./types
 type CirruEvalError* = ref object of ValueError
   code*: CirruData
 
-type CirruCoreError* = ref object of ValueError
-  data*: CirruData
-
 proc raiseEvalError*(msg: string, code: CirruData): void =
   var e: CirruEvalError
   new e
@@ -40,11 +37,3 @@ proc dimEcho*(text: varargs[string]): void =
   setStyle({styleDim})
   echo buffer
   resetAttributes()
-
-proc coreFnError*(msg: string, x: CirruData = CirruData(kind: crDataNil)) =
-  var e: CirruCoreError
-  new e
-  e.msg = msg
-  e.data = x
-
-  raise e
