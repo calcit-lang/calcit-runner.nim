@@ -46,7 +46,7 @@ proc nativeEval(item: CirruData, interpret: FnInterpret, scope: CirruDataScope, 
   code = preprocess(item, toHashset[string](scope.keys), ns)
   if not checkExprStructure(code):
     raiseEvalError("Expected cirru expr in eval(...)", code)
-  dimEcho("eval: ", $code)
+  echo "eval: ", $code
   interpret code, scope, ns
 
 proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruData =
@@ -258,6 +258,8 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
               return sym
             of importDef:
               raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
+          else:
+            raiseEvalError("no such ns: " & nsPart, sym)
         else:
           if importDict.hasKey(sym.symbolVal):
             let importTarget = importDict[sym.symbolVal]

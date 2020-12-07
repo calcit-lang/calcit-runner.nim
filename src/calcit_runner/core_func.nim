@@ -232,7 +232,7 @@ proc nativeWriteFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     raiseEvalError("Expected content in string", args)
   writeFile(fileName.stringVal, content.stringVal)
 
-  dimEcho fmt"Wrote to file {fileName.stringVal}"
+  echo "Wrote to file " & fileName.stringVal
   return CirruData(kind: crDataNil)
 
 proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =

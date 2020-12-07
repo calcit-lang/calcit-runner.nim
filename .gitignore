@@ -2,6 +2,7 @@
 out/*
 
 example/.compact-inc.cirru
+.calcit-error.cirru
 
 # Ignore all
 src/cr
