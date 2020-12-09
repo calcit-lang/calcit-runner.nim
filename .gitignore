@@ -6,6 +6,7 @@ example/.compact-inc.cirru
 
 # Ignore all
 src/cr
+src/cr_once
 tests/test_expr
 tests/run_calcit
 tests/prof

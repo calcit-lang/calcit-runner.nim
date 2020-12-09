@@ -6,7 +6,7 @@ author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["cr"]
+namedBin      = {"cr": "cr", "cr_once": "cr_once"}.toTable()
 binDir        = "out/"
 
 # Dependencies
