@@ -25,12 +25,14 @@ import calcit_runner/eval_util
 import calcit_runner/to_json
 import calcit_runner/gen_code
 
+export CirruData, CirruDataKind, `==`, crData
+
 # slots for dynamic registering GUI functions
 var onLoadPluginProcs: Table[string, FnInData]
 
-export CirruData, CirruDataKind, `==`, crData
-
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
+
+let commandLineVersion* = "0.1.0"
 
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f

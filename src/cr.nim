@@ -80,8 +80,10 @@ while true:
 if evalOnce:
   discard evalSnippet(evalOnceCode)
 elif runOnce:
+  echo "Calcit runner version: ", commandLineVersion
   discard runProgram(snapshotFile)
 else:
+  echo "Calcit runner version: ", commandLineVersion
   discard runProgram(snapshotFile)
   # watch mode by default
   setControlCHook(handleControl)
