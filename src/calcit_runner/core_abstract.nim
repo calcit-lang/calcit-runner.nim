@@ -354,7 +354,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeMapcat = genCirru(
     [defn, mapcat, [f, xs],
-      [concat, "&", [map, f, xs]]]
+      ["if", ["empty?", xs], ["[]"],
+        [concat, "&", [map, f, xs]]]]
   , coreNs)
 
   let codeMerge = genCirru(
