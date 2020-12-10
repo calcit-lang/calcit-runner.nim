@@ -1127,6 +1127,12 @@ proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
 proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   CirruData(kind: crDataNumber, numberVal: cpuTime()) # cpuTime returns in seconds
 
+proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("get-char-code expects 1 argument", args)
+  if args[0].kind != crDataString: raiseEvalError("get-char-code expects a string", args)
+  if args[0].stringVal.len != 1: raiseEvalError("get-char-code expects a string of a character", args)
+  CirruData(kind: crDataNumber, numberVal: float(char(args[0].stringVal[0])))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1224,3 +1230,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
   programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
+  programData[coreNs].defs["get-char-code"] = CirruData(kind: crDataProc, procVal: nativeGetCharCode)

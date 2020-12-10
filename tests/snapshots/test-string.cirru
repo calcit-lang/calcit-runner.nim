@@ -69,10 +69,18 @@
 
         |test-format $ quote
           fn ()
+            log-title "|Testing format"
+
             assert= |1.2346 $ format-number 1.23456789 4
             assert= |1.235 $ format-number 1.23456789 3
             assert= |1.23 $ format-number 1.23456789 2
             assert= |1.2 $ format-number 1.23456789 1
+
+        |test-char $ quote
+          fn ()
+            log-title "|Test char"
+
+            echo "|char:" $ get-char-code |a
 
         |main! $ quote
           defn main! ()
@@ -88,8 +96,9 @@
             log-title "|Testing trim"
             test-trim
 
-            log-title "|Testing format"
             test-format
+
+            test-char
 
             do true
 
