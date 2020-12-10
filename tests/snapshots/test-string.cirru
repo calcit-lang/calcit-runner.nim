@@ -80,7 +80,12 @@
           fn ()
             log-title "|Test char"
 
-            echo "|char:" $ get-char-code |a
+            assert= 97 $ get-char-code |a
+
+            assert= |a $ first |abc
+            assert= |c $ last |abc
+            assert= nil $ first |
+            assert= nil $ last |
 
         |main! $ quote
           defn main! ()

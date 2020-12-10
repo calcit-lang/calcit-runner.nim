@@ -329,10 +329,15 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   of crDataNil:
     return base
   of crDataList:
-    if base.len == 0:
+    if base.listVal.len == 0:
       return CirruData(kind: crDataNil)
     else:
       return base.listVal.first
+  of crDataString:
+    if base.stringVal.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataString, stringVal: $base.stringVal[0])
   else:
     raiseEvalError("first requires a list but got " & $base.kind, args)
 
@@ -367,6 +372,11 @@ proc nativeLast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
       return CirruData(kind: crDataNil)
     else:
       return base.listVal.last
+  of crDataString:
+    if base.stringVal.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataString, stringVal: $base.stringVal[^1])
   else:
     raiseEvalError("last requires a list", args)
 
