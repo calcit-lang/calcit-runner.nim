@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: jiro4989/setup-nim-action@v1
+      with:
+        nim-version: "1.4.0"
+    - name: Tests
+      run: nimble build --threads:on --verbose -y
+
+    - name: Deploy to server
+      id: deploy
+      uses: Pendect/action-rsyncer@v1.1.0
+      env:
+        DEPLOY_KEY: ${{secrets.rsync_private_key}}
+      with:
+        flags: '-avzr --progress'
+        options: ''
+        ssh_options: ''
+        src: 'out/*'
+        dest: 'rsync-user@calcit-lang.org:/web-assets/repo/calcit-lang/binaries/linux/'
+
+    - name: Display status from deploy
+      run: echo "${{ steps.deploy.outputs.status }}"
