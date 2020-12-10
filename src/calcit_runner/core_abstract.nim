@@ -161,7 +161,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeTake = genCirru(
     ["defn", "take", ["n", "xs"],
-      ["slice", "xs", 0, "n"]]
+      ["if", [">=", n, [count, xs]], xs,
+        [slice, xs, 0, n]]]
   , coreNs)
 
   let codeDrop = genCirru(

@@ -50,7 +50,7 @@
               assert |dissoc $ =
                 dissoc (range 10) 4
                 [] 0 1 2 3 5 6 7 8 9
-              assert |take $ = (take 4 $ range 10) $ [] 0 1 2 3
+              assert= (take 4 $ range 10) $ [] 0 1 2 3
               assert |drop $ = (drop 4 $ range 10) ([] 4 5 6 7 8 9)
               echo $ format-ternary-tree $ reverse $ [] |a |b |c |d |e
               echo $ format-ternary-tree $ [] |e |d |c |b a
