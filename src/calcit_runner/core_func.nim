@@ -456,10 +456,14 @@ proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   of crDataNil:
     return base
   of crDataList:
+    let i0 = startIdx.numberVal.int
+    let i1 = endIdx.numberVal.int
+    if i0 < 0: raiseEvalError("start index too small for slice", args)
+    if i1 > base.listVal.len: raiseEvalError("end index too large for slice", args)
     if base.len == 0:
       return CirruData(kind: crDataNil)
     else:
-      return CirruData(kind: crDataList, listVal: base.listVal.slice(startIdx.numberVal.int, endIdx.numberVal.int))
+      return CirruData(kind: crDataList, listVal: base.listVal.slice(i0, i1))
   else:
     raiseEvalError("slice requires a list", (args))
 
