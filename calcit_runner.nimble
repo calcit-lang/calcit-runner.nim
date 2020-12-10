@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.1.0"
+version       = "0.1.1"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
@@ -13,7 +13,7 @@ binDir        = "out/"
 
 requires "nim >= 1.2.8"
 requires "libfswatch"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.3.5"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.3.7"
 requires "ternary_tree >= 0.1.27"
 requires "https://github.com/calcit-lang/json-paint#v0.0.23"
 requires "nanoid"
