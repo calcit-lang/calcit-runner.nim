@@ -64,6 +64,18 @@
                   [] 1 2 3 4
                 [] 0 0 1 0 1 2 0 1 2 3
 
+              assert=
+                mapcat
+                  fn (x) (range x)
+                  [] 1
+                [] 0
+
+              assert=
+                mapcat
+                  fn (x) (range x)
+                  []
+                []
+
               assert |identity $ =
                 map identity $ range 10
                 range 10
