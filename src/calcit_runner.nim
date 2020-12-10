@@ -81,8 +81,11 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
     raise e
 
   except Defect as e:
-    coloredEcho fgRed, "Failed to run command"
-    echo e.msg
+    echo ""
+    displayErrorMessage("Failed assertion")
+    showStack()
+    echo ""
+    raise e
 
 # only load code of modules, ignore recursive deps
 proc loadModules(modulePath: string) =

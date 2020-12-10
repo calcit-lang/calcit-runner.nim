@@ -329,10 +329,15 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   of crDataNil:
     return base
   of crDataList:
-    if base.len == 0:
+    if base.listVal.len == 0:
       return CirruData(kind: crDataNil)
     else:
       return base.listVal.first
+  of crDataString:
+    if base.stringVal.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataString, stringVal: $base.stringVal[0])
   else:
     raiseEvalError("first requires a list but got " & $base.kind, args)
 
@@ -367,6 +372,11 @@ proc nativeLast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
       return CirruData(kind: crDataNil)
     else:
       return base.listVal.last
+  of crDataString:
+    if base.stringVal.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataString, stringVal: $base.stringVal[^1])
   else:
     raiseEvalError("last requires a list", args)
 
@@ -446,10 +456,14 @@ proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   of crDataNil:
     return base
   of crDataList:
+    let i0 = startIdx.numberVal.int
+    let i1 = endIdx.numberVal.int
+    if i0 < 0: raiseEvalError("start index too small for slice", args)
+    if i1 > base.listVal.len: raiseEvalError("end index too large for slice", args)
     if base.len == 0:
       return CirruData(kind: crDataNil)
     else:
-      return CirruData(kind: crDataList, listVal: base.listVal.slice(startIdx.numberVal.int, endIdx.numberVal.int))
+      return CirruData(kind: crDataList, listVal: base.listVal.slice(i0, i1))
   else:
     raiseEvalError("slice requires a list", (args))
 
@@ -1127,6 +1141,12 @@ proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
 proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   CirruData(kind: crDataNumber, numberVal: cpuTime()) # cpuTime returns in seconds
 
+proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("get-char-code expects 1 argument", args)
+  if args[0].kind != crDataString: raiseEvalError("get-char-code expects a string", args)
+  if args[0].stringVal.len != 1: raiseEvalError("get-char-code expects a string of a character", args)
+  CirruData(kind: crDataNumber, numberVal: float(char(args[0].stringVal[0])))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1224,3 +1244,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
   programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
+  programData[coreNs].defs["get-char-code"] = CirruData(kind: crDataProc, procVal: nativeGetCharCode)
