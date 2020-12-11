@@ -633,9 +633,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   else:
     raiseEvalError("Cannot turn into symbol", (args))
 
-proc nativeTurnStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
-    raiseEvalError("turn-str requires 1 arg", (args))
+    raiseEvalError("turn-string requires 1 arg", (args))
   let x = args[0]
   case x.kind
   of crDataKeyword:
@@ -1181,7 +1181,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataProc, procVal: nativeButlast)
   programData[coreNs].defs["reverse"] = CirruData(kind: crDataProc, procVal: nativeReverse)
-  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnStr)
+  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataProc, procVal: nativeTurnString)
+  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnString) # alias, deprecating in future
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataProc, procVal: nativeTurnSymbol)
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataProc, procVal: nativeTurnKeyword)
   programData[coreNs].defs["identical?"] = CirruData(kind: crDataProc, procVal: nativeIdenticalQuestion)
