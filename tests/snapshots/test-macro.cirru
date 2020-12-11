@@ -213,6 +213,12 @@
               with-cpu-time $ &+ 1 2
               , 3
 
+        |test-assert $ quote
+          fn ()
+            log-title "|Assert in different order"
+            assert (= 1 1) |string
+            assert |string (= 1 1)
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -236,6 +242,8 @@
             test-with-log
 
             test-with-cpu-time
+
+            test-assert
 
             do true
 

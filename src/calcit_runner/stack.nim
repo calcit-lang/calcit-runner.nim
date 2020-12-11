@@ -1,10 +1,13 @@
 
 import lists
 import strutils
+import tables
 
 import ternary_tree
+import cirru_edn
 
 import ./types
+import ./to_json
 
 type StackInfo* = object
   ns*: string
@@ -36,15 +39,30 @@ proc popDefStack*(): void =
 
 proc showStack*(): void =
   # let errorStack = reversed(defStack)
-  var details: string
+
+  var infoList: seq[CirruEdnValue]
 
   for item in defStack:
     echo item.ns, "/", item.def
-    details = details & "\n" & item.ns & "/" & item.def & "\n" & $item.code & "\n" &
-      "args: " & $CirruData(kind: crDataList, listVal: initTernaryTreeList(item.args))
+
+    var infoItem = initTable[CirruEdnValue, CirruEdnValue]()
+    infoItem[CirruEdnValue(kind: crEdnKeyword, keywordVal: "def")] =
+      CirruEdnValue(kind: crEdnString, stringVal: item.ns & "/" & item.def)
+    infoItem[CirruEdnValue(kind: crEdnKeyword, keywordVal: "code")] =
+      CirruEdnValue(kind: crEdnQuotedCirru, quotedVal: item.code.toCirruNode)
+
+    var ys: seq[CirruEdnValue]
+    for ax in item.args:
+      ys.add ax.toEdn
+    infoItem[CirruEdnValue(kind: crEdnKeyword, keywordVal: "args")] =
+      CirruEdnValue(kind: crEdnVector, vectorVal: ys)
+
+    infoList.add CirruEdnValue(kind: crEdnMap, mapVal: infoItem)
+
+  let details = CirruEdnValue(kind: crEdnVector, vectorVal: infoList).formatToCirru(true)
 
   writeFile "./.calcit-error.cirru", details
-  echo "wrote error details to .calcit-error.cirru"
+  echo "\nMore error details in .calcit-error.cirru     <--------="
 
 var traceFnNs: string
 var traceFnName: string

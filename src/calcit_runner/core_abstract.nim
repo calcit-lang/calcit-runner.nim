@@ -644,14 +644,16 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeAssert = genCirru(
     [defmacro, "assert", [message, xs],
-      ["quote-replace",
-        ["do",
-          ["if", ["not", ["string?", ["~", message]]],
-                 ["raise", [str, "|expects 1st argument to be string"]]],
-          ["if", ["~", xs], "nil",
-             ["do",
-              ["echo", "|Failed assertion:", [quote, ["~", xs]]],
-              ["raise", ["~", message]]]]]]]
+      ["if", ["&and", ["string?", xs], ["not", ["string?", message]]],
+        ["quote-replace", ["assert", ["~", xs], ["~", message]]],
+        ["quote-replace",
+          ["do",
+            ["if", ["not", ["string?", ["~", message]]],
+                   ["raise", [str, "|expects 1st argument to be string"]]],
+            ["if", ["~", xs], "nil",
+               ["do",
+                ["echo", "|Failed assertion:", [quote, ["~", xs]]],
+                ["raise", ["~", message]]]]]]]]
   , coreNs)
 
   let codePrintln = genCirru(
