@@ -87,6 +87,22 @@
             assert= nil $ first |
             assert= nil $ last |
 
+        |test-re $ quote
+          fn ()
+            log-title "|Test regular expression"
+
+            assert= true $ re-matches |\d |2
+            assert= true $ re-matches |\d+ |23
+            assert= false $ re-matches |\d |a
+
+            assert= 1 $ re-find-index |\d |a1
+            assert= -1 $ re-find-index |\d |aa
+
+            assert= ([] |1 |2 |3) $ re-find-all |\d |123
+            assert= ([] |123) $ re-find-all |\d+ |123
+            assert= ([] |1 |2 |3) $ re-find-all |\d+ |1a2a3
+            assert= ([] |1 |2 |34) $ re-find-all |\d+ |1a2a34
+
         |main! $ quote
           defn main! ()
             log-title "|Testing str"
@@ -104,6 +120,8 @@
             test-format
 
             test-char
+
+            test-re
 
             do true
 
