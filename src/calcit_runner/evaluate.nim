@@ -121,9 +121,9 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
 
     # echo "HEAD: ", head, " ", xs
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
-    # pushDefStack(head, CirruData(kind: crDataNil), args)
+    pushDefStack(head, CirruData(kind: crDataNil), args)
     let ret = f(args, interpret, scope, ns)
-    # popDefStack()
+    popDefStack()
     return ret
 
   of crDataFn:

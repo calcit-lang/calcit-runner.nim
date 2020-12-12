@@ -2,6 +2,7 @@
 import lists
 import strutils
 import tables
+import algorithm
 
 import ternary_tree
 import cirru_edn
@@ -37,19 +38,16 @@ proc pushDefStack*(node: CirruData, code: CirruData, args: seq[CirruData]): void
 proc popDefStack*(): void =
   defStack.remove defStack.tail
 
-proc showStack*(): void =
+proc showStack*(message: string): void =
   # let errorStack = reversed(defStack)
 
   var infoList: seq[CirruEdnValue]
 
   for item in defStack:
     echo item.ns, "/", item.def
-
     var infoItem = initTable[CirruEdnValue, CirruEdnValue]()
-    infoItem[CirruEdnValue(kind: crEdnKeyword, keywordVal: "def")] =
-      CirruEdnValue(kind: crEdnString, stringVal: item.ns & "/" & item.def)
-    infoItem[CirruEdnValue(kind: crEdnKeyword, keywordVal: "code")] =
-      CirruEdnValue(kind: crEdnQuotedCirru, quotedVal: item.code.toCirruNode)
+    infoItem[crEdn("def", true)] = crEdn(item.ns & "/" & item.def)
+    infoItem[crEdn("code", true)] = CirruEdnValue(kind: crEdnQuotedCirru, quotedVal: item.code.toCirruNode)
 
     var ys: seq[CirruEdnValue]
     for ax in item.args:
@@ -59,7 +57,12 @@ proc showStack*(): void =
 
     infoList.add CirruEdnValue(kind: crEdnMap, mapVal: infoItem)
 
-  let details = CirruEdnValue(kind: crEdnVector, vectorVal: infoList).formatToCirru(true)
+  infoList.reverse() # show inner function first
+
+  var detailTable = initTable[CirruEdnValue, CirruEdnValue]()
+  detailTable[crEdn("message", true)] = crEdn(message)
+  detailTable[crEdn("stack", true)] = CirruEdnValue(kind: crEdnVector, vectorVal: infoList)
+  let details = CirruEdnValue(kind: crEdnMap, mapVal: detailTable).formatToCirru(true)
 
   writeFile "./.calcit-error.cirru", details
   echo "\nMore error details in .calcit-error.cirru     <--------="
