@@ -188,6 +188,9 @@
               with-log $ + 1 2
               , 3
 
+            ; echo $ macroexpand $ quote $ call-with-log + 1 2 3 4
+            assert= 10 $ call-with-log + 1 2 3 4
+
         |test-with-cpu-time $ quote
           fn ()
             log-title "|Testing with-cpu-time"

@@ -444,27 +444,31 @@ proc nativeIdenticalQuestion(args: seq[CirruData], interpret: FnInterpret, scope
     return CirruData(kind: crDataBool, boolVal: false)
 
 proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 3:
-    raiseEvalError("slice requires 3 args", args)
+  if args.len < 2:
+    raiseEvalError("slice requires 2~3 args", args)
   let base = args[0]
   let startIdx = args[1]
-  let endIdx = args[2]
 
-  if not startIdx.isNumber or not endIdx.isNumber:
-    raiseEvalError("slice requires startIdx and endIdx in number", args)
+  if not startIdx.isNumber: raiseEvalError("slice requires startIdx in number", args)
 
   case base.kind
   of crDataNil:
     return base
   of crDataList:
-    let i0 = startIdx.numberVal.int
-    let i1 = endIdx.numberVal.int
-    if i0 < 0: raiseEvalError("start index too small for slice", args)
-    if i1 > base.listVal.len: raiseEvalError("end index too large for slice", args)
     if base.len == 0:
       return CirruData(kind: crDataNil)
     else:
-      return CirruData(kind: crDataList, listVal: base.listVal.slice(i0, i1))
+      let i0 = startIdx.numberVal.int
+      if i0 < 0: raiseEvalError("start index too small for slice", args)
+      if args.len >= 3:
+        let endIdx = args[2]
+        if not endIdx.isNumber: raiseEvalError("slice requires endIdx in number", args)
+        let i1 = endIdx.numberVal.int
+        if i1 > base.listVal.len: raiseEvalError("end index too large for slice", args)
+        return CirruData(kind: crDataList, listVal: base.listVal.slice(i0, i1))
+      else:
+        let i1 = base.listVal.len
+        return CirruData(kind: crDataList, listVal: base.listVal.slice(i0, i1))
   else:
     raiseEvalError("slice requires a list", (args))
 
@@ -484,7 +488,7 @@ proc nativeConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     return base
 
   if not base.isList or not another.isList:
-    raiseEvalError("&concat requires two lists", args)
+    raiseEvalError("&concat requires two lists, got: " & $base.kind & " : " & $another.kind, args)
 
   return CirruData(kind: crDataList, listVal: base.listVal.concat(another.listVal))
 

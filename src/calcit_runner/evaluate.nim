@@ -148,11 +148,12 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     return ret
 
   of crDataKeyword:
-    if xs.len != 2: raiseEvalError("keyword function expects 1 argument", xs)
+    if xs.len != 2: raiseEvalError("keyword function :" & value.keywordVal[] & " expects 1 argument", xs)
     let base = interpret(xs[1], scope, ns)
     if base.kind == crDataNil:
       return base
-    if base.kind != crDataMap: raiseEvalError("keyword function expects a map but got " & $base.kind, xs)
+    if base.kind != crDataMap:
+      raiseEvalError("keyword function :" & value.keywordVal[] & " expects a map but got " & $base.kind, xs)
     let ret = base.mapVal[value]
     if ret.isNone:
       return CirruData(kind: crDataNil)
