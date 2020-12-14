@@ -17,7 +17,7 @@ proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[
 
   if splitPosition >= 0:
     if passedArgs.len < splitPosition:
-      raiseEvalError("No enough arguments", CirruData(kind: crDataList, listVal: definedArgs))
+      raiseEvalError("No enough arguments for:" & $CirruData(kind: crDataList, listVal: definedArgs), CirruData(kind: crDataList, listVal: definedArgs))
     if splitPosition != (definedArgs.len - 2):
       raiseEvalError("& should appear before last argument", CirruData(kind: crDataList, listVal: definedArgs))
     for idx in 0..<splitPosition:

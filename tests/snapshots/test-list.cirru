@@ -32,7 +32,7 @@
               assert |&concat $ =
                 &concat (range 10) (range 4)
                 [] 0 1 2 3 4 5 6 7 8 9 0 1 2 3
-              assert "|concat only 1" $ =
+              assert=
                 concat $ [] 1 2 3
                 [] 1 2 3
               assert "|concat lists" $ =

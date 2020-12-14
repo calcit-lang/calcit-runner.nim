@@ -348,9 +348,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   let codeConcat = genCirru(
-    [defn, concat, [item, "&", xs],
-      ["if", ["empty?", xs], item,
-        [recur, ["&concat", item, [first, xs]], "&", [rest, xs]]]]
+    [defn, concat, ["&", xs],
+      ["if", ["empty?", xs], ["[]"],
+        ["if", ["=", ["count", xs], 1], [first, xs],
+          [recur, ["&concat", [get, xs, 0], [get, xs, 1]], "&", [slice, xs, 2]]]]]
   , coreNs)
 
   let codeMapcat = genCirru(
@@ -541,10 +542,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
                   ["if", ["/=", ["~", va], ["~", vb]],
                          ["do",
                             ["echo"],
-                            ["echo", "|Wanted:", ["~", va]],
-                            ["echo", "|       ", [quote, ["~", a]]],
-                            ["echo", "|Got:   ", ["~", vb]],
-                            ["echo", "|       ", [quote, ["~", b]]],
+                            ["echo", "|Left: ", ["~", va]],
+                            ["echo", "|      ", [quote, ["~", a]]],
+                            ["echo", "|Right:", ["~", vb]],
+                            ["echo", "|      ", [quote, ["~", b]]],
                             ["raise", "|Not equal!"]],
                           "nil"]]]]]
   , coreNs)
