@@ -7,7 +7,10 @@
         ns app.main $ :require
       :defs $ {}
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (try-fibo)
+          defn main! ()
+            println "\"Loaded program!"
+            ; try-fibo
+            echo $ sieve-primes ([] 2 3 5 7 11 13) 17 400
 
         |try-fibo $ quote
           defn try-fibo ()
@@ -19,6 +22,16 @@
           defn fibo (x)
             if (< x 2) (, 1)
               + (fibo $ - x 1) (fibo $ - x 2)
+
+        |sieve-primes $ quote
+          defn sieve-primes (acc n limit)
+            if (&> n limit) acc $ if
+              every?
+                fn (m)
+                  &> (mod n m) 0
+                , acc
+              recur (conj acc n) (inc n) (, limit)
+              recur acc (inc n) limit
 
       :proc $ quote ()
       :configs $ {} (:extension nil)

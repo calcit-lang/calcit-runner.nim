@@ -1,7 +1,8 @@
 
 import nimprof
 import times
-import calcit_runner
+
+import ./calcit_runner
 
 let t1 = now()
 

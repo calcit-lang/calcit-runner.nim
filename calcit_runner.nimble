@@ -26,7 +26,7 @@ task once, "run once":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --once example/compact.cirru"
 
 task perf, "run with perf":
-  exec "nim compile --verbosity:0 --profiler:on --stackTrace:on --hints:off -r tests/prof"
+  exec "nim compile --profiler:on --stackTrace:on -r tests/prof"
 
 task t, "Runs the test suite":
   exec "nim c -r --hints:off --threads:on tests/test_expr.nim"
