@@ -55,7 +55,10 @@ proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): 
   return ret
 
 proc displayErrorMessage(message: string) =
+  showStack(message)
+  echo ""
   coloredEcho fgRed, message
+  echo ""
 
   let ns = codeConfigs.initFn.split('/')[0]
   let def = "on-error"
@@ -67,24 +70,15 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
     return evaluateDefCode(ns, def, argData, dropArg)
 
   except CirruEvalError as e:
-    showStack()
-    echo ""
     displayErrorMessage(e.msg & " " & $e.code)
-    echo ""
     raise e
 
   except ValueError as e:
-    echo ""
     displayErrorMessage(e.msg)
-    showStack()
-    echo ""
     raise e
 
   except Defect as e:
-    echo ""
     displayErrorMessage("Failed assertion")
-    showStack()
-    echo ""
     raise e
 
 # only load code of modules, ignore recursive deps

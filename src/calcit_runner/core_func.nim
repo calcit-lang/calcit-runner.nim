@@ -12,6 +12,7 @@ import random
 import nanoid
 import times
 import algorithm
+import re
 
 import ternary_tree
 import cirru_edn
@@ -633,9 +634,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   else:
     raiseEvalError("Cannot turn into symbol", (args))
 
-proc nativeTurnStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
-    raiseEvalError("turn-str requires 1 arg", (args))
+    raiseEvalError("turn-string requires 1 arg", (args))
   let x = args[0]
   case x.kind
   of crDataKeyword:
@@ -1147,6 +1148,36 @@ proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if args[0].stringVal.len != 1: raiseEvalError("get-char-code expects a string of a character", args)
   CirruData(kind: crDataNumber, numberVal: float(char(args[0].stringVal[0])))
 
+# TODO Performance, creating regular expressions dynamically is slow.
+# adding specific data type for regex may help in caching. not decided yet
+proc nativerReMatches(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("re-matches expects 2 arguments", args)
+  let regex = args[0]
+  if regex.kind != crDataString: raiseEvalError("re-matches expects a string for regex", args)
+  let operand = args[1]
+  if operand.kind != crDataString: raiseEvalError("re-matches expects a string operand", args)
+  return CirruData(kind: crDataBool, boolVal: operand.stringVal.match(re(regex.stringVal)))
+
+proc nativerReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("re-find-index expects 2 arguments", args)
+  let regex = args[0]
+  if regex.kind != crDataString: raiseEvalError("re-find-index expects a string for regex", args)
+  let operand = args[1]
+  if operand.kind != crDataString: raiseEvalError("re-find-index expects a string operand", args)
+  return CirruData(kind: crDataNumber, numberVal: operand.stringVal.find(re(regex.stringVal)).float)
+
+proc nativerReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("re-find expects 2 arguments", args)
+  let regex = args[0]
+  if regex.kind != crDataString: raiseEvalError("re-find expects a string for regex", args)
+  let operand = args[1]
+  if operand.kind != crDataString: raiseEvalError("re-find expects a string operand", args)
+  let ys = operand.stringVal.findAll(re(regex.stringVal))
+  var xs: seq[CirruData]
+  for y in ys:
+    xs.add CirruData(kind: crDataString, stringVal: y)
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1181,7 +1212,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataProc, procVal: nativeButlast)
   programData[coreNs].defs["reverse"] = CirruData(kind: crDataProc, procVal: nativeReverse)
-  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnStr)
+  programData[coreNs].defs["turn-string"] = CirruData(kind: crDataProc, procVal: nativeTurnString)
+  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnString) # alias, deprecating in future
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataProc, procVal: nativeTurnSymbol)
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataProc, procVal: nativeTurnKeyword)
   programData[coreNs].defs["identical?"] = CirruData(kind: crDataProc, procVal: nativeIdenticalQuestion)
@@ -1245,3 +1277,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
   programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
   programData[coreNs].defs["get-char-code"] = CirruData(kind: crDataProc, procVal: nativeGetCharCode)
+  programData[coreNs].defs["re-matches"] = CirruData(kind: crDataProc, procVal: nativerReMatches)
+  programData[coreNs].defs["re-find-index"] = CirruData(kind: crDataProc, procVal: nativerReFindIndex)
+  programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativerReFindAll)
