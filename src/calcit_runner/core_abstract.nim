@@ -789,6 +789,20 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
               ["~", v]]]]]]
   , coreNs)
 
+  let codeCallWithLog = genCirru(
+    [defmacro, "call-with-log", [f, "&", xs],
+      ["let", [[v, [gensym, "|v"]], ["args-value", [gensym, "|args-value"]]],
+        ["quote-replace",
+          ["let", [
+              [["~", "args-value"], ["[]", ["~@", xs]]],
+              [["~", v], [["~", f], "&", ["~", "args-value"]]]
+            ],
+            ["echo", "|call:", [quote, ["'call-with-log", ["~", f], ["~@", xs]]], "|=>", ["~", v]],
+            ["echo", "|f:   ", ["~", f]],
+            ["echo", "|args:", ["~", "args-value"]],
+            ["~", v]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -894,3 +908,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["{,}"] = codeMapComma
   programCode[coreNs].defs["&doseq"] = codeNativeDoseq
   programCode[coreNs].defs["with-cpu-time"] = codeWithCpuTime
+  programCode[coreNs].defs["call-with-log"] = codeCallWithLog
