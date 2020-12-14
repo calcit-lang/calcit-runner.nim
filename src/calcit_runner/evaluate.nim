@@ -128,7 +128,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
 
   of crDataFn:
     let traceThis = matchesTraceFn(value.fnNs, value.fnName)
-    let fnPath =  value.fnNs & "/" & value.fnName
+    # let fnPath = value.fnNs & "/" & value.fnName
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
 
     if traceThis:
