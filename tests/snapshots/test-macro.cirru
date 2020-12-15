@@ -222,6 +222,30 @@
             assert (= 1 1) |string
             assert |string (= 1 1)
 
+        |test-extract $ quote
+          fn ()
+            log-title "|Extract map via keywords"
+
+            &reset-gensym-index!
+
+            assert=
+              macroexpand $ quote $ let{}
+                (a b) o
+                + a b
+              quote $ &let (result__1 o)
+                let
+                    a $ :a result__1
+                    b $ :b result__1
+                  + a b
+
+            &let
+              base $ {}
+                :a 5
+                :b 6
+              assert= 11 $ let{}
+                (a b) base
+                + a b
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -247,6 +271,8 @@
             test-with-cpu-time
 
             test-assert
+
+            test-extract
 
             do true
 
