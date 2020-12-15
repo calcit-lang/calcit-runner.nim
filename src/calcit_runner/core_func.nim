@@ -13,6 +13,7 @@ import nanoid
 import times
 import algorithm
 import re
+import unicode
 
 import ternary_tree
 import cirru_edn
@@ -1149,8 +1150,8 @@ proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("get-char-code expects 1 argument", args)
   if args[0].kind != crDataString: raiseEvalError("get-char-code expects a string", args)
-  if args[0].stringVal.len != 1: raiseEvalError("get-char-code expects a string of a character", args)
-  CirruData(kind: crDataNumber, numberVal: float(char(args[0].stringVal[0])))
+  if args[0].stringVal.runeLen != 1: raiseEvalError("get-char-code expects a string of a character", args)
+  CirruData(kind: crDataNumber, numberVal: float(args[0].stringVal.runeAt(0)))
 
 # TODO Performance, creating regular expressions dynamically is slow.
 # adding specific data type for regex may help in caching. not decided yet
