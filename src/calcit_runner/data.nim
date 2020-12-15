@@ -183,6 +183,14 @@ proc toCirruData*(xs: CirruNode, ns: string): CirruData =
     CirruData(kind: crDataList, listVal: list)
 
 proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
+  var noSpread = true
+  for x in xs:
+    if x.kind == crDataSymbol and x.symbolVal == "&":
+      noSpread = false
+      break
+  if noSpread:
+    return xs
+
   var args: seq[CirruData]
   var spreadMode = false
   for x in xs:
@@ -199,6 +207,17 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
   args
 
 proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): seq[CirruData] =
+  var noSpread = true
+  for x in xs:
+    if x.kind == crDataSymbol and x.symbolVal == "&":
+      noSpread = false
+      break
+  if noSpread:
+    var args = newSeq[CirruData](xs.len)
+    for idx, x in xs:
+      args[idx] = interpret(x, scope, ns)
+    return args
+
   var args: seq[CirruData] = @[]
   var spreadMode = false
   for x in xs:
@@ -206,9 +225,8 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       let ys = interpret(x, scope, ns)
       if not ys.isList:
         raiseEvalError("Spread mode expects a list", xs)
-      ys.listVal.each(proc(y: CirruData): void =
+      for y in ys.listVal:
         args.add y
-      )
       spreadMode = false
     elif x.isSymbol and x.symbolVal == "&":
       spreadMode = true
