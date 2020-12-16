@@ -197,7 +197,7 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     if programCode.hasKey(ns).not:
       raise newException(ValueError, "No code for such ns: " & ns)
     if programCode[ns].defs.hasKey(def).not:
-      raise newException(ValueError, "No such definition: " & def)
+      raise newException(ValueError, "No such definition under " & ns & ": " & def)
     var code = programCode[ns].defs[def]
     programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc)
     pushDefStack(StackInfo(ns: ns, def: def, code: code, args: @[]))

@@ -464,7 +464,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
          ["if", ["has-index?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
         [["map?", x],
          ["if", ["contains?", x, k], [assoc, x, k, [f, [get, x, k]]], x]],
-        [true, ["raise", [str, "|Cannot update key on item: ", x]]]]]
+        [true, ["raise", ["&str", "|Cannot update key on item: ", x]]]]]
   , coreNs)
 
   let codeGroupBy = genCirru(
@@ -650,11 +650,11 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["quote-replace",
           ["do",
             ["if", ["not", ["string?", ["~", message]]],
-                   ["raise", [str, "|expects 1st argument to be string"]]],
+                   ["raise", "|expects 1st argument to be string"]],
             ["if", ["~", xs], "nil",
                ["do",
-                ["echo", "|Failed assertion:", [quote, ["~", xs]]],
-                ["raise", ["~", message]]]]]]]]
+                ["echo", "|Failed assertion:", [quote, ["~", xs]], ],
+                ["raise", ["~", ["&str-concat", message, [quote, ["~", xs]]]]]]]]]]]
   , coreNs)
 
   let codePrintln = genCirru(
@@ -803,6 +803,24 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
             ["~", v]]]]]
   , coreNs)
 
+  let codeLetExtractMap = genCirru(
+    [defmacro, "let{}", [binding, "&", body],
+      ["assert", "|expects 2 items in list of binding",
+        ["&and", ["list?", binding], ["=", 2, [count, binding]]]],
+      ["let", [[items, [first, binding]],
+               [base, [last, binding]],
+               ["var-result", [gensym, "|result"]]],
+        ["assert", [str, "|expects symbol names in binding names: ", items],
+          ["every?", "symbol?", items]],
+        ["quote-replace",
+          ["&let", [["~", "var-result"], ["~", base]],
+            ["let", ["~", [map,
+                            [defn, "gen-items%", [x],
+                              ["[]", x, ["[]", ["turn-keyword", x], "var-result"]]],
+                             items]],
+                      ["~@", body]]]]]]
+  , coreNs)
+
   # programCode[coreNs].defs["foldl"] = codeFoldl
   programCode[coreNs].defs["unless"] = codeUnless
   programCode[coreNs].defs["&<="] = codeNativeLittlerEqual
@@ -909,3 +927,4 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   programCode[coreNs].defs["&doseq"] = codeNativeDoseq
   programCode[coreNs].defs["with-cpu-time"] = codeWithCpuTime
   programCode[coreNs].defs["call-with-log"] = codeCallWithLog
+  programCode[coreNs].defs["let{}"] = codeLetExtractMap

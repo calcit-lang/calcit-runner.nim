@@ -52,6 +52,8 @@ cr compact.cirru # watch by default
 
 cr compact.cirru --once # run only once
 
+cr compact.cirru --init-fn='app.main/main!' # specifying init-fn
+
 cr -e="range 100" # eval from CLI
 
 cr_once # bundled without wathcer and SDL2, for CI only

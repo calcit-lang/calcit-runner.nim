@@ -4,6 +4,7 @@ import calcit_runner
 import parseopt
 import os
 import strutils
+import options
 
 import json_paint
 
@@ -14,6 +15,7 @@ import ./calcit_runner/errors
 var runOnce = false
 var evalOnce = false
 var evalOnceCode: string
+var initFn = none(string)
 
 registerCoreProc("init-canvas", nativeInitCanvas)
 registerCoreProc("draw-canvas", nativeDrawCanvas)
@@ -72,6 +74,8 @@ while true:
       if cliArgs.val == "" or cliArgs.val == "true":
         runOnce = true
         dimEcho "Runner: watching mode disabled."
+    if cliArgs.key == "init-fn" and cliArgs.val != "":
+      initFn = some(cliArgs.val)
   of cmdArgument:
     snapshotFile = cliArgs.key
     incrementFile = cliArgs.key.replace("compact", ".compact-inc")
@@ -81,10 +85,10 @@ if evalOnce:
   discard evalSnippet(evalOnceCode)
 elif runOnce:
   echo "Calcit runner version: ", commandLineVersion
-  discard runProgram(snapshotFile)
+  discard runProgram(snapshotFile, initFn)
 else:
   echo "Calcit runner version: ", commandLineVersion
-  discard runProgram(snapshotFile)
+  discard runProgram(snapshotFile, initFn)
   # watch mode by default
   setControlCHook(handleControl)
   watchFile(snapshotFile, incrementFile)

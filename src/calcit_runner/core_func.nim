@@ -13,6 +13,7 @@ import nanoid
 import times
 import algorithm
 import re
+import unicode
 
 import ternary_tree
 import cirru_edn
@@ -335,10 +336,10 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     else:
       return base.listVal.first
   of crDataString:
-    if base.stringVal.len == 0:
+    if base.stringVal.runeLen == 0:
       return CirruData(kind: crDataNil)
     else:
-      return CirruData(kind: crDataString, stringVal: $base.stringVal[0])
+      return CirruData(kind: crDataString, stringVal: base.stringVal.runeAtPos(0).toUTF8())
   else:
     raiseEvalError("first requires a list but got " & $base.kind, args)
 
@@ -890,8 +891,8 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   var list = initTernaryTreeList[CirruData](@[])
   # Nim splits with "" differently
   if target.stringVal == "":
-    for c in base.stringVal:
-      list = list.append CirruData(kind: crDataString, stringVal: $c)
+    for idx in 0..<base.stringVal.runeLen:
+      list = list.append CirruData(kind: crDataString, stringVal: base.stringVal.runeAtPos(idx).toUTF8())
   else:
     for item in base.stringVal.split(target.stringVal):
       list = list.append CirruData(kind: crDataString, stringVal: item)
@@ -1149,8 +1150,8 @@ proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("get-char-code expects 1 argument", args)
   if args[0].kind != crDataString: raiseEvalError("get-char-code expects a string", args)
-  if args[0].stringVal.len != 1: raiseEvalError("get-char-code expects a string of a character", args)
-  CirruData(kind: crDataNumber, numberVal: float(char(args[0].stringVal[0])))
+  if args[0].stringVal.runeLen != 1: raiseEvalError("get-char-code expects a string of a character", args)
+  CirruData(kind: crDataNumber, numberVal: float(args[0].stringVal.runeAtPos(0)))
 
 # TODO Performance, creating regular expressions dynamically is slow.
 # adding specific data type for regex may help in caching. not decided yet
