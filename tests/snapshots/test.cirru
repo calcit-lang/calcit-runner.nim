@@ -72,6 +72,11 @@
             assert= (if false 1) (if nil 1)
             assert= (if false 1 2) (if nil 1 2)
 
+        |test-display-stack $ quote
+          fn ()
+            log-title "|Testing display stack"
+            display-stack "|show stack here"
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"
@@ -88,6 +93,8 @@
             ; test-time
 
             test-if
+
+            test-display-stack
 
             do true
 

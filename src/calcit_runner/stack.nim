@@ -38,7 +38,15 @@ proc pushDefStack*(node: CirruData, code: CirruData, args: seq[CirruData]): void
 proc popDefStack*(): void =
   defStack.remove defStack.tail
 
-proc showStack*(message: string): void =
+proc displayStack*(): void =
+  var xs: seq[StackInfo]
+  for item in defStack:
+    xs.add item
+  for idx in 0..<xs.len:
+    let item = xs[^(idx + 1)]
+    echo item.ns, "/", item.def
+
+proc displayStackDetails*(message: string): void =
   # let errorStack = reversed(defStack)
 
   var infoList: seq[CirruEdnValue]
