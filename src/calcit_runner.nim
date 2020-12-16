@@ -55,7 +55,7 @@ proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): 
   return ret
 
 proc displayErrorMessage(message: string) =
-  showStack(message)
+  displayStackDetails(message)
   echo ""
   coloredEcho fgRed, message
   echo ""

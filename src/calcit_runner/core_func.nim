@@ -1155,7 +1155,7 @@ proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
 # TODO Performance, creating regular expressions dynamically is slow.
 # adding specific data type for regex may help in caching. not decided yet
-proc nativerReMatches(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReMatches(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("re-matches expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-matches expects a string for regex", args)
@@ -1163,7 +1163,7 @@ proc nativerReMatches(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   if operand.kind != crDataString: raiseEvalError("re-matches expects a string operand", args)
   return CirruData(kind: crDataBool, boolVal: operand.stringVal.match(re(regex.stringVal)))
 
-proc nativerReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("re-find-index expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-find-index expects a string for regex", args)
@@ -1171,7 +1171,7 @@ proc nativerReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   if operand.kind != crDataString: raiseEvalError("re-find-index expects a string operand", args)
   return CirruData(kind: crDataNumber, numberVal: operand.stringVal.find(re(regex.stringVal)).float)
 
-proc nativerReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("re-find expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-find expects a string for regex", args)
@@ -1182,6 +1182,12 @@ proc nativerReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   for y in ys:
     xs.add CirruData(kind: crDataString, stringVal: y)
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+
+proc nativeDisplayStack(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len < 1: raiseEvalError("displat stack expects 1 argument", args)
+  echo "Display stack: " & $args[0]
+  displayStack()
+  return CirruData(kind: crDataNil)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1282,6 +1288,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
   programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
   programData[coreNs].defs["get-char-code"] = CirruData(kind: crDataProc, procVal: nativeGetCharCode)
-  programData[coreNs].defs["re-matches"] = CirruData(kind: crDataProc, procVal: nativerReMatches)
-  programData[coreNs].defs["re-find-index"] = CirruData(kind: crDataProc, procVal: nativerReFindIndex)
-  programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativerReFindAll)
+  programData[coreNs].defs["re-matches"] = CirruData(kind: crDataProc, procVal: nativeReMatches)
+  programData[coreNs].defs["re-find-index"] = CirruData(kind: crDataProc, procVal: nativeReFindIndex)
+  programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativeReFindAll)
+  programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
