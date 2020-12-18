@@ -14,6 +14,7 @@ import times
 import algorithm
 import re
 import unicode
+import deques
 
 import ternary_tree
 import cirru_edn
@@ -1124,8 +1125,8 @@ proc nativeDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, sco
     ternaryVal: createDualBalancedTernary(args[0].numberVal, args[1].numberVal)
   )
 
-proc nativeTernaryToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("ternary->point expects 1 argument", args)
+proc nativeDbtToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("dbt->point expects 1 argument", args)
   if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
   let v = args[0].ternaryVal.toFloat()
   let xs = @[
@@ -1188,6 +1189,31 @@ proc nativeDisplayStack(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   echo "Display stack: " & $args[0]
   displayStack()
   return CirruData(kind: crDataNil)
+
+# "dbt" stands for dual-balanced-ternary
+proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("dbt-digits expects 1 argument", args)
+  if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
+  let dbtValue = args[0].ternaryVal
+
+  var xs = initTernaryTreeList[CirruData](@[])
+  for idx in 0..<dbtValue.integral.len:
+    let i = dbtValue.integral.len - idx - 1
+    var chunk = initDeque[DualBalancedTernaryDigit]()
+    chunk.addLast(dbtValue.integral[i])
+    xs = xs.append(CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+      CirruData(kind: crDataNumber, numberVal: i.float),
+      CirruData(kind: crDataTernary, ternaryVal: DualBalancedTernary(integral: chunk)),
+    ])))
+  for idx in 0..<dbtValue.fractional.len:
+    let i = -1 - idx
+    var chunk = initDeque[DualBalancedTernaryDigit]()
+    chunk.addLast(dbtValue.fractional[idx])
+    xs = xs.append(CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+      CirruData(kind: crDataNumber, numberVal: i.float),
+      CirruData(kind: crDataTernary, ternaryVal: DualBalancedTernary(integral: chunk)),
+    ])))
+  return CirruData(kind: crDataList, listVal: xs)
 
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
@@ -1283,7 +1309,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
   programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)
   programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary)
-  programData[coreNs].defs["ternary->point"] = CirruData(kind: crDataProc, procVal: nativeTernaryToPoint)
+  programData[coreNs].defs["dbt"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary) # alias
+  programData[coreNs].defs["dbt->point"] = CirruData(kind: crDataProc, procVal: nativeDbtToPoint)
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
   programData[coreNs].defs["cpu-time"] = CirruData(kind: crDataProc, procVal: nativeCpuTime)
@@ -1292,3 +1319,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["re-find-index"] = CirruData(kind: crDataProc, procVal: nativeReFindIndex)
   programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativeReFindAll)
   programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
+  programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
