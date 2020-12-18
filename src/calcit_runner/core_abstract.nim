@@ -39,29 +39,29 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   # use native foldl for performance
   let codeFoldl = genCirru(
-    ["defn", "foldl", ["f", "xs", "acc"],
+    ["defn", "foldl", [f, acc, xs],
       ["if", ["empty?", "xs"], "acc",
-             ["recur", "f", ["rest", "xs"], ["f", "acc", ["first", "xs"]]]]]
+             ["recur", "f", ["f", "acc", ["first", "xs"]], [rest, xs]]]]
   , coreNs)
 
   let codeAdd = genCirru(
     ["defn", "+", ["x", "&", "ys"],
-      ["foldl", "&+", "ys", "x"]]
+      [reduce, "&+", x, ys]]
   , coreNs)
 
   let codeMinus = genCirru(
     ["defn", "-", ["x", "&", "ys"],
-      ["foldl", "&-", "ys", "x"]]
+      [reduce, "&-", x, ys]]
   , coreNs)
 
   let codeMultiply = genCirru(
     ["defn", "*", ["x", "&", "ys"],
-      ["foldl", "&*", "ys", "x"]]
+      [reduce, "&*", x, ys]]
   , coreNs)
 
   let codeDivide = genCirru(
     ["defn", "/", ["x", "&", "ys"],
-      ["foldl", "&/", "ys", "x"]]
+      [reduce, "&/", x, ys]]
   , coreNs)
 
   let codeFoldlCompare = genCirru(
@@ -153,10 +153,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeMap = genCirru(
     ["defn", "map", ["f", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "x"],
           ["append", "acc", ["f", "x"]]],
-        "xs", ["[]"]]]
+        ["[]"], xs]]
   , coreNs)
 
   let codeTake = genCirru(
@@ -172,50 +172,50 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeStr = genCirru(
     ["defn", "str", ["&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&str-concat", "acc", "item"]],
-        "xs", "|"]]
+        "|", xs]]
   , coreNs)
 
   let codeInclude = genCirru(
     ["defn", "include", ["base", "&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&include", "acc", "item"]],
-        "xs", "base"]]
+        base, xs]]
   , coreNs)
 
   let codeExclude = genCirru(
     ["defn", "exclude", ["base", "&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&exclude", "acc", "item"]],
-        "xs", "base"]]
+        base, xs]]
   , coreNs)
 
   let codeDifference = genCirru(
     ["defn", "difference", ["base", "&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&difference", "acc", "item"]],
-        "xs", "base"]]
+        base, xs]]
   , coreNs)
 
   let codeUnion = genCirru(
     ["defn", "union", ["base", "&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&union", "acc", "item"]],
-        "xs", "base"]]
+        base, xs]]
   , coreNs)
 
   let codeIntersection = genCirru(
     ["defn", "intersection", ["base", "&", "xs"],
-      ["foldl",
+      [reduce,
         ["fn", ["acc", "item"],
           ["&intersection", "acc", "item"]],
-        "xs", "base"]]
+        base, xs]]
   , coreNs)
 
   let codeIndexOf = genCirru(
@@ -321,18 +321,18 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeMax = genCirru(
     ["defn", "max", ["xs"],
       ["if", ["empty?", "xs"], "nil",
-        ["foldl",
+        [reduce,
           ["fn", ["acc", "x"],
             ["&max", "acc", "x"]],
-          ["rest", "xs"], ["first", "xs"]]]]
+          [first, xs], [rest, xs]]]]
   , coreNs)
 
   let codeMin = genCirru(
     ["defn", "min", ["xs"],
       ["if", ["empty?", "xs"], "nil",
-        ["foldl",
+        [reduce,
           ["fn", ["acc", "x"], ["&min", "acc", "x"]],
-          ["rest", "xs"], ["first", "xs"]]]]
+          [first, xs], [rest, xs]]]]
   , coreNs)
 
   let codeEveryQuestion = genCirru(
@@ -362,7 +362,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeMerge = genCirru(
     [defn, merge, [x0, "&", xs],
-      [foldl, "&merge", xs, x0]]
+      [reduce, "&merge", x0, xs]]
   , coreNs)
 
   let codeIdentity = genCirru(
@@ -381,33 +381,30 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeFilter = genCirru(
     [defn, filter, [f, xs],
-      [foldl,
+      [reduce,
         [fn, [acc, x],
              ["if", [f, x],
                   [append, acc, x],
                   acc]],
-        xs,
-        ["[]"]]]
+        ["[]"], xs]]
   , coreNs)
 
   let codeFilterNot = genCirru(
     [defn, "filter-not", [f, xs],
-      [foldl,
+      [reduce,
         [fn, [acc, x],
              [unless, [f, x],
                   [append, acc, x],
                   acc]],
-        xs,
-        ["[]"]]]
+        ["[]"], xs]]
   , coreNs)
 
   let codePairsMap = genCirru(
     [defn, "pairs-map", [xs],
-      [foldl, [fn, [acc, pair],
+      [reduce, [fn, [acc, pair],
                    ["assert", "|expects a pair", ["&and", ["list?", pair], ["&=", 2, [count, pair]]]],
                    [assoc, acc, [first, pair], [last, pair]]],
-              xs,
-              ["{}"]]]
+              ["{}"], xs]]
   , coreNs)
 
   let codeZipmap = genCirru(

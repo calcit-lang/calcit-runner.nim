@@ -818,13 +818,13 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
   let f = args[0]
   if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
-  let xs = args[1]
-  var acc = args[2]
+  var acc = args[1]
+  let xs = args[2]
   if xs.kind == crDataNil:
     return acc
 
   if xs.kind != crDataList:
-    raiseEvalError("Expects xs to be a list", args)
+    raiseEvalError("Expects xs to be a list but got " & $xs.kind, args)
 
   for item in xs.listVal:
     case f.kind
@@ -1283,6 +1283,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataProc, procVal: nativeIntersection)
   programData[coreNs].defs["recur"] = CirruData(kind: crDataProc, procVal: nativeRecur)
   programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl)
+  programData[coreNs].defs["reduce"] = CirruData(kind: crDataProc, procVal: nativeFoldl) # alias
   programData[coreNs].defs["rand"] = CirruData(kind: crDataProc, procVal: nativeRand)
   programData[coreNs].defs["rand-int"] = CirruData(kind: crDataProc, procVal: nativeRandInt)
   programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace)
