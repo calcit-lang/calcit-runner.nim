@@ -65,31 +65,31 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   , coreNs)
 
   let codeFoldlCompare = genCirru(
-    ["defn", "foldl-compare", ["f", "xs", "acc"],
+    ["defn", "foldl-compare", [f, acc, xs],
       ["if", ["empty?", "xs"], true,
              ["if", ["f", "acc", ["first", "xs"]],
-                    ["recur", "f", ["rest", "xs"], ["first", "xs"]],
+                    ["recur", "f", [first, xs], [rest, xs]],
                     false]]]
   , coreNs)
 
   let codeLittlerThan = genCirru(
-    ["defn", "<", ["x", "&", "ys"], ["foldl-compare", "&<", "ys", "x"]]
+    ["defn", "<", ["x", "&", "ys"], ["foldl-compare", "&<", x, ys]]
   , coreNs)
 
   let codeLargerThan = genCirru(
-    ["defn", ">", ["x", "&", "ys"], ["foldl-compare", "&>", "ys", "x"]]
+    ["defn", ">", ["x", "&", "ys"], ["foldl-compare", "&>", x, ys]]
   , coreNs)
 
   let codeEqual = genCirru(
-    ["defn", "=", ["x", "&", "ys"], ["foldl-compare", "&=", "ys", "x"]]
+    ["defn", "=", ["x", "&", "ys"], ["foldl-compare", "&=", x, ys]]
   , coreNs)
 
   let codeLargerEqual = genCirru(
-    ["defn", ">=", ["x", "&", "ys"], ["foldl-compare", "&>=", "ys", "x"]]
+    ["defn", ">=", ["x", "&", "ys"], ["foldl-compare", "&>=", x, ys]]
   , coreNs)
 
   let codeLittlerEqual = genCirru(
-    ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", "ys", "x"]]
+    ["defn", "<=", ["x", "&", "ys"], ["foldl-compare", "&<=", x, ys]]
   , coreNs)
 
   let codeApply = genCirru(

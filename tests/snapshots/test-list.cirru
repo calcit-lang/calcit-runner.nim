@@ -190,7 +190,7 @@
             assert "|minus" $ = -1 (- 1 2)
             assert |minus $ = -7 (- 4 5 6)
             assert |minus $ = 91 (- 100 $ - 10 1)
-            assert "|compare" $ foldl-compare &< ([] 1 2) 0
+            assert "|compare" $ foldl-compare &< 0 ([] 1 2)
             assert "|compare" (< 1 2 3 4)
             assert |compare $ not (< 3 2)
             assert |mutiply $ = (* 2 3) 6
