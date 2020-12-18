@@ -185,18 +185,22 @@
         |test-foldl $ quote
           defn test-foldl ()
             assert "|get" $ = 1 $ get ([] 1 2 3) 0
-            assert "|foldl" $ = 6 $ foldl &+ ([] 1 2 3) 0
+            assert "|foldl" $ = 6 $ foldl &+ 0 ([] 1 2 3)
             assert |add $ = (+ 1 2 3 4 (+ 5 6 7)) 28
             assert "|minus" $ = -1 (- 1 2)
             assert |minus $ = -7 (- 4 5 6)
             assert |minus $ = 91 (- 100 $ - 10 1)
-            assert "|compare" $ foldl-compare &< ([] 1 2) 0
+            assert "|compare" $ foldl-compare &< 0 ([] 1 2)
             assert "|compare" (< 1 2 3 4)
             assert |compare $ not (< 3 2)
             assert |mutiply $ = (* 2 3) 6
             assert |mutiply $ = (* 2 3 4) 24
             assert |divide $ = (/ 2 3) (/ 4 6)
             assert |divide $ = (/ 2 3 4) (/ 1 6)
+
+            assert=
+              reduce + 2 ([] 3 4 5)
+              , 14
 
         |test-apply $ quote
           defn test-apply ()
