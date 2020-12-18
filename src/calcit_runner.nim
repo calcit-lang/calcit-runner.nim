@@ -84,7 +84,7 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
 # only load code of modules, ignore recursive deps
 proc loadModules(modulePath: string) =
   let fullpath = getEnv("HOME").joinPath(".config/calcit/modules/", modulePath)
-  echo "Loading modules from path: ", fullpath
+  echo "Loading module: ", fullpath
   let snapshotInfo = loadSnapshot(fullpath)
 
   for fileNs, file in snapshotInfo.files:
