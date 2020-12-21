@@ -1185,7 +1185,7 @@ proc nativeReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
 
 proc nativeDisplayStack(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len < 1: raiseEvalError("displat stack expects 1 argument", args)
+  if args.len < 1: raiseEvalError("display stack expects 1 argument", args)
   echo "Display stack: " & $args[0]
   displayStack()
   return CirruData(kind: crDataNil)

@@ -137,7 +137,7 @@ proc runEventListener*(event: JsonNode) =
 
   except ValueError as e:
     coloredEcho fgRed, "Failed to handle event: ", e.msg
-    raise e
+    # raise e
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
