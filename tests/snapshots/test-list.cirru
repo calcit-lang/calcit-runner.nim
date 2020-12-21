@@ -266,6 +266,7 @@
               swap! *counted &+ n
 
             assert= 10 (deref *counted)
+            assert= 10 @*counted
 
         |main! $ quote
           defn main! ()

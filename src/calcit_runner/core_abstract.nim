@@ -34,7 +34,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeWhen = genCirru(
     ["defmacro", "when", ["cond", "&", "body"],
-      ["quote-replace", ["if", ["~", cond], ["do", ["~@", "body"]]]]]
+      ["quote-replace", ["if", "~cond", ["do", "~@body"]]]]
   , coreNs)
 
   # use native foldl for performance
@@ -245,7 +245,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeThreadFirst = genCirru(
     ["defmacro", "->", ["base", "&", "xs"],
-      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+      ["if", ["empty?", "xs"], ["quote-replace", "~base"],
         ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
             ["recur", ["&concat", ["[]", ["first", "x0"], "base"], ["rest", "x0"]],
@@ -255,7 +255,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeThreadLast = genCirru(
     ["defmacro", "->>", ["base", "&", "xs"],
-      ["if", ["empty?", "xs"], ["quote-replace", ["~", "base"]],
+      ["if", ["empty?", "xs"], ["quote-replace", "~base"],
         ["&let", ["x0", ["first", "xs"]],
           ["if", ["list?", "x0"],
             ["recur", ["append", "x0", "base"], "&", ["rest", "xs"]],
@@ -269,7 +269,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["let", [["expr", ["first", "pair"]],
                ["branch", ["last", "pair"]]],
         ["quote-replace",
-          ["if", ["~", "expr"], ["~", "branch"],
+          ["if", "~expr", "~branch",
             ["~", ["if", ["empty?", "else"], "nil",
               ["quote-replace",
                 ["cond", ["~", ["first", "else"]],
@@ -284,17 +284,17 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["let", [[x, [first, pattern]],
                [branch, [last, pattern]]],
         ["quote-replace",
-          ["if", ["&=", ["~", item], ["~", x]], ["~", branch],
+          ["if", ["&=", ["~", item], ["~", x]], "~branch",
             ["~", ["if", ["empty?", others], "nil",
-                    ["quote-replace", ["&case", ["~", item], ["~@", others]]]]]]]]]
+                    ["quote-replace", ["&case", "~item", "~@others"]]]]]]]]
   , coreNs)
 
   let codeCase = genCirru(
     [defmacro, "case", [item, "&", patterns],
       ["&let", [v, [gensym, "|v"]],
         ["quote-replace",
-          ["&let", [["~", v], ["~", item]],
-            ["&case", ["~", v], ["~@", patterns]]]]]]
+          ["&let", ["~v", "~item"],
+            ["&case", "~v", "~@patterns"]]]]]
   , coreNs)
 
   let codeGetIn = genCirru(
@@ -439,8 +439,8 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeLambda = genCirru(
     [defmacro, "\\", ["&", xs],
       ["if", ["contains-symbol?", xs, "'%2"],
-        ["quote-replace", [fn, ["%", "%2"], ["~", xs]]],
-        ["quote-replace", [fn, ["%"], ["~", xs]]]]]
+        ["quote-replace", [fn, ["%", "%2"], "~xs"]],
+        ["quote-replace", [fn, ["%"], "~xs"]]]]
   , coreNs)
 
   let codeHasIndexQuestion = genCirru(
@@ -514,42 +514,42 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeListList = genCirru(
     [defmacro, "[][]", ["&", xs],
       ["&let",
-        [items, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]],
+        [items, [map, [fn, [ys], ["quote-replace", ["[]", "~@ys"]]],
                 xs]],
-        ["quote-replace", ["[]", ["~@", items]]]]]
+        ["quote-replace", ["[]", "~@items"]]]]
     , coreNs)
 
   let codeMapSyntax = genCirru(
     [defmacro, "{}", ["&", xs],
-      ["&let", [ys, [map, [fn, [x], ["quote-replace", ["[]", ["~@", x]]]], xs]],
-        ["quote-replace", ["&{}", ["~@", ys]]]]]
+      ["&let", [ys, [map, [fn, [zs], ["quote-replace", ["[]", "~@zs"]]], xs]],
+        ["quote-replace", ["&{}", "~@ys"]]]]
   , coreNs)
 
   let codeFn = genCirru(
     [defmacro, fn, [args, "&", body],
-      ["quote-replace", [defn, "f%", ["~", args], ["~@", body]]]]
+      ["quote-replace", [defn, "f%", "~args", "~@body"]]]
   , coreNs)
 
   let codeAssertEqual = genCirru(
     [defmacro, "assert=", [a, b],
       ["let", [[va, [gensym, "|va"]], [vb, [gensym, "|vb"]]],
         ["quote-replace",
-          ["let", [[["~", va], ["~", a]],
-                   [["~", vb], ["~", b]]],
-                  ["if", ["/=", ["~", va], ["~", vb]],
+          ["let", [["~va", "~a"],
+                   ["~vb", "~b"]],
+                  ["if", ["/=", "~va", "~vb"],
                          ["do",
                             ["echo"],
-                            ["echo", "|Left: ", ["~", va]],
-                            ["echo", "|      ", [quote, ["~", a]]],
-                            ["echo", "|Right:", ["~", vb]],
-                            ["echo", "|      ", [quote, ["~", b]]],
+                            ["echo", "|Left: ", "~va"],
+                            ["echo", "|      ", [quote, "~a"]],
+                            ["echo", "|Right:", "~vb"],
+                            ["echo", "|      ", [quote, "~b"]],
                             ["raise", "|Not equal!"]],
                           "nil"]]]]]
   , coreNs)
 
   let codeSwapBang = genCirru(
     [defmacro, "swap!", [a, f, "&", args],
-      ["quote-replace", ["reset!", ["~", a], [["~", f], [deref, ["~", a]], ["~@", args]]]]]
+      ["quote-replace", ["reset!", "~a", ["~f", [deref, "~a"], "~@args"]]]]
   , coreNs)
 
   let codeAssocIn = genCirru(
@@ -605,19 +605,19 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ],
         ["assert", "|loop requires symbols in pairs", ["every?", "symbol?", args]],
         ["quote-replace", [apply,
-                            [defn, "generated-loop", ["~", args], ["~@", body]],
-                            ["[]", ["~@", values]]]]]]
+                            [defn, "generated-loop", "~args", "~@body"],
+                            ["[]", "~@values"]]]]]
   , coreNs)
 
   let codeLet = genCirru(
     [defmacro, "let", [pairs, "&", body],
       ["assert", "|expects pairs in list for let", ["list?", pairs]],
       ["if", ["&=", 1, [count, pairs]],
-        ["quote-replace", ["&let", ["~", [first, pairs]], ["~@", body]]],
+        ["quote-replace", ["&let", ["~", [first, pairs]], "~@body"]],
         ["if", ["empty?", pairs],
-          ["quote-replace", ["do", ["~@", body]]],
+          ["quote-replace", ["do", "~@body"]],
           ["quote-replace", ["&let", ["~", [first, pairs]],
-                                     ["let", ["~", [rest, pairs]], ["~@", body]]]]]]]
+                                     ["let", ["~", [rest, pairs]], "~@body"]]]]]]
   , coreNs)
 
   let codeLetThread = genCirru(
@@ -637,21 +637,21 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let codeListComma = genCirru(
     [defmacro, "[,]", ["&", body],
       ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
-        ["quote-replace", ["[]", ["~@", xs]]]]]
+        ["quote-replace", ["[]", "~@xs"]]]]
   , coreNs)
 
   let codeAssert = genCirru(
     [defmacro, "assert", [message, xs],
       ["if", ["&and", ["string?", xs], ["not", ["string?", message]]],
-        ["quote-replace", ["assert", ["~", xs], ["~", message]]],
+        ["quote-replace", ["assert", "~xs", "~message"]],
         ["quote-replace",
           ["do",
-            ["if", ["not", ["string?", ["~", message]]],
+            ["if", ["not", ["string?", "~message"]],
                    ["raise", "|expects 1st argument to be string"]],
             ["if", ["~", xs], "nil",
                ["do",
-                ["echo", "|Failed assertion:", [quote, ["~", xs]], ],
-                ["raise", ["~", ["&str-concat", message, [quote, ["~", xs]]]]]]]]]]]
+                ["echo", "|Failed assertion:", [quote, "~xs"], ],
+                ["raise", ["~", ["&str-concat", message, [quote, "~xs"]]]]]]]]]]
   , coreNs)
 
   let codePrintln = genCirru(
@@ -712,7 +712,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
 
   let codeEither = genCirru(
     ["defmacro", "either", [x, y],
-      ["quote-replace", ["if", ["nil?", ["~", x]], ["~", y], ["~", x]]]]
+      ["quote-replace", ["if", ["nil?", "~x"], "~y", "~x"]]]
   , coreNs)
 
   # to be compatible in Calcit Editor, name is useless here
@@ -724,7 +724,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defmacro, "and", [item, "&", xs],
       ["if", ["empty?", xs], item,
         ["quote-replace",
-          ["if", ["~", item],
+          ["if", "~item",
                  ["and", ["~", ["first", xs]], ["~@", [rest, xs]]],
                  false]]]]
   , coreNs)
@@ -734,7 +734,7 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defmacro, "or", [item, "&", xs],
       ["if", ["empty?", xs], item,
         ["quote-replace",
-          ["if", ["~", item], true,
+          ["if", "~item", true,
                  ["or", ["~", ["first", xs]], ["~@", [rest, xs]]]]]]]
   , coreNs)
 
@@ -742,15 +742,15 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
     [defmacro, "with-log", [x],
       ["&let", [v, [gensym, "|v"]],
         ["quote-replace",
-          ["&let", [["~", v], ["~", x]],
-            ["echo", [quote, ["~", x]], "|=>", ["~", v]],
-            ["~", v]]]]]
+          ["&let", ["~v", "~x"],
+            ["echo", [quote, "~x"], "|=>", "~v"],
+            "~v"]]]]
   , coreNs)
 
   let codeMapComma = genCirru(
     [defmacro, "{,}", ["&", body],
       ["&let", [xs, [filter, [fn, [x], ["/=", x, "',"]], body]],
-        ["quote-replace", ["pairs-map", ["section-by", 2, ["[]", ["~@", xs]]]]]]]
+        ["quote-replace", ["pairs-map", ["section-by", 2, ["[]", "~@xs"]]]]]]
   , coreNs)
 
   let codeNativeDoseq = genCirru(
@@ -761,10 +761,10 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
           [apply,
             [defn, "doseq-fn%", [xs],
               ["if", ["empty?", xs], "nil",
-                ["&let", [["~", name], [first, xs]],
-                  ["~@", body],
+                ["&let", ["~name", [first, xs]],
+                  "~@body",
                   [recur, [rest, xs]]]]],
-            ["[]", ["~", xs0]]]]]]
+            ["[]", "~xs0"]]]]]
   , coreNs)
 
   let codeWithCpuTime = genCirru(
@@ -772,12 +772,12 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["let", [[started, [gensym, "|started"]],
                [v, [gensym, "|v"]]],
         ["quote-replace",
-          ["&let", [["~", started], ["cpu-time"]],
-            ["&let", [["~", v], ["~", x]],
+          ["&let", ["~started", ["cpu-time"]],
+            ["&let", ["~v", "~x"],
               ["echo", "|[cpu-time]",
                        [quote, ["~", x]],
                        "|=>",
-                       ["format-number", ["&*", 1000, ["&-", ["cpu-time"], ["~", started]]], 3],
+                       ["format-number", ["&*", 1000, ["&-", ["cpu-time"], "~started"]], 3],
                        "|ms"
               ],
               ["~", v]]]]]]
@@ -788,13 +788,13 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
       ["let", [[v, [gensym, "|v"]], ["args-value", [gensym, "|args-value"]]],
         ["quote-replace",
           ["let", [
-              [["~", "args-value"], ["[]", ["~@", xs]]],
-              [["~", v], [["~", f], "&", ["~", "args-value"]]]
+              [["~", "args-value"], ["[]", "~@xs"]],
+              [["~", v], ["~f", "&", "~args-value"]]
             ],
-            ["echo", "|call:", [quote, ["'call-with-log", ["~", f], ["~@", xs]]], "|=>", ["~", v]],
-            ["echo", "|f:   ", ["~", f]],
-            ["echo", "|args:", ["~", "args-value"]],
-            ["~", v]]]]]
+            ["echo", "|call:", [quote, ["'call-with-log", "~f", "~@xs"]], "|=>", "~v"],
+            ["echo", "|f:   ", "~f"],
+            ["echo", "|args:", "~args-value"],
+            "~v"]]]]
   , coreNs)
 
   let codeLetExtractMap = genCirru(
@@ -807,12 +807,12 @@ proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
         ["assert", [str, "|expects symbol names in binding names: ", items],
           ["every?", "symbol?", items]],
         ["quote-replace",
-          ["&let", [["~", "var-result"], ["~", base]],
+          ["&let", [["~", "var-result"], "~base"],
             ["let", ["~", [map,
                             [defn, "gen-items%", [x],
                               ["[]", x, ["[]", ["turn-keyword", x], "var-result"]]],
                              items]],
-                      ["~@", body]]]]]]
+                      "~@body"]]]]]
   , coreNs)
 
   # programCode[coreNs].defs["foldl"] = codeFoldl
