@@ -32,8 +32,6 @@ var onLoadPluginProcs: Table[string, FnInData]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
 
-let commandLineVersion* = "0.1.1"
-
 proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
 

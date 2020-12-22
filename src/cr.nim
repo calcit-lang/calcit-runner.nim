@@ -11,6 +11,7 @@ import json_paint
 import ./calcit_runner/canvas
 import ./calcit_runner/watcher
 import ./calcit_runner/errors
+import ./calcit_runner/version
 
 var runOnce = false
 var evalOnce = false

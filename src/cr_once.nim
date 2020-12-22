@@ -5,6 +5,7 @@ import options
 
 import ./calcit_runner
 import ./calcit_runner/errors
+import ./calcit_runner/version
 
 var evalOnce = false
 var evalOnceCode: string
