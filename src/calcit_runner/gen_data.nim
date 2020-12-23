@@ -52,7 +52,7 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
   of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword(xs.keywordVal))
   of crEdnVector:
     var ys = initTernaryTreeList[CirruData](@[])
-    for item in xs.listVal:
+    for item in xs.vectorVal:
       ys = ys.append item.toCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: ys)
   of crEdnList:
