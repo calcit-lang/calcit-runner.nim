@@ -39,7 +39,6 @@ proc nativeDrawErrorMessage*(args: seq[CirruData], interpret: FnInterpret, scope
     "align": "left",
     "color": [0, 90, 60],
     "font-size": 16,
-    "x": 20,
-    "y": 20,
+    "position": [20, 20],
   })
   return CirruData(kind: crDataNil)
