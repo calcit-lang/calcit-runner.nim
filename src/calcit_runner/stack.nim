@@ -54,8 +54,8 @@ proc displayStackDetails*(message: string): void =
   for item in defStack:
     echo item.ns, "/", item.def
     var infoItem = initTable[CirruEdnValue, CirruEdnValue]()
-    infoItem[crEdn("def", true)] = crEdn(item.ns & "/" & item.def)
-    infoItem[crEdn("code", true)] = CirruEdnValue(kind: crEdnQuotedCirru, quotedVal: item.code.toCirruNode)
+    infoItem[genCrEdnKeyword("def")] = genCrEdn(item.ns & "/" & item.def)
+    infoItem[genCrEdnKeyword("code")] = CirruEdnValue(kind: crEdnQuotedCirru, quotedVal: item.code.toCirruNode)
 
     var ys: seq[CirruEdnValue]
     for ax in item.args:
@@ -68,8 +68,8 @@ proc displayStackDetails*(message: string): void =
   infoList.reverse() # show inner function first
 
   var detailTable = initTable[CirruEdnValue, CirruEdnValue]()
-  detailTable[crEdn("message", true)] = crEdn(message)
-  detailTable[crEdn("stack", true)] = CirruEdnValue(kind: crEdnVector, vectorVal: infoList)
+  detailTable[genCrEdnKeyword("message")] = genCrEdn(message)
+  detailTable[genCrEdnKeyword("stack")] = CirruEdnValue(kind: crEdnVector, vectorVal: infoList)
   let details = CirruEdnValue(kind: crEdnMap, mapVal: detailTable).formatToCirru(true)
 
   writeFile "./.calcit-error.cirru", details
