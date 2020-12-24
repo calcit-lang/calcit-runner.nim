@@ -22,7 +22,6 @@ import calcit_runner/stack
 import calcit_runner/gen_data
 import calcit_runner/evaluate
 import calcit_runner/eval_util
-import calcit_runner/to_json
 import calcit_runner/gen_code
 
 export CirruData, CirruDataKind, `==`, crData
@@ -123,7 +122,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
 
   runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
-proc runEventListener*(event: JsonNode) =
+proc runEventListener*(event: CirruEdnValue) =
   let ns = codeConfigs.initFn.split('/')[0]
   let def = "on-window-event"
 
@@ -131,7 +130,7 @@ proc runEventListener*(event: JsonNode) =
     echo "Warning: " & ns & "/" & def & "does not exist"
     return
   try:
-    discard runCode(ns, def, event.toCirruData)
+    discard runCode(ns, def, event.toCirruData(ns, none(CirruDataScope)))
 
   except ValueError as e:
     coloredEcho fgRed, "Failed to handle event: ", e.msg

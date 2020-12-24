@@ -709,7 +709,7 @@ proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   let content = args[0]
   if content.kind != crDataString:
     raiseEvalError("parse-cirru-edn requires a string", content)
-  let ednData = parseEdnFromStr(content.stringVal)
+  let ednData = parseCirruEdn(content.stringVal)
   return ednData.toCirruData(ns, some(scope))
 
 proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =

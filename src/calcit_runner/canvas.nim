@@ -1,8 +1,8 @@
 
-import json
 import options
 
-import json_paint
+import edn_paint
+import cirru_edn
 import ternary_tree
 
 import ./types
@@ -27,18 +27,18 @@ proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("Expects 1 argument", args)
   let data = args[0]
-  renderCanvas(data.toJson)
+  renderCanvas(data.toEdn)
 
   return CirruData(kind: crDataBool, boolVal: true)
 
 proc nativeDrawErrorMessage*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 1 or args[0].kind != crDataString: raiseEvalError("Expects a string message", args)
-  renderCanvas(%* {
-    "type": "text",
-    "text": args[0].stringVal,
-    "align": "left",
-    "color": [0, 90, 60],
-    "font-size": 16,
-    "position": [20, 20],
-  })
+  renderCanvas(genCrEdnMap(
+    genCrEdnKeyword("type"), genCrEdn("text"),
+    genCrEdnKeyword("text"), genCrEdn(args[0].stringVal),
+    genCrEdnKeyword("align"), genCrEdn("left"),
+    genCrEdnKeyword("color"), genCrEdnVector(genCrEdn(0), genCrEdn(90), genCrEdn(60)),
+    genCrEdnKeyword("font-size"), genCrEdn(16),
+    genCrEdnKeyword("position"), genCrEdnVector(genCrEdn(20), genCrEdn(20)),
+  ))
   return CirruData(kind: crDataNil)

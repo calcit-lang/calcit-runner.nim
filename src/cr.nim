@@ -1,12 +1,13 @@
 
-import json
 import calcit_runner
 import parseopt
 import os
 import strutils
 import options
+import tables
 
-import json_paint
+import cirru_edn
+import edn_paint
 
 import ./calcit_runner/canvas
 import ./calcit_runner/watcher
@@ -46,9 +47,11 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
       # echo tried.msg
       handleFileChange(snapshotFile, incrementFile)
 
-    takeCanvasEvents(proc(event: JsonNode) =
-      if event.kind == JObject:
-        case event["type"].getStr
+    takeCanvasEvents(proc(event: CirruEdnValue) =
+      if event.kind == crEdnMap:
+        let t = event.mapVal[genCrEdnKeyword("type")]
+        if t.kind != crEdnString: raise newException(ValueError, "TODO, expects type string")
+        case t.stringVal
         of "quit":
           quit 0
         else:
