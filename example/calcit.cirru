@@ -753,7 +753,7 @@
                                               |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604812752340) (:text |deref)
                           |x $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604462363656)
                             :data $ {}
-                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604462363656) (:text |:stroke-color)
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604462363656) (:text |:line-color)
                               |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604462363656)
                                 :data $ {}
                                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1604462363656) (:text |[])
