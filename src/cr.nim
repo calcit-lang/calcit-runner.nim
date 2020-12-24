@@ -50,8 +50,9 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
     takeCanvasEvents(proc(event: CirruEdnValue) =
       if event.kind == crEdnMap:
         let t = event.mapVal[genCrEdnKeyword("type")]
-        if t.kind != crEdnString: raise newException(ValueError, "TODO, expects type string")
-        case t.stringVal
+        if t.kind != crEdnKeyword:
+          raise newException(ValueError, "expects event type in keyword")
+        case t.keywordVal
         of "quit":
           quit 0
         else:
