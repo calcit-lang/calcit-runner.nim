@@ -199,10 +199,10 @@
 
             assert=
               macroexpand $ quote $ with-cpu-time $ + 1 2
-              quote $ &let
-                started__1 $ cpu-time
-                &let
-                  v__2 $ + 1 2
+              quote
+                let
+                    started__1 $ cpu-time
+                    v__2 $ + 1 2
                   echo |[cpu-time]
                     quote $ + 1 2
                     , |=>
