@@ -31,7 +31,7 @@ proc extractDefs(defs: CirruEdnValue, ns: string): Table[string, CirruData] =
 
   return result
 
-proc extractFile(v: CirruEdnValue, ns: string): FileSource =
+proc extractFile*(v: CirruEdnValue, ns: string): FileSource =
   if v.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
   var file: FileSource

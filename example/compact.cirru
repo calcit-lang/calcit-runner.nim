@@ -99,7 +99,7 @@
                 :stops $ [][] (100 60) (200 200) (600 60) (500 400) (300 300)
                     :x $ deref *control-point
                     :y $ deref *control-point
-                :stroke-color $ [] 200 90 80 1
+                :line-color $ [] 200 90 80 1
               {} (:type :touch-area) (:x 100) (:y 100) (:radius 20) (:path "\"inc") (:events $ [] :touch-down) (:action :demo)
         |try-canvas $ quote
           defn try-canvas () (echo "\"init" "\"canvas")

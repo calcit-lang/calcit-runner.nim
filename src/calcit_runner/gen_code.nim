@@ -1,6 +1,4 @@
 
-import macros
-import strformat
 import json
 import sequtils
 
@@ -25,28 +23,6 @@ proc toCirruData(xs: varargs[CirruData]): CirruData =
   for x in xs:
     args.add x
   CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
-
-macro genCirru*(code: untyped, ns: untyped): CirruData =
-  # echo code.treeRepr
-  case code.kind
-  of nnkNilLit:
-    return newCall(bindSym"toCirruData", newLit("nil"))
-  of nnkIntLit:
-    return newCall(bindSym"toCirruData", newLit(code.intVal.int))
-  of nnkFloatLit:
-    return newCall(bindSym"toCirruData", newLit(code.floatVal.float))
-  of nnkIdent:
-    return newCall(bindSym"toCirruData", newLit(code.strVal), ns)
-  of nnkStrLit:
-    return newCall(bindSym"toCirruData", newLit(code.strVal), ns)
-  of nnkBracket:
-    var node = newCall(bindSym"toCirruData")
-    for x in code:
-      node.add newCall(bindSym"genCirru", x, ns)
-      # echo "code: ", x.treeRepr
-    return node
-  else:
-    raise newException(ValueError, fmt"Unknown kind of code {code.kind}, {code.treeRepr}")
 
 proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   case v.kind
