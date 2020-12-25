@@ -30,6 +30,7 @@ import ./eval_util
 import ./evaluate
 import ./atoms
 import ./stack
+import ./event_loop
 
 # init generator for rand
 randomize()
@@ -1215,6 +1216,17 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     ])))
   return CirruData(kind: crDataList, listVal: xs)
 
+proc nativeTimeoutCall(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("timeout-call expects 2 arguments", args)
+  let duration = args[0]
+  if duration.kind != crDataNumber: raiseEvalError("expects number value for timeout", args)
+  let cb = args[1]
+  if cb.kind != crDataFn and cb.kind != crDataProc: raiseEvalError("expects func value for timeout-call", args)
+
+  let taskId = setupTimeoutTask(duration.numberVal.int, cb, ns)
+
+  return CirruData(kind: crDataNumber, numberVal: taskId.float)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1321,3 +1333,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativeReFindAll)
   programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
+  programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)

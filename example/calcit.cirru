@@ -156,6 +156,9 @@
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605610637258) (:text |echo)
                   |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1605610637258) (:text |[,])
+              |yyyyyD $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895790590)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895793144) (:text |try-timeout)
               |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1598199469694) (:data $ {})
               |yyyyx $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1604160743867)
                 :data $ {}
@@ -438,6 +441,46 @@
                           |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601550075500) (:text |load-cirru-edn)
                           |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601550087408) (:text "|\"./example/compact.cirru")
                       |D $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1601550137101) (:text |str)
+          |try-timeout $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895800557)
+            :data $ {}
+              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895802297) (:text |defn)
+              |yyyj $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895803542)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895803542) (:text |echo)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895803542) (:text "|\"next")
+              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895800557) (:text |try-timeout)
+              |yyu $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895914940)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896093708) (:text |&doseq)
+                  |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896086066)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |timeout-call)
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896086066)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |*)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |idx)
+                          |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |200)
+                      |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896086066)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |fn)
+                          |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896086066) (:data $ {})
+                          |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896086066)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |echo)
+                              |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text "|\"finished:")
+                              |r $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896086066) (:text |idx)
+                  |f $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896078881)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896079902) (:text |idx)
+                      |j $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608896081031)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896082706) (:text |range)
+                          |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608896083055) (:text |20)
+              |r $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895800557) (:data $ {})
+              |yyr $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1608895803542)
+                :data $ {}
+                  |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895803542) (:text |echo)
+                  |j $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1608895803542) (:text "|\"timeout")
           |gen-num $ {} (:type :expr) (:by |Bka0vFjNW) (:at 1600533388568)
             :data $ {}
               |T $ {} (:type :leaf) (:by |Bka0vFjNW) (:at 1600533391697) (:text |defmacro)

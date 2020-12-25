@@ -20,6 +20,7 @@
             echo $ fn (a) 1
             draw/try-canvas
             ; try-atom
+            try-timeout
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -58,6 +59,12 @@
         |try-edn $ quote
           defn try-edn ()
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
+        |try-timeout $ quote
+          defn try-timeout () (echo "\"timeout")
+            &doseq (idx $ range 20)
+              timeout-call (* idx 200)
+                fn () (echo "\"finished:" idx)
+            echo "\"next"
         |gen-num $ quote
           defmacro gen-num (a b c) (echo "\"expanding..." a b c) (quote $ + 1 2 3)
         |reload! $ quote

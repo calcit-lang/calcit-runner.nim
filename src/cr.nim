@@ -13,6 +13,7 @@ import ./calcit_runner/canvas
 import ./calcit_runner/watcher
 import ./calcit_runner/errors
 import ./calcit_runner/version
+import ./calcit_runner/event_loop
 
 var runOnce = false
 var evalOnce = false
@@ -59,7 +60,12 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
           runEventListener(event)
     )
 
-    sleep(180)
+    let triedEvent = eventsChan.tryRecv()
+    if triedEvent.dataAvailable:
+      let taskParams = triedEvent.msg
+      finishTask(taskParams.id, taskParams.params)
+
+    sleep(90)
 
 var cliArgs = initOptParser(commandLineParams())
 var snapshotFile = "compact.cirru"
