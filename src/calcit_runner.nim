@@ -23,6 +23,7 @@ import calcit_runner/gen_data
 import calcit_runner/evaluate
 import calcit_runner/eval_util
 import calcit_runner/gen_code
+import calcit_runner/emit_js
 
 export CirruData, CirruDataKind, `==`, crData
 
@@ -64,7 +65,11 @@ proc displayErrorMessage(message: string) =
 
 proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
   try:
-    return evaluateDefCode(ns, def, argData, dropArg)
+    if jsMode:
+      preprocessSymbolByPath(ns, def)
+      emitJs(programData, ns, def)
+    else:
+      return evaluateDefCode(ns, def, argData, dropArg)
 
   except CirruEvalError as e:
     displayErrorMessage(e.msg & " " & $e.code)

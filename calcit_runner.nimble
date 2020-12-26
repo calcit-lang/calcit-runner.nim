@@ -39,3 +39,6 @@ task ct, "Runs calcit tests":
 
 task e, "eval some code":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='range 10'"
+
+task jsgen, "try js":
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru"
