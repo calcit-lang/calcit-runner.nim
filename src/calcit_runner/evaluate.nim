@@ -50,6 +50,7 @@ proc nativeEval(item: CirruData, interpret: FnInterpret, scope: CirruDataScope, 
   interpret code, scope, ns
 
 proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruData =
+  # echo "interpret symbol: ", sym
   if sym.kind != crDataSymbol:
     raiseEvalError("Expects a symbol", sym)
 
@@ -59,7 +60,12 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   if sym.resolved.isSome:
     let path = sym.resolved.get
 
-    return programData[path.ns].defs[path.def]
+    var v = programData[path.ns].defs[path.def]
+    if v.kind == crDataThunk:
+      while v.kind == crDataThunk:
+        v = interpret(v.thunkCode[], v.thunkScope, v.thunkNs)
+      programData[path.ns].defs[path.def] = v
+    return v
 
   if scope.contains(sym.symbolVal):
     let fromScope = scope[sym.symbolVal]
@@ -206,7 +212,16 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     # echo "setting: ", ns, "/", def
     # echo "processed code: ", code
     pushDefStack(StackInfo(ns: ns, def: def, code: code, args: @[]))
-    programData[ns].defs[def] = interpret(code, CirruDataScope(), ns)
+    if code.isADefinition():
+      # definitions need to be initialized just before preprocessing
+      programData[ns].defs[def] = interpret(code, CirruDataScope(), ns)
+    else:
+      var codeRef = new RefCirruData
+      codeRef[] = code
+      programData[ns].defs[def] = CirruData(
+        kind: crDataThunk, thunkCode: codeRef, thunkNs: ns,
+        thunkScope: CirruDataScope(),
+      )
     popDefStack()
 
 proc preprocessHelper(code: CirruData, localDefs: Hashset[string], ns: string): CirruData =
@@ -287,6 +302,12 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         let path = value.resolved.get
         value = programData[path.ns].defs[path.def]
 
+        # force extracting thunk of functions
+        if value.kind == crDataThunk:
+          while value.kind == crDataThunk:
+            value = interpret(value.thunkCode[], value.thunkScope, value.thunkNs)
+          programData[path.ns].defs[path.def] = value
+
       # echo "run into: ", code, " ", value
 
       case value.kind
@@ -324,6 +345,8 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
           raiseEvalError(fmt"Unknown syntax: ${head}", code)
 
         return code
+      of crDataThunk:
+        raiseEvalError("thunk should have been extracted", code)
       else:
         # could be dynamically passed functions
         var xs = initTernaryTreeList[CirruData](@[originalValue])

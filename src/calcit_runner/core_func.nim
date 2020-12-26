@@ -210,6 +210,8 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("symbol"))
     of crDataAtom: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("atom"))
     of crDataTernary: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("ternary"))
+    # TODO better extract thunk in such cases
+    of crDataThunk: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("thunk"))
 
 proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:

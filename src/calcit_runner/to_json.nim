@@ -10,6 +10,7 @@ import cirru_edn
 import cirru_parser
 
 import ./types
+import ./errors
 
 proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   case x.kind:
@@ -61,6 +62,8 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   of crDataRecur: return JsonNode(kind: JNull)
   of crDataAtom: return JsonNode(kind: JNull)
   of crDataTernary: return JsonNode(kind: JString, str: $x.ternaryVal)
+  of crDataThunk:
+    raiseEvalError("must calculate thunk before to json", x)
 
 # notice that JSON does not have keywords or some other types
 proc toCirruData*(v: JsonNode): CirruData =
@@ -120,7 +123,9 @@ proc toCirruNode*(x: CirruData): CirruNode =
     return CirruNode(kind: cirruString, text: $x.ternaryVal)
 
   of crDataSet, crDataMap, crDataFn, crDataProc, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
-    raise newException(ValueError, "Unexpect set to convert to CirruNode: " & $x.kind)
+    raiseEvalError("Unexpect set to convert to CirruNode: ", x)
+  of crDataThunk:
+    raiseEvalError("must calculate thunk before converting", x)
 
 proc toEdn*(x: CirruData): CirruEdnValue =
   case x.kind:
@@ -158,3 +163,6 @@ proc toEdn*(x: CirruData): CirruEdnValue =
 
   of crDataProc, crDataFn, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
     return CirruEdnValue(kind: crEdnString, stringVal: "<<" & $x.kind & ">>\n" & $x)
+
+  of crDataThunk:
+    raiseEvalError("must calculate thunk before converting", x)
