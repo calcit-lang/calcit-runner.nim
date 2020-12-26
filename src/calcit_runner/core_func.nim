@@ -433,9 +433,9 @@ proc nativeIdenticalQuestion(args: seq[CirruData], interpret: FnInterpret, scope
   of crDataNil:
     return CirruData(kind: crDataBool, boolVal: true)
   of crDataString:
-    return CirruData(kind: crDataBool, boolVal: cast[pointer](a.stringVal) == cast[pointer](b.stringVal))
+    return CirruData(kind: crDataBool, boolVal: a.stringVal == b.stringVal)
   of crDataSymbol:
-    return CirruData(kind: crDataBool, boolVal: cast[pointer](a.symbolVal) == cast[pointer](b.symbolVal))
+    return CirruData(kind: crDataBool, boolVal: a.symbolVal == b.symbolVal)
   of crDataBool:
     return CirruData(kind: crDataBool, boolVal: a.boolVal == b.boolVal)
   of crDataNumber:

@@ -16,9 +16,9 @@
               echo $ stringify-json new-data
               write-file "\"codes-new.json" (stringify-json new-data) 
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (echo [,])
-            echo $ fn (a) 1
-            draw/try-canvas
+          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (; echo [,])
+            ; echo $ fn (a) 1
+            ; draw/try-canvas
             ; try-atom
             try-timeout
         |try-hygienic $ quote
@@ -61,8 +61,8 @@
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
         |try-timeout $ quote
           defn try-timeout () (echo "\"timeout")
-            &doseq (idx $ range 20)
-              timeout-call (* idx 200)
+            &doseq (idx $ range 40)
+              timeout-call (* idx 80)
                 fn () (echo "\"finished:" idx)
             echo "\"next"
         |gen-num $ quote
