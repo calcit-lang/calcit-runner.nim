@@ -816,3 +816,15 @@
                         [] x ([] (turn-keyword x) var-result)
                       , items
                     ~@ body
+
+        |conf $ quote
+          def conf append
+
+        |turn-str $ quote
+          def turn-str turn-string
+
+        |reduce $ quote
+          def reduce foldl
+
+        |dbt $ quote
+          def dbt dual-balanced-ternary

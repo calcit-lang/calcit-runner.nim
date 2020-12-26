@@ -1257,14 +1257,12 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)
   programData[coreNs].defs["append"] = CirruData(kind: crDataProc, procVal: nativeAppend)
-  programData[coreNs].defs["conj"] = CirruData(kind: crDataProc, procVal: nativeAppend) # an alias
   programData[coreNs].defs["first"] = CirruData(kind: crDataProc, procVal: nativeFirst)
   programData[coreNs].defs["empty?"] = CirruData(kind: crDataProc, procVal: nativeEmptyQuestion)
   programData[coreNs].defs["last"] = CirruData(kind: crDataProc, procVal: nativeLast)
   programData[coreNs].defs["butlast"] = CirruData(kind: crDataProc, procVal: nativeButlast)
   programData[coreNs].defs["reverse"] = CirruData(kind: crDataProc, procVal: nativeReverse)
   programData[coreNs].defs["turn-string"] = CirruData(kind: crDataProc, procVal: nativeTurnString)
-  programData[coreNs].defs["turn-str"] = CirruData(kind: crDataProc, procVal: nativeTurnString) # alias, deprecating in future
   programData[coreNs].defs["turn-symbol"] = CirruData(kind: crDataProc, procVal: nativeTurnSymbol)
   programData[coreNs].defs["turn-keyword"] = CirruData(kind: crDataProc, procVal: nativeTurnKeyword)
   programData[coreNs].defs["identical?"] = CirruData(kind: crDataProc, procVal: nativeIdenticalQuestion)
@@ -1297,7 +1295,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&intersection"] = CirruData(kind: crDataProc, procVal: nativeIntersection)
   programData[coreNs].defs["recur"] = CirruData(kind: crDataProc, procVal: nativeRecur)
   programData[coreNs].defs["foldl"] = CirruData(kind: crDataProc, procVal: nativeFoldl)
-  programData[coreNs].defs["reduce"] = CirruData(kind: crDataProc, procVal: nativeFoldl) # alias
   programData[coreNs].defs["rand"] = CirruData(kind: crDataProc, procVal: nativeRand)
   programData[coreNs].defs["rand-int"] = CirruData(kind: crDataProc, procVal: nativeRandInt)
   programData[coreNs].defs["replace"] = CirruData(kind: crDataProc, procVal: nativeReplace)
@@ -1324,7 +1321,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["format-number"] = CirruData(kind: crDataProc, procVal: nativeFormatNumber)
   programData[coreNs].defs["sort"] = CirruData(kind: crDataProc, procVal: nativeSort)
   programData[coreNs].defs["dual-balanced-ternary"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary)
-  programData[coreNs].defs["dbt"] = CirruData(kind: crDataProc, procVal: nativeDualBalancedTernary) # alias
   programData[coreNs].defs["dbt->point"] = CirruData(kind: crDataProc, procVal: nativeDbtToPoint)
   programData[coreNs].defs["quit"] = CirruData(kind: crDataProc, procVal: nativeQuit)
   programData[coreNs].defs["get-env"] = CirruData(kind: crDataProc, procVal: nativeGetEnv)
