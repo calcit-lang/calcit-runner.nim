@@ -154,17 +154,8 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     return ret
 
   of crDataKeyword:
-    if xs.len != 2: raiseEvalError("keyword function :" & value.keywordVal[] & " expects 1 argument", xs)
-    let base = interpret(xs[1], scope, ns)
-    if base.kind == crDataNil:
-      return base
-    if base.kind != crDataMap:
-      raiseEvalError("keyword function :" & value.keywordVal[] & " expects a map but got " & $base.kind, xs)
-    let ret = base.mapVal[value]
-    if ret.isNone:
-      return CirruData(kind: crDataNil)
-    else:
-      return ret.get
+    # keyword operator should be handled during macro expanding
+    raiseEvalError("Dynamic keyword operator is not supported", xs)
 
   of crDataMap:
     if xs.len != 2: raiseEvalError("map function expects 1 argument", xs)
@@ -311,11 +302,19 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
       # echo "run into: ", code, " ", value
 
       case value.kind
-      of crDataProc, crDataFn, crDataKeyword:
+      of crDataProc, crDataFn:
         var xs = initTernaryTreeList[CirruData](@[originalValue])
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)
+      of crDataKeyword:
+        if code.listVal.len != 2: raiseEvalError("Expected keyword call of length 2", code)
+        var xs = initTernaryTreeList[CirruData](@[
+          CirruData(kind: crDataSymbol, symbolVal: "get", ns: ns),
+          code.listVal[1],
+          code.listVal[0],
+        ])
+        return preprocess(CirruData(kind: crDataList, listVal: xs), localDefs, ns)
       of crDataMacro:
         let xs = code[1..^1]
         pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))

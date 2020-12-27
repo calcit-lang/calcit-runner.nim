@@ -82,6 +82,9 @@ nimble once
 
 # demo of eval from CLI
 nimble e
+
+# for emitting js
+nimble jsgen
 ```
 
 ### Modules

@@ -24,7 +24,7 @@ proc toJsFileName(ns: string): string =
 
 proc escapeVar(name: string): string =
   name
-  .replace("-", "_")
+  .replace("-", "_SUBS_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
   .replace(">", "_SHR_")
@@ -39,6 +39,9 @@ proc escapeVar(name: string): string =
   .replace("!", "_BANG_")
   .replace("%", "_PCT_")
   .replace("/", "_SLSH_")
+  .replace("=", "_EQ_")
+  .replace(">", "_GT_")
+  .replace("<", "_LT_")
 
 proc toJsCode(xs: CirruData): string =
   case xs.kind
