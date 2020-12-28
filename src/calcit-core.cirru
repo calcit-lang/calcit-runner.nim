@@ -70,6 +70,9 @@
         |apply $ quote
           defn apply (f args) $ f & args
 
+        |apply-args $ quote
+          defn apply-args (args f) $ f & args
+
         |list? $ quote
           defn list? (x) $ &= (type-of x) :list
 
@@ -167,21 +170,21 @@
 
         |index-of $ quote
           defn index-of (xs0 item)
-            loop
-                idx 0
-                xs xs0
-              if (empty? xs) nil
-                if (&= item (first xs)) idx
-                  recur (&+ 1 idx) (rest xs)
+            apply-args
+              [] 0 xs0
+              fn (idx xs)
+                if (empty? xs) nil
+                  if (&= item (first xs)) idx
+                    recur (&+ 1 idx) (rest xs)
 
         |find-index $ quote
           defn find-index (f xs0)
-            loop
-                idx 0
-                xs xs0
-              if (empty? xs) nil
-                if (f (first xs)) idx
-                  recur (&+ 1 idx) f (rest xs)
+            apply-args
+              [] 0 xs0
+              fn (idx xs)
+                if (empty? xs) nil
+                  if (f (first xs)) idx
+                    recur (&+ 1 idx) f (rest xs)
 
         |find $ quote
           defn find (f xs)
@@ -319,15 +322,14 @@
 
         |map-indexed $ quote
           defn map-indexed (f xs)
-            loop
-                acc ([])
-                idx 0
-                ys xs
-              if (empty? ys) acc
-                recur
-                  append acc (f idx (first ys))
-                  &+ idx 1
-                  rest ys
+            apply-args
+              [] ([]) 0 xs
+              fn (acc idx ys)
+                if (empty? ys) acc
+                  recur
+                    append acc (f idx (first ys))
+                    &+ idx 1
+                    rest ys
 
         |filter $ quote
           defn filter (f xs)
@@ -361,17 +363,16 @@
 
         |zipmap $ quote
           defn zipmap (xs0 ys0)
-            loop
-                acc $ {}
-                xs xs0
-                ys ys0
-              if
-                &or (empty? xs) (empty? ys)
-                , acc
-                recur
-                  assoc acc (first xs) (first ys)
-                  rest xs
-                  rest ys
+            apply-args
+              [] ({})xs0 ys0
+              fn (acc xs ys)
+                if
+                  &or (empty? xs) (empty? ys)
+                  , acc
+                  recur
+                    assoc acc (first xs) (first ys)
+                    rest xs
+                    rest ys
 
         |rand-nth $ quote
           defn rand-nth (xs)
@@ -381,13 +382,14 @@
         |contains-symbol? $ quote
           defn contains-symbol? (xs y)
             if (list? xs)
-              loop
-                  body xs
-                if (empty? body) false
-                  if
-                    contains-symbol? (first body) y
-                    , true
-                    recur (rest body)
+              apply-args
+                [] xs
+                fn (body)
+                  if (empty? body) false
+                    if
+                      contains-symbol? (first body) y
+                      , true
+                      recur (rest body)
               &= xs y
 
         |\ $ quote
@@ -421,18 +423,18 @@
 
         |group-by $ quote
           defn group-by (f xs0)
-            loop
-                acc $ {}
-                xs xs0
-              if (empty? xs) acc
-                let
-                    x0 $ first xs
-                    key $ f x0
-                  recur
-                    if (contains? acc key)
-                      update acc key $ \ append % x0
-                      assoc acc key $ [] x0
-                    rest xs
+            apply-args
+              [] ({}) xs0
+              fn (acc xs)
+                if (empty? xs) acc
+                  let
+                      x0 $ first xs
+                      key $ f x0
+                    recur
+                      if (contains? acc key)
+                        update acc key $ \ append % x0
+                        assoc acc key $ [] x0
+                      rest xs
 
         |keys $ quote
           defn keys (x)
@@ -445,28 +447,28 @@
         |frequencies $ quote
           defn frequencies (xs0)
             assert "|expects a list for frequencies" (list? xs0)
-            loop
-                acc $ {}
-                xs xs0
-              &let
-                x0 (first xs)
-                if (empty? xs) acc
-                  recur
-                    if (contains? acc (first xs))
-                      update acc (first xs) (\ &+ % 1)
-                      assoc acc (first xs) 1
-                    rest xs
+            apply-args
+              [] ({}) xs0
+              fn (acc xs)
+                &let
+                  x0 (first xs)
+                  if (empty? xs) acc
+                    recur
+                      if (contains? acc (first xs))
+                        update acc (first xs) (\ &+ % 1)
+                        assoc acc (first xs) 1
+                      rest xs
 
         |section-by $ quote
           defn section-by (n xs0)
-            loop
-                acc $ []
-                xs xs0
-              if (&<= (count xs) n)
-                append acc xs
-                recur
-                  append acc (take n xs)
-                  drop n xs
+            apply-args
+              [] ([]) xs0
+              fn (acc xs)
+                if (&<= (count xs) n)
+                  append acc xs
+                  recur
+                    append acc (take n xs)
+                    drop n xs
 
         |[][] $ quote
           defmacro [][] (& xs)
@@ -561,8 +563,8 @@
 
         |loop $ quote
           defmacro loop (pairs & body)
-            assert "|loops requires pairs" (list? pairs)
-            assert "|loops requires pairs in pairs"
+            assert "|expects pairs in loop" (list? pairs)
+            assert "|expects pairs in pairs in loop"
               every?
                 defn detect-pairs? (x)
                   &and (list? x)
@@ -648,7 +650,8 @@
 
         |join-str $ quote
           defn join-str (sep xs0)
-            apply
+            apply-args
+              [] | xs0 true
               fn (acc xs beginning?)
                 if (empty? xs) acc
                   recur
@@ -657,11 +660,11 @@
                       first xs
                     rest xs
                     , false
-              [] | xs0 true
 
         |join $ quote
           defn join (sep xs0)
-            apply
+            apply-args
+              [] ([]) xs0 true
               fn (acc xs beginning?)
                 if (empty? xs) acc
                   recur
@@ -670,19 +673,19 @@
                       first xs
                     rest xs
                     , false
-              [] ([]) xs0 true
 
         |repeat $ quote
           defn quote (n0 x)
-            apply
+            apply-args
+              [] ([]) n0
               fn (acc n)
                 if (&<= n 0) acc
                   recur (append acc x) (&- n 1)
-              [] ([]) n0
 
         |interleave $ quote
           defn interleave (xs0 ys0)
-            apply
+            apply-args
+              [] ([]) xs0 ys0
               fn (acc xs ys)
                 if
                   &or (empty? xs) (empty? ys)
@@ -691,7 +694,6 @@
                     -> acc (append (first xs)) (append (first ys))
                     rest xs
                     rest ys
-              [] ([]) xs0 ys0
 
         |map-kv $ quote
           defn map-kv (f dict)
@@ -814,3 +816,15 @@
                         [] x ([] (turn-keyword x) var-result)
                       , items
                     ~@ body
+
+        |conf $ quote
+          def conf append
+
+        |turn-str $ quote
+          def turn-str turn-string
+
+        |reduce $ quote
+          def reduce foldl
+
+        |dbt $ quote
+          def dbt dual-balanced-ternary

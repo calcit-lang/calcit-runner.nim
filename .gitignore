@@ -16,3 +16,5 @@ src/*.out
 
 profile_results.txt
 calcit_runner_*.nims
+
+js-out/*

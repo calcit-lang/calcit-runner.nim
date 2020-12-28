@@ -83,3 +83,15 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
     raiseEvalError("expects a list or a liternal from defmacro", quoted)
 
   return quoted
+
+# code of functions and macros
+proc isADefinition*(code: CirruData): bool =
+  if code.kind != crDataList:
+    return false
+  if code.listVal.len == 0:
+    raiseEvalError("expects some code other than empty", code)
+  if code.listVal[0].kind == crDataSymbol:
+    let text = code.listVal[0].symbolVal
+    if text == "defn" or text == "defmacro":
+      return true
+  return false

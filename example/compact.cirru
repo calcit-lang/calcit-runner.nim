@@ -16,10 +16,14 @@
               echo $ stringify-json new-data
               write-file "\"codes-new.json" (stringify-json new-data) 
         |main! $ quote
-          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (echo [,])
-            echo $ fn (a) 1
-            draw/try-canvas
-            ; try-atom
+          defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (; echo [,])
+            ; echo $ fn (a) 1
+            ; draw/try-canvas
+            try-atom
+            try-atom
+            try-thunk
+            try-thunk
+            try-timeout
         |try-hygienic $ quote
           defn try-hygienic ()
             let
@@ -47,21 +51,31 @@
               echo "\"internal c:" a b c
               quote-replace $ do (echo "\"c is:" c)
                 + (~ a) (~ b) (, c)
+        |try-thunk $ quote
+          defn try-thunk () (echo "\"running thunk with data:" demo-thunk-data)
         |try-var-args $ quote
           defn try-var-args () (var-fn 1 2 3 4) (var-macro a b c d)
         |*state-a $ quote
-          defatom *state-a $ {} (:count 0)
+          defatom *state-a $ do (echo "\"initilizing state a") ({} $ :count 0)
         |try-atom $ quote
-          defn try-atom () (echo *state-a) (echo $ deref *state-a)
+          defn try-atom () (echo *state-a) (echo $ deref *state-a) (swap! *state-a update :count inc)
             add-watch *state-a :a $ fn (a b) (echo "\"change happened:" a b)
             remove-watch *state-a :a
         |try-edn $ quote
           defn try-edn ()
             echo $ str (load-cirru-edn "\"./example/compact.cirru")
+        |try-timeout $ quote
+          defn try-timeout () (echo "\"timeout")
+            &doseq (idx $ range 40)
+              timeout-call (* idx 80)
+                fn () (echo "\"finished:" idx)
+            echo "\"next"
         |gen-num $ quote
           defmacro gen-num (a b c) (echo "\"expanding..." a b c) (quote $ + 1 2 3)
         |reload! $ quote
           defn reload! () (println "\"Reloaded..." $ inc10 4) (; main!) (draw/try-redraw-canvas) (; reload-atom)
+        |demo-thunk-data $ quote
+          def demo-thunk-data $ do (echo "\"inside a chunk") (+ 1 2 3 4)
         |var-fn $ quote
           defn var-fn (a & xs) (echo a xs)
         |on-error $ quote

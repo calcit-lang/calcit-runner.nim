@@ -17,9 +17,6 @@
             assert "|keyword function" $ =
               :a ({} (:a 1))
               , 1
-            assert "|keyword used at nil" $ =
-              :a nil
-              , nil
             &let
               base $ {} (:a 1)
               assert= 1 $ base :a

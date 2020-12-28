@@ -55,6 +55,7 @@ type
     crDataRecur,
     crDataAtom,
     crDataTernary,
+    crDataThunk,
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
@@ -100,6 +101,13 @@ type
       atomDef*: string
     of crDataTernary:
       ternaryVal*: DualBalancedTernary
+    # in calcit, thunks are only used for top-left expressions,
+    # to ensure the order of execution.
+    # functions and macros should not be represented as thunks
+    of crDataThunk:
+      thunkCode*: ref CirruData
+      thunkScope*: CirruDataScope
+      thunkNs*: string
 
   RefCirruData* = ref CirruData
 
@@ -194,6 +202,8 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
       "(&atom " & val.atomNs & "/" & val.atomDef & " )"
     of crDataTernary:
       $val.ternaryVal
+    of crDataThunk:
+      "(:&thunk " & $val.thunkCode[] & ")"
 
 proc `$`*(v: CirruData): string =
   v.toString(false, false)
@@ -303,6 +313,13 @@ proc hash*(value: CirruData): Hash =
       result = result !& hash(value.ternaryVal)
       result = !$ result
 
+    of crDataThunk:
+      result = hash("thunk:")
+      result = result !& hash(value.thunkCode[])
+      result = result !& hash(value.ns)
+      # TODO skipped scope of thunk
+      result = !$ result
+
 proc `==`*(x, y: CirruData): bool =
   if x.kind != y.kind:
     return false
@@ -367,3 +384,6 @@ proc `==`*(x, y: CirruData): bool =
 
     of crDataTernary:
       return x.ternaryVal == y.ternaryVal
+
+    of crDataThunk:
+      return x.thunkCode == y.thunkCode and x.thunkNs == y.thunkNs
