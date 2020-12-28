@@ -24,6 +24,7 @@ import calcit_runner/evaluate
 import calcit_runner/eval_util
 import calcit_runner/gen_code
 import calcit_runner/emit_js
+import calcit_runner/color_echo
 
 export CirruData, CirruDataKind, `==`, crData
 

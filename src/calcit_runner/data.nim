@@ -118,7 +118,7 @@ proc len*(xs: CirruData): int =
   of crDataNil:
     return 0
   else:
-    coloredEcho(fgRed, $xs)
+    echo(fgRed, $xs)
     raiseEvalError("Data has no len function", xs)
 
 proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
