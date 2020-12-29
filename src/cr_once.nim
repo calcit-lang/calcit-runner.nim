@@ -4,8 +4,8 @@ import parseopt
 import options
 
 import ./calcit_runner
-import ./calcit_runner/errors
 import ./calcit_runner/version
+import ./calcit_runner/color_echo
 
 var evalOnce = false
 var evalOnceCode: string

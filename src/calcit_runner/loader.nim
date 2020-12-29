@@ -10,6 +10,7 @@ import cirru_parser
 import ./types
 import ./data
 import ./errors
+import ./color_echo
 
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:

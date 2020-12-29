@@ -11,10 +11,10 @@ import edn_paint
 
 import ./calcit_runner/canvas
 import ./calcit_runner/watcher
-import ./calcit_runner/errors
 import ./calcit_runner/version
 import ./calcit_runner/event_loop
 import ./calcit_runner/emit_js
+import ./calcit_runner/color_echo
 
 var runOnce = false
 var evalOnce = false

@@ -7,6 +7,7 @@ import sequtils
 import strutils
 import math
 import strformat
+import system
 
 import ternary_tree
 import dual_balanced_ternary
@@ -161,6 +162,14 @@ proc escapeString(x: string): string =
     escape("|" & x)
   else:
     "|" & x
+
+when defined(js):
+  # cheat compiler for js backend since those functions are missing
+  # https://github.com/nim-lang/Nim/blob/version-1-4/lib/system.nim#L2366-L2372
+  proc rawProc*[T: proc](x: T): pointer {.noSideEffect, inline.} =
+    discard
+  proc rawEnv*[T: proc](x: T): pointer {.noSideEffect, inline.} =
+    discard
 
 proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
   case val.kind:
