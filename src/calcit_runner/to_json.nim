@@ -24,9 +24,9 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
     return JsonNode(kind: JString, str: x.stringVal)
   of crDataKeyword:
     if keywordColon:
-      return JsonNode(kind: JString, str: ":" & x.keywordVal[])
+      return JsonNode(kind: JString, str: ":" & x.keywordVal)
     else:
-      return JsonNode(kind: JString, str: x.keywordVal[])
+      return JsonNode(kind: JString, str: x.keywordVal)
   of crDataList:
     var elems: seq[JsonNode] = @[]
     for i, child in x.listVal:
@@ -45,9 +45,9 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
         fields[k.stringVal] = toJson(v, keywordColon)
       of crDataKeyword:
         if keywordColon:
-          fields[":" & k.keywordVal[]] = toJson(v, keywordColon)
+          fields[":" & k.keywordVal] = toJson(v, keywordColon)
         else:
-          fields[k.keywordVal[]] = toJson(v, keywordColon)
+          fields[k.keywordVal] = toJson(v, keywordColon)
       else:
         raise newException(ValueError, "required string keys in JObject")
     return JsonNode(kind: JObject, fields: fields)
@@ -109,7 +109,7 @@ proc toCirruNode*(x: CirruData): CirruNode =
   of crDataString:
     return CirruNode(kind: cirruString, text: "|" & x.stringVal)
   of crDataKeyword:
-    return CirruNode(kind: cirruString, text: ":" & x.keywordVal[])
+    return CirruNode(kind: cirruString, text: ":" & x.keywordVal)
   of crDataList:
     var elems: DoublyLinkedList[CirruNode]
     for child in x.listVal:
@@ -138,7 +138,7 @@ proc toEdn*(x: CirruData): CirruEdnValue =
   of crDataString:
     return CirruEdnValue(kind: crEdnString, stringVal: x.stringVal)
   of crDataKeyword:
-    return CirruEdnValue(kind: crEdnKeyword, keywordVal: x.keywordVal[])
+    return CirruEdnValue(kind: crEdnKeyword, keywordVal: x.keywordVal)
   of crDataList:
     var elems: seq[CirruEdnValue] = @[]
     for i, child in x.listVal:

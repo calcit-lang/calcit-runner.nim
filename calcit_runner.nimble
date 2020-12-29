@@ -13,9 +13,9 @@ binDir        = "out/"
 
 requires "nim >= 1.2.8"
 requires "libfswatch"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.4.0"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.4.2"
 requires "ternary_tree >= 0.1.28"
-requires "https://github.com/calcit-lang/edn-paint#v0.2.4"
+requires "https://github.com/calcit-lang/edn-paint#v0.2.6"
 requires "nanoid"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.4"
 
@@ -44,4 +44,4 @@ task jsgen, "try generating js":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
 
 task jslib, "generating js core lib core from Nim":
-  exec "nim js -d:release -o:js-out/procs.js src/calcit_runner/js_procs.nim"
+  exec "nim js -d:release -o:js-out/calcit.procs.mjs src/calcit_runner/js_procs.nim"
