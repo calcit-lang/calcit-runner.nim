@@ -635,7 +635,7 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal[], ns: ns, dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: ns, dynamic: true)
   of crDataString:
     return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: ns, dynamic: true)
   of crDataSymbol:
@@ -649,7 +649,7 @@ proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataString, stringVal: x.keywordVal[])
+    return CirruData(kind: crDataString, stringVal: x.keywordVal)
   of crDataString:
     return x
   of crDataSymbol:
@@ -973,7 +973,7 @@ proc nativeAddWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
   let f = args[2]
   if f.kind != crDataFn and a.kind != crDataProc: raiseEvalError("expects an function for add-watch", args)
-  addAtomWatcher(a.atomNs, a.atomDef, k.keywordVal[], f)
+  addAtomWatcher(a.atomNs, a.atomDef, k.keywordVal, f)
 
 proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("reset! expects 2 arguments", args)
@@ -981,7 +981,7 @@ proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
   let k = args[1]
   if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
-  removeAtomWatcher(a.atomNs, a.atomDef, k.keywordVal[])
+  removeAtomWatcher(a.atomNs, a.atomDef, k.keywordVal)
 
 proc nativeSubstr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 2: raiseEvalError("substr expects 2~3 arguments", args)

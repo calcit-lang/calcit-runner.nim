@@ -12,18 +12,8 @@ import system
 import ternary_tree
 import dual_balanced_ternary
 
-type
-  RefKeyword* = ref string
-
-var keywordRegistry: Table[string, RefKeyword]
-
-proc loadKeyword*(content: string): RefKeyword =
-  if not keywordRegistry.contains(content):
-    var k = new RefKeyword
-    k[] = content
-    keywordRegistry[content] = k
-
-  return keywordRegistry[content]
+proc loadKeyword*(content: string): string =
+  return content
 
 type ImportKind* = enum
   importNs, importDef
@@ -70,7 +60,10 @@ type
     of crDataBool: boolVal*: bool
     of crDataNumber: numberVal*: float
     of crDataString: stringVal*: string
-    of crDataKeyword: keywordVal*: RefKeyword
+    of crDataKeyword:
+      # TODO Clojure reused memory of keywords, need something similar
+      # `ref string` was used, but it breaks compiler and breaks js backend
+      keywordVal*: string
     of crDataProc:
       procVal*: FnInData
     of crDataFn:
@@ -192,7 +185,7 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
     of crDataSet: fromSetToString(val.setVal, symbolDetail)
     of crDataMap: fromMapToString(val.mapVal, symbolDetail)
     of crDataNil: "nil"
-    of crDataKeyword: ":" & val.keywordVal[]
+    of crDataKeyword: ":" & val.keywordVal
     of crDataProc: "(:&proc)"
     of crDataFn:
       "(:&function " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ")"
@@ -264,7 +257,7 @@ proc hash*(value: CirruData): Hash =
     of crDataBool:
       return hash("bool:" & $(value.boolVal))
     of crDataKeyword:
-      return hash("keyword:" & value.keywordVal[])
+      return hash("keyword:" & value.keywordVal)
     of crDataProc:
       result = hash("proc:")
       result = result !& hash(value.procVal)

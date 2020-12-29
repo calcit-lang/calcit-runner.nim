@@ -2,9 +2,7 @@ import tables
 import sets
 import options
 import system
-import terminal
 import sequtils
-import re
 import math
 import strutils
 import json
@@ -17,6 +15,7 @@ import dual_balanced_ternary
 
 import ./types
 import ./errors
+import ./str_util
 
 proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
 proc isList*(x: CirruData): bool = x.kind == crDataList
@@ -118,7 +117,6 @@ proc len*(xs: CirruData): int =
   of crDataNil:
     return 0
   else:
-    echo(fgRed, $xs)
     raiseEvalError("Data has no len function", xs)
 
 proc `[]`*(xs: CirruData, fromTo: HSlice[int, int]): seq[CirruData] =
@@ -152,9 +150,9 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
   elif token.startsWith("0x"):
     return CirruData(kind: crDataNumber, numberVal: token.parseHexInt.float)
-  elif match(token, re"^-?\d+(\.\d+)?$"):
+  elif token.matchesFloat:
     return CirruData(kind: crDataNumber, numberVal: parseFloat(token))
-  elif match(token, re"^&\d+(\.\d+)?$") or match(token, re"^&\.\d+$"):
+  elif token.matchesTernary:
     return CirruData(kind: crDataTernary, ternaryVal: parseTernary(token))
   elif token == "true":
     return CirruData(kind: crDataBool, boolVal: true)
@@ -170,19 +168,19 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     return CirruData(kind: crDataString, stringVal: "\n")
   elif token == "&tab":
     return CirruData(kind: crDataString, stringVal: "\t")
-  elif token.len >= 2 and token[0] == '@' and match(token[1..^1], re"[\*\w\-\?]+"):
+  elif token.len >= 2 and token[0] == '@' and token[1..^1].matchesSimpleVar():
     # expects @*x-y? expanded as (deref *x-y?)
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
       CirruData(kind: crDataSymbol, symbolVal: "deref", ns: ns),
       CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns),
     ]))
-  elif token.len >= 3 and token[0..<2] == "~@" and match(token[2..^1], re"[\w\-\?]+"):
+  elif token.len >= 3 and token[0..<2] == "~@" and token[2..^1].matchesSimpleVar():
     # expects ~@x-y? expanded as (~@ x-y?)
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
       CirruData(kind: crDataSymbol, symbolVal: "~@", ns: ns),
       CirruData(kind: crDataSymbol, symbolVal: token[2..^1], ns: ns),
     ]))
-  elif token.len >= 2 and token[0] == '~' and match(token[1..^1], re"[\w\-\?]+"):
+  elif token.len >= 2 and token[0] == '~' and token[1..^1].matchesSimpleVar():
     # expects ~x-y? expanded as (~ x-y?)
     return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
       CirruData(kind: crDataSymbol, symbolVal: "~", ns: ns),
