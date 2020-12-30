@@ -18,7 +18,7 @@ import ./data
 # just in theory, compile those functions to `calcit.procs.js`,
 # and code emitted from `emit_js.nim` could run.
 
-proc nativePrint(args: seq[CirruData]): CirruData {.exportc: "print".} =
+proc nativePrint(args: varargs[CirruData]): CirruData {.exportc: "print"} =
   echo args.map(`$`).join(" ")
   return CirruData(kind: crDataNil)
 
