@@ -58,17 +58,18 @@ proc toJsCode(xs: CirruData, ns: string): string =
   of crDataSymbol:
     result = result & varPrefix & xs.symbolVal.escapeVar() & " "
   of crDataString:
-    result = result & xs.stringVal.escape() & " "
+    result = result & "initCrString(" & xs.stringVal.escape() & ") "
   of crDataBool:
-    result = result & $xs.boolVal & " "
+    result = result & "initCrBool(" & $xs.boolVal & ") "
   of crDataNumber:
-    result = result & $xs.numberVal & " "
+    result = result & "initCrNumber(" & $xs.numberVal & ") "
   of crDataNil:
-    result = result & "null "
+    result = result & "initCrNil() "
   of crDataKeyword:
-    result = result & varPrefix & "turn_keyword(" & xs.keywordVal.escape() & ")"
+    result = result & varPrefix & "initCrKeyword(" & xs.keywordVal.escape() & ")"
   of crDataList:
     if xs.listVal.len == 0:
+      echo "[WARNING] Unpexpected empty list"
       return "()"
     let head = xs.listVal[0]
     let body = xs.listVal.rest()
@@ -188,9 +189,10 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     let jsFilePath = joinPath(jsEmitPath, ns.toJsFileName())
     let nsStates = "calcit_states:" & ns
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
-    var content = ""
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.mjs".escape()
+    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, initCrNil, initCrNumber, initCrBool, initCrString{cCurlyR} from {procsLib};{cLine}"
+    content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     if ns == "calcit.core":
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"
     else:
@@ -213,7 +215,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     for def, f in file.defs:
       case f.kind
       of crDataProc:
-        content = content & fmt"{cLine}export var {def.escapeVar} = _calcit_procs_.{def.escapeVar};{cLine}"
+        content = content & fmt"{cLine}var {def.escapeVar} = _calcit_procs_.{def.escapeVar};{cLine}"
       of crDataFn:
         content = content & genJsFunc(def, f.fnArgs, f.fnCode, ns, true)
       of crDataThunk:
