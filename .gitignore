@@ -1,5 +1,6 @@
 
-out/*
+out
+js-out
 
 example/.compact-inc.cirru
 .calcit-error.cirru
@@ -16,5 +17,3 @@ src/*.out
 
 profile_results.txt
 calcit_runner_*.nims
-
-js-out/*

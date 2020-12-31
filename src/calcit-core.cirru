@@ -797,6 +797,14 @@
                   echo "|args:" ~args-value
                   ~ v
 
+        |defn-with-log $ quote
+          defmacro defn-with-log (f-name args & body)
+            quote-replace
+              defn ~f-name ~args
+                &let
+                  ~f-name $ defn ~f-name ~args ~@body
+                  call-with-log ~f-name ~@args
+
         |let{} $ quote
           defmacro let{} (binding & body)
             assert "|expects 2 items in list of binding"

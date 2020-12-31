@@ -191,6 +191,24 @@
             ; echo $ macroexpand $ quote $ call-with-log + 1 2 3 4
             assert= 10 $ call-with-log + 1 2 3 4
 
+            &reset-gensym-index!
+
+            assert=
+              macroexpand $ quote
+                defn-with-log f1 (a b) (+ a b)
+              quote
+                defn f1 (a b)
+                  &let
+                    f1 (defn f1 (a b) (+ a b))
+                    call-with-log f1 a b
+
+            ; echo $ macroexpand $ quote
+              defn-with-log f1 (a b) (+ a b)
+            let
+                f2 $ defn-with-log f1 (a b) (+ a b)
+              assert= 7 $ f2 3 4
+              assert= 11 $ f2 & ([] 5 6)
+
         |test-with-cpu-time $ quote
           fn ()
             log-title "|Testing with-cpu-time"
