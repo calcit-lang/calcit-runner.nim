@@ -1030,15 +1030,6 @@ proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
       spaceChars.incl(x)
   return CirruData(kind: crDataString, stringVal: origin.stringVal.strip(chars = spaceChars))
 
-proc nativeSetTraceFnBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: raiseEvalError("set-trace-fn! expects 2 arguments", args)
-  let nsPart = args[0]
-  if nsPart.kind != crDataString: raiseEvalError("Expects string for ns", args)
-  let defPart = args[1]
-  if defPart.kind != crDataString: raiseEvalError("Expects string for ns", args)
-  setTraceFn(nsPart.stringVal, defPart.stringVal)
-  CirruData(kind: crDataNil)
-
 proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
 
@@ -1310,7 +1301,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["str-find"] = CirruData(kind: crDataProc, procVal: nativeStrFind)
   programData[coreNs].defs["parse-float"] = CirruData(kind: crDataProc, procVal: nativeParseFloat)
   programData[coreNs].defs["trim"] = CirruData(kind: crDataProc, procVal: nativeTrim)
-  programData[coreNs].defs["set-trace-fn!"] = CirruData(kind: crDataProc, procVal: nativeSetTraceFnBang)
   programData[coreNs].defs["[]"] = CirruData(kind: crDataProc, procVal: nativeList)
   programData[coreNs].defs["gensym"] = CirruData(kind: crDataProc, procVal: nativeGensym)
   programData[coreNs].defs["&reset-gensym-index!"] = CirruData(kind: crDataProc, procVal: nativeResetGensymIndexBang)

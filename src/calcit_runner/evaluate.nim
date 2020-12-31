@@ -133,23 +133,14 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     return ret
 
   of crDataFn:
-    let traceThis = matchesTraceFn(value.fnNs, value.fnName)
     # let fnPath = value.fnNs & "/" & value.fnName
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
-
-    if traceThis:
-      echo getTraceIndentation(), value.fnName, " -> ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
-      traceStackSize = traceStackSize + 1
 
     # echo "HEAD: ", head, " ", xs
     pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
     let ret = evaluteFnData(value, args, interpret, ns)
     popDefStack()
-
-    if traceThis:
-      traceStackSize = traceStackSize - 1
-      echo getTraceIndentation(), "<- ", ret
 
     return ret
 
