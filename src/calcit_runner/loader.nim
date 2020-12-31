@@ -37,15 +37,15 @@ proc extractFile*(v: CirruEdnValue, ns: string): FileSource =
     raise newException(ValueError, "expects a map")
   var file: FileSource
 
-  if v.contains(genCrEdnKeyword("ns")):
-    let nsCode = v.get(genCrEdnKeyword("ns"))
+  if v.containsKwd("ns"):
+    let nsCode = v.getKwd("ns")
     file.ns = getSourceNode(nsCode, ns)
 
-  if v.contains(genCrEdnKeyword("proc")):
-    let run = v.get(genCrEdnKeyword("proc"))
+  if v.containsKwd("proc"):
+    let run = v.getKwd("proc")
     file.run = getSourceNode(run, ns)
 
-  let defs = v.get(genCrEdnKeyword("defs"))
+  let defs = v.getKwd("defs")
   file.defs = extractDefs(defs, ns)
 
   return file
@@ -53,28 +53,28 @@ proc extractFile*(v: CirruEdnValue, ns: string): FileSource =
 proc getCodeConfigs(initialData: CirruEdnValue): CodeConfigs =
   var codeConfigs = CodeConfigs()
 
-  if not initialData.contains(genCrEdnKeyword("configs")):
+  if not initialData.containsKwd("configs"):
     raise newException(ValueError, "expects configs field")
-  let configs = initialData.get(genCrEdnKeyword("configs"))
+  let configs = initialData.getKwd("configs")
   if configs.kind != crEdnMap:
     raise newException(ValueError, "expects configs to be a map")
 
-  if configs.contains(genCrEdnKeyword("init-fn")):
-    let initFn = configs.get(genCrEdnKeyword("init-fn"))
+  if configs.containsKwd("init-fn"):
+    let initFn = configs.getKwd("init-fn")
     if initFn.kind == crEdnString:
       codeConfigs.initFn = initFn.stringVal
 
-  if configs.contains(genCrEdnKeyword("reload-fn")):
-    let reloadFn = configs.get(genCrEdnKeyword("reload-fn",))
+  if configs.containsKwd("reload-fn"):
+    let reloadFn = configs.getKwd("reload-fn",)
     if reloadFn.kind == crEdnString:
       codeConfigs.reloadFn = reloadFn.stringVal
 
-  let package = initialData.get(genCrEdnKeyword("package",))
+  let package = initialData.getKwd("package",)
   if package.kind != crEdnString:
     raise newException(ValueError, "expects a string")
 
-  if configs.contains(genCrEdnKeyword("modules")):
-    let modulesList = configs.get(genCrEdnKeyword("modules"))
+  if configs.containsKwd("modules"):
+    let modulesList = configs.getKwd("modules")
     if modulesList.kind == crEdnVector:
       for item in modulesList.vectorVal:
         if item.kind != crEdnString:
@@ -101,7 +101,7 @@ proc loadSnapshot*(snapshotFile: string): tuple[files: Table[string, FileSource]
   if initialData.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
-  let files = initialData.get(genCrEdnKeyword("files"))
+  let files = initialData.getKwd("files")
 
   if files.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
@@ -129,31 +129,31 @@ proc extractFileChangeDetail(originalFile: var FileSource, ns: string, changedFi
   if changedFile.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
-  if changedFile.contains(genCrEdnKeyword("ns")):
-    let data = changedFile.get(genCrEdnKeyword("ns"))
+  if changedFile.containsKwd("ns"):
+    let data = changedFile.getKwd("ns")
     coloredEcho fgMagenta, "patching: ns changed"
     originalFile.ns = getSourceNode(data, ns)
 
-  if changedFile.contains(genCrEdnKeyword("proc")):
-    let data = changedFile.get(genCrEdnKeyword("proc"))
+  if changedFile.containsKwd("proc"):
+    let data = changedFile.getKwd("proc")
     coloredEcho fgMagenta, "patching: proc changed"
     originalFile.run = getSourceNode(data, ns)
 
-  if changedFile.contains(genCrEdnKeyword("removed-defs")):
-    let data = changedFile.get(genCrEdnKeyword("removed-defs"))
+  if changedFile.containsKwd("removed-defs"):
+    let data = changedFile.getKwd("removed-defs")
     let removedDefs = extractStringSet(data)
     for x in removedDefs:
       coloredEcho fgMagenta, "patching: removed def ", x
       originalFile.defs.del x
 
-  if changedFile.contains(genCrEdnKeyword("added-defs")):
-    let data = changedFile.get(genCrEdnKeyword("added-defs"))
+  if changedFile.containsKwd("added-defs"):
+    let data = changedFile.getKwd("added-defs")
     for k, v in extractDefs(data, ns):
       coloredEcho fgMagenta, "patching: added def ", k
       originalFile.defs[k] = v
 
-  if changedFile.contains(genCrEdnKeyword("changed-defs")):
-    let data = changedFile.get(genCrEdnKeyword("changed-defs"))
+  if changedFile.containsKwd("changed-defs"):
+    let data = changedFile.getKwd("changed-defs")
     for k, v in extractDefs(data, ns):
       coloredEcho fgMagenta, "patching: updated def ", k
       originalFile.defs[k] = v
@@ -165,15 +165,15 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
   if changesInfo.kind != crEdnMap:
     raise newException(ValueError, "expects a map")
 
-  if changesInfo.contains(genCrEdnKeyword("removed")):
-    let namesInfo = changesInfo.get(genCrEdnKeyword("removed"))
+  if changesInfo.containsKwd("removed"):
+    let namesInfo = changesInfo.getKwd("removed")
     let removedNs = extractStringSet(namesInfo)
     for x in removedNs:
       coloredEcho fgMagenta, "patching, removing ns: ", x
       programData.del x
 
-  if changesInfo.contains(genCrEdnKeyword("added")):
-    let added = changesInfo.get(genCrEdnKeyword("added"))
+  if changesInfo.containsKwd("added"):
+    let added = changesInfo.getKwd("added")
     if added.kind != crEdnMap:
       raise newException(ValueError, "expects a map")
     for k, v in added.mapVal:
@@ -182,8 +182,8 @@ proc loadChanges*(incrementFile: string, programData: var Table[string, FileSour
       coloredEcho fgMagenta, "patching, add ns: ", k.stringVal
       programData[k.stringVal] = extractFile(v, k.stringVal)
 
-  if changesInfo.contains(genCrEdnKeyword("changed")):
-    let changed = changesInfo.get(genCrEdnKeyword("changed"))
+  if changesInfo.containsKwd("changed"):
+    let changed = changesInfo.getKwd("changed")
     if changed.kind != crEdnMap:
       raise newException(ValueError, "expects a map")
 
