@@ -14,6 +14,7 @@
               assert "|compare list" $ = a $ [] 1 2 3
               assert "|prepend" $ = (prepend a 4) $ [] 4 1 2 3
               assert "|append" $ = (append a 4) $ [] 1 2 3 4
+              assert "|conj" $ = (conj a 4) $ [] 1 2 3 4
               assert "|first" $ = 1 (first a)
               assert "|last" $ = 3 (last a)
               assert "|gets nil" $ nil? (first $ [])

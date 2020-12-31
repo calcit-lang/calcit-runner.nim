@@ -825,8 +825,8 @@
                       , items
                     ~@ body
 
-        |conf $ quote
-          def conf append
+        |conj $ quote
+          def conj append
 
         |turn-str $ quote
           def turn-str turn-string
