@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.2.6"
+version       = "0.2.7"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
@@ -43,5 +43,5 @@ task e, "eval some code":
 task jsgen, "try generating js":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
 
-task jslib, "generating js core lib core from Nim":
+task jsprocs, "generating js core lib core from Nim":
   exec "nim js -d:release -o:js-out/calcit.procs.mjs src/calcit_runner/js_procs.nim"

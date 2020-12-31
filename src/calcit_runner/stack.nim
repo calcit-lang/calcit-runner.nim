@@ -1,6 +1,5 @@
 
 import lists
-import strutils
 import tables
 import algorithm
 
@@ -74,17 +73,3 @@ proc displayStackDetails*(message: string): void =
 
   writeFile "./.calcit-error.cirru", details
   echo "\nMore error details in .calcit-error.cirru     <--------="
-
-var traceFnNs: string
-var traceFnName: string
-var traceStackSize* = 0
-
-proc matchesTraceFn*(ns: string, def: string): bool =
-  traceFnNs == ns and traceFnName == def
-
-proc setTraceFn*(ns: string, def: string) =
-  traceFnNs = ns
-  traceFnName = def
-
-proc getTraceIndentation*(): string =
-  repeat("  ", traceStackSize)

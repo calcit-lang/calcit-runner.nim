@@ -249,3 +249,13 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     else:
       args.add interpret(x, scope, ns)
   args
+
+proc getKwd*(x: CirruEdnValue, k: string): CirruEdnValue =
+  if x.kind != crEdnMap:
+    raise newException(ValueError, "getKwd expects a map")
+  x.get(genCrEdnKeyword(k))
+
+proc containsKwd*(x: CirruEdnValue, k: string): bool =
+  if x.kind != crEdnMap:
+    raise newException(ValueError, "containsKwd expects a map")
+  x.contains(genCrEdnKeyword(k))
