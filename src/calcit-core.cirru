@@ -317,6 +317,10 @@
           defn merge (x0 & xs)
             reduce &merge x0 xs
 
+        |merge-non-nil $ quote
+          defn merge-non-nil (x0 & xs)
+            reduce &merge-non-nil x0 xs
+
         |identity $ quote
           defn identity (x) x
 

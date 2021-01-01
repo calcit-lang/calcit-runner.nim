@@ -45,6 +45,13 @@
                 vals $ {} (:a 1) (:b 2) (:c 2)
                 [] 2 1 2
 
+              assert=
+                merge-non-nil
+                  {,} :a 1 , :b 2 , :c 3
+                  {,} :a nil , :b 12
+                  {,} :c nil , :d 14
+                {,} :a 1 , :b 12 , :c 3 , :d 14
+
         |test-pairs $ quote
           fn ()
 

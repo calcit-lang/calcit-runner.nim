@@ -531,6 +531,26 @@ proc nativeMerge(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
 
   return CirruData(kind: crDataMap, mapVal: base.mapVal.merge(another.mapVal))
 
+proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2:
+    raiseEvalError("merge-non-nil requires 2 args", args)
+  let base = args[0]
+  let another = args[1]
+
+  if base.isNil and base.isNil:
+    return base
+
+  if base.isNil:
+    return another
+
+  if another.isNil:
+    return base
+
+  if not base.isMap or not another.isMap:
+    raiseEvalError("merge-non-nil requires two maps", args)
+
+  return CirruData(kind: crDataMap, mapVal: base.mapVal.mergeSkip(another.mapVal, CirruData(kind: crDataNil)))
+
 proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
     raiseEvalError("contains requires 2 args", args)
@@ -1262,6 +1282,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&concat"] = CirruData(kind: crDataProc, procVal: nativeConcat)
   programData[coreNs].defs["format-ternary-tree"] = CirruData(kind: crDataProc, procVal: nativeFormatTernaryTree)
   programData[coreNs].defs["&merge"] = CirruData(kind: crDataProc, procVal: nativeMerge)
+  programData[coreNs].defs["&merge-non-nil"] = CirruData(kind: crDataProc, procVal: nativeMergeNonNil)
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
