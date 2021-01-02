@@ -13,7 +13,7 @@ import ./types
 import ./errors
 import ./data
 
-# TODO staled feature: compiling to js
+# TODO staled feature: compiling to js. prefer using src/includes/calcit.procs.ts
 # Nim supports js backend, however, Nim is a low-level language.
 # some libs used in Nim does not fit js, this CLI has this problem.
 # just in theory, compile those functions to `calcit.procs.js`,

@@ -17,3 +17,5 @@ src/*.out
 
 profile_results.txt
 calcit_runner_*.nims
+
+src/includes/calcit.procs.js*
