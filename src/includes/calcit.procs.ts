@@ -6,6 +6,12 @@ class CrDataKeyword {
   toString() {
     return `:${this.content}`;
   }
+  // get [Symbol.toStringTag]() {
+  //   return `:${this.content}`;
+  // }
+  [Symbol.toPrimitive]() {
+    return `:${this.content}`;
+  }
 }
 
 class CrDataRecur {
@@ -139,6 +145,10 @@ export let foldl = (
   acc: CrDataValue,
   xs: CrDataValue[]
 ): CrDataValue => {
+  if (f == null) {
+    debugger;
+    throw new Error("Expected function for folding");
+  }
   var result = acc;
   for (let idx in xs) {
     let item = xs[idx];
@@ -149,6 +159,10 @@ export let foldl = (
 
 export let _AND__ADD_ = (x: number, y: number): number => {
   return x + y;
+};
+
+export let _AND__STAR_ = (x: number, y: number): number => {
+  return x * y;
 };
 
 export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
@@ -327,7 +341,6 @@ export let range = (n: number): number[] => {
 };
 
 export let empty_QUES_ = (xs: CrDataValue): boolean => {
-  debugger;
   if (xs instanceof Array) {
     return xs.length == 0;
   }
@@ -340,6 +353,74 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
 
   // TODO set not handled
   throw new Error("Does not support empty? on this type");
+};
+
+// recur has to be handled, so need to wrap functions
+export let callFunction = (
+  f: CrDataFn,
+  ...args: CrDataValue[]
+): CrDataValue => {
+  if (typeof f !== "function") {
+    debugger;
+    throw new Error("Expected function to be called");
+  }
+  var result = f.apply(null, args);
+  var times = 0;
+  while (result instanceof CrDataRecur) {
+    if (f === recur) {
+      // do not recur on itself
+      break;
+    }
+    if (times > 1000) {
+      debugger;
+      throw new Error("Expected tail recursion to exist quickly");
+    }
+    result = f.apply(null, result.args);
+    times = times + 1;
+  }
+  return result;
+};
+
+export let first = (xs: CrDataValue): CrDataValue => {
+  if (xs == null) {
+    return null;
+  }
+  if (xs instanceof Array) {
+    return xs[0];
+  }
+  if (typeof xs === "string") {
+    return xs[0];
+  }
+  throw new Error("Expects something sequential");
+};
+
+export let timeout_DASH_call = (duration: number, f: CrDataFn): null => {
+  if (typeof duration !== "number") {
+    throw new Error("Expected duration in number");
+  }
+  if (typeof f !== "function") {
+    throw new Error("Expected callback in fn");
+  }
+  setTimeout(f, duration);
+  return null;
+};
+
+export let rest = (xs: CrDataValue): CrDataValue => {
+  if (xs instanceof Array) {
+    return xs.slice(1);
+  }
+  if (typeof xs === "string") {
+    return xs.substr(1);
+  }
+  throw new Error("Expects something sequential");
+};
+
+export let recur = (...xs: CrDataValue[]): CrDataRecur => {
+  return new CrDataRecur(xs);
+};
+
+export let _AND_get_DASH_calcit_DASH_backend = () => {
+  return kwd("js");
 };
 
 // TODO not handled correct in generated js

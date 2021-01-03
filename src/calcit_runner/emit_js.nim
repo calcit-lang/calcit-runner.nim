@@ -51,7 +51,7 @@ proc escapeVar(name: string): string =
   if result == "let": result = "_LET_"
 
 # handle recursion
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, localDefs: HashSet[string]): string
+proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
@@ -99,8 +99,14 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Expected symbol behind let", pair)
         # TODO `let` inside expressions makes syntax error
         result = result & fmt"let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns, localDefs)};{cLine}"
-        for x in content:
-          result = result & "return " & x.toJsCode(ns, localDefs) & "\n"
+        # defined new local variable
+        var scopedDefs = localDefs
+        scopedDefs.incl(defName.symbolVal.escapeVar())
+        for idx, x in content:
+          if idx == content.len - 1:
+            result = result & "return " & x.toJsCode(ns, scopedDefs) & "\n"
+          else:
+            result = result & x.toJsCode(ns, scopedDefs) & "\n"
         return result & "})()"
       of ";":
         return "// " & $body & "\n"
@@ -162,7 +168,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if spreading:
           argsCode = argsCode & "..."
         argsCode = argsCode & x.toJsCode(ns, localDefs)
-    result = result & head.toJsCode(ns, localDefs) & "(" & argsCode & ")"
+    result = result & varPrefix & "callFunction(" & head.toJsCode(ns, localDefs) & "," & argsCode & ")"
   else:
     echo "[WARNING] unknown kind to gen js code: ", xs.kind
 
@@ -174,14 +180,16 @@ proc toJsCode(xs: seq[CirruData], ns: string, localDefs: HashSet[string]): strin
     else:
       result = result & x.toJsCode(ns, localDefs) & ";\n"
 
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, localDefs: HashSet[string]): string =
+proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
+  var localDefs = outerDefs
   var argsCode = ""
   var spreading = false
   for x in args:
     if spreading:
       if argsCode != "":
         argsCode = argsCode & ", "
-      argsCode = argsCode & "..." & $x
+      localDefs.incl(($x).escapeVar())
+      argsCode = argsCode & "..." & ($x).escapeVar()
       spreading = false
     else:
       if x.kind == crDataSymbol and x.symbolVal == "&":
@@ -189,6 +197,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
         continue
       if argsCode != "":
         argsCode = argsCode & ", "
+      localDefs.incl(($x).escapeVar())
       argsCode = argsCode & ($x).escapeVar
   var exportMark = if exported: "export " else: ""
   fmt"{cLine}{exportMark}function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}{cLine}"
@@ -202,7 +211,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.js".escape()
-    var content = fmt"{cLine}import {cCurlyL}initCrKeyword{cCurlyR} from {procsLib};{cLine}"
+    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, callFunction{cCurlyR} from {procsLib};{cLine}"
     content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     if ns == "calcit.core":
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"

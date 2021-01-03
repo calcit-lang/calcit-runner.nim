@@ -647,7 +647,9 @@
         |println $ quote
           defn println (& xs)
             print & xs
-            print "|\n"
+            when
+              = (&get-calcit-backend) :nim
+              print "|\n"
 
         |echo $ quote
           def echo println

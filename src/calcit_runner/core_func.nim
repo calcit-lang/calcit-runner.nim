@@ -1240,6 +1240,9 @@ proc nativeTimeoutCall(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
   return CirruData(kind: crDataNumber, numberVal: taskId.float)
 
+proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1343,3 +1346,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
   programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)
+  programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
