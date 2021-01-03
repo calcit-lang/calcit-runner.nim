@@ -23,12 +23,23 @@ var jsEmitPath* = "js-out"
 proc toJsFileName(ns: string): string =
   ns & ".mjs"
 
+proc hasNsPart(x: string): bool =
+  let trySlashPos = x.find('/')
+  return trySlashPos >= 1 and trySlashPos < x.len - 1
+
 proc escapeVar(name: string): string =
+  if name.hasNsPart():
+    let pieces = name.split("/")
+    if pieces.len != 2:
+      raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+    let nsPart = pieces[0]
+    let defPart = pieces[1]
+    return nsPart.escapeVar() & "." & defPart.escapeVar()
   result = name
   .replace("-", "_DASH_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
-  .replace(">", "_SHR_")
+  # .replace(">", "_SHR_")
   .replace("*", "_STAR_")
   .replace("&", "_AND_")
   .replace("{}", "_MAP_")
@@ -45,10 +56,12 @@ proc escapeVar(name: string): string =
   .replace("<", "_LT_")
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
+  .replace("\\", "_BSL_")
   if result == "if": result = "_IF_"
   if result == "do": result = "_DO_"
   if result == "else": result = "_ELSE_"
   if result == "let": result = "_LET_"
+  if result == "case": result = "_CASE_"
 
 # handle recursion
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
@@ -59,6 +72,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   of crDataSymbol:
     if localDefs.contains(xs.symbolVal):
       result = result & xs.symbolVal.escapeVar() & " "
+    elif xs.symbolVal.hasNsPart():
+      result = result & xs.symbolVal.escapeVar() & " "
     else:
       result = result & varPrefix & xs.symbolVal.escapeVar() & " "
   of crDataString:
@@ -67,6 +82,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     result = result & $xs.boolVal
   of crDataNumber:
     result = result & $xs.numberVal
+  of crDataTernary:
+    result = result & "initCrTernary(" & ($xs.ternaryVal).escape() & ")"
   of crDataNil:
     result = result & "null"
   of crDataKeyword:
@@ -104,9 +121,9 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         scopedDefs.incl(defName.symbolVal.escapeVar())
         for idx, x in content:
           if idx == content.len - 1:
-            result = result & "return " & x.toJsCode(ns, scopedDefs) & "\n"
+            result = result & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
           else:
-            result = result & x.toJsCode(ns, scopedDefs) & "\n"
+            result = result & x.toJsCode(ns, scopedDefs) & ";\n"
         return result & "})()"
       of ";":
         return "// " & $body & "\n"
@@ -228,9 +245,10 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
         of importDef:
           content = content & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
         of importNs:
-          content = content & fmt"{cLine}import {importName.escapeVar} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
+          content = content & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
     else:
-      echo "[WARNING] no imports information for ", ns
+      # echo "[WARNING] no imports information for ", ns
+      discard
 
     var defNames: HashSet[string]
     for def in file.defs.keys:
@@ -246,8 +264,9 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
       of crDataThunk:
         content = content & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
       of crDataMacro:
-        # macro should be handled during compilation
-        discard
+        # macro should be handled during compilation, psuedo code
+        content = content & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR};{cLine}"
+        content = content & fmt"{cLine}{def.escapeVar}.isMacro = true;{cLine}"
       of crDataSyntax:
         # should he handled inside compiler
         discard

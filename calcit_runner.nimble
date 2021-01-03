@@ -41,7 +41,8 @@ task e, "eval some code":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='range 10'"
 
 task jsgen, "try generating js":
-  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js tests/snapshots/test.cirru --once"
+  # exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
 
 # task jsprocs, "generating js core lib core from Nim":
 #   exec "nim js -d:release -o:js-out/calcit.procs.mjs src/calcit_runner/js_procs.nim"

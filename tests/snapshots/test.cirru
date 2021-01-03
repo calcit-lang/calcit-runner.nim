@@ -102,8 +102,10 @@
             log-title "|Testing detects"
             test-detects
 
-            log-title "|Testing id"
-            test-id
+            when
+              = :nim $ &get-calcit-backend
+              log-title "|Testing id"
+              test-id
 
             log-title "|Testing time"
             ; "|skipped since CI uses a different timezone"
@@ -113,18 +115,21 @@
 
             test-display-stack
 
-            test-cond/main!
-            test-gynienic/main!
-            test-json/main!
+            when
+              = :nim $ &get-calcit-backend
+              test-macro/main!
+              test-gynienic/main!
+              test-ternary/main!
+              test-cond/main!
+              test-json/main!
+
             test-lens/main!
             test-list/main!
-            test-macro/main!
             test-map/main!
             test-math/main!
             test-recursion/main!
             test-set/main!
             test-string/main!
-            test-ternary/main!
 
             do true
 

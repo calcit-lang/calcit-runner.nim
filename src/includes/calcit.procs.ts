@@ -37,6 +37,7 @@ type CrDataValue =
   | number
   | boolean
   | Map<CrDataValue, CrDataValue>
+  | Set<CrDataValue>
   | Array<CrDataValue>
   // TODO set
   | CrDataKeyword
@@ -83,7 +84,17 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   if (x instanceof CrDataAtom) {
     return kwd("atom");
   }
+  if (x instanceof Set) {
+    return kwd("set");
+  }
+  if (x === true || x === false) {
+    return kwd("bool");
+  }
   if (typeof x === "function") {
+    if (x.isMacro) {
+      // this is faked...
+      return kwd("macro");
+    }
     return kwd("fn");
   }
   throw new Error(`Unknown data ${x}`);
@@ -244,8 +255,8 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue) => {
   if (xs instanceof Array) {
     for (let idx in xs) {
       let v = xs[idx];
-      if (!_AND__EQ_(v, x)) {
-        return false;
+      if (_AND__EQ_(v, x)) {
+        return true;
       }
     }
     return false;
@@ -258,18 +269,18 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue) => {
   throw new Error("Does not support contains? on this type");
 };
 
-export let get = (xs: CrDataValue, x: CrDataValue) => {
+export let get = (xs: CrDataValue, k: CrDataValue) => {
   if (xs instanceof Array) {
-    for (let idx in xs) {
-      return xs[idx];
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
     }
-    return false;
+    return xs[k];
   }
   if (xs instanceof Map) {
-    if (xs.has(x)) {
-      return null;
+    if (xs.has(k)) {
+      return xs.get(k);
     }
-    return xs.get(x);
+    return null;
   }
 
   throw new Error("Does not support `get` on this type");
@@ -280,15 +291,28 @@ export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
     }
-    var ys: CrDataValue[] = new Array(xs.length);
-    for (let idx in xs) {
-      ys[idx] = xs[idx];
-    }
+    var ys: CrDataValue[] = cloneArray(xs);
     ys[k] = v;
     return ys;
   }
   if (xs instanceof Map) {
     return xs.set(k, v);
+  }
+
+  throw new Error("Does not support `get` on this type");
+};
+
+export let dissoc = (xs: CrDataValue, k: CrDataValue) => {
+  if (xs instanceof Array) {
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
+    }
+    var ys: CrDataValue[] = cloneArray(xs);
+    ys.splice(k, 1);
+    return ys;
+  }
+  if (xs instanceof Map) {
+    return xs.delete(k);
   }
 
   throw new Error("Does not support `get` on this type");
@@ -329,13 +353,23 @@ export let remove_DASH_watch = (a: CrDataAtom, k: CrDataKeyword): null => {
   return null;
 };
 
-// TODO, variadic args
-export let range = (n: number): number[] => {
+export let range = (n: number, m: number, m2: number): number[] => {
   var result: number[] = [];
-  var idx = 0;
-  while (idx < n) {
-    result.push(idx);
-    idx = idx + 1;
+  if (m2 != null) {
+    // TODO
+  }
+  if (m != null) {
+    var idx = n;
+    while (idx < m) {
+      result.push(idx);
+      idx = idx + 1;
+    }
+  } else {
+    var idx = 0;
+    while (idx < n) {
+      result.push(idx);
+      idx = idx + 1;
+    }
   }
   return result;
 };
@@ -357,10 +391,13 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
 
 // recur has to be handled, so need to wrap functions
 export let callFunction = (
-  f: CrDataFn,
+  f: CrDataValue,
   ...args: CrDataValue[]
 ): CrDataValue => {
   if (typeof f !== "function") {
+    if (f instanceof Map) {
+      return callFunction(get, f, ...args);
+    }
     debugger;
     throw new Error("Expected function to be called");
   }
@@ -407,6 +444,9 @@ export let timeout_DASH_call = (duration: number, f: CrDataFn): null => {
 
 export let rest = (xs: CrDataValue): CrDataValue => {
   if (xs instanceof Array) {
+    if (xs.length === 0) {
+      return null;
+    }
     return xs.slice(1);
   }
   if (typeof xs === "string") {
@@ -423,5 +463,140 @@ export let _AND_get_DASH_calcit_DASH_backend = () => {
   return kwd("js");
 };
 
+export let not = (x: boolean): boolean => {
+  return !x;
+};
+
+let cloneArray = (xs: CrDataValue[]): CrDataValue[] => {
+  let ys: CrDataValue[] = new Array(xs.length);
+  for (let idx in xs) {
+    ys[idx] = xs[idx];
+  }
+  return ys;
+};
+
+export let prepend = (xs: CrDataValue[], v: CrDataValue): CrDataValue[] => {
+  if (!(xs instanceof Array)) {
+    throw new Error("Expected array");
+  }
+  let ys = cloneArray(xs);
+  ys.unshift(v);
+  return ys;
+};
+
+export let append = (xs: CrDataValue[], v: CrDataValue): CrDataValue[] => {
+  if (!(xs instanceof Array)) {
+    throw new Error("Expected array");
+  }
+  let ys = cloneArray(xs);
+  ys.push(v);
+  return ys;
+};
+
+export let last = (xs: CrDataValue): CrDataValue => {
+  if (xs instanceof Array) {
+    return xs[xs.length - 1];
+  }
+  if (typeof xs === "string") {
+    return xs[xs.length - 1];
+  }
+  throw new Error("Data not ready for last");
+};
+
+export let butlast = (xs: CrDataValue): CrDataValue => {
+  if (xs instanceof Array) {
+    if (xs.length === 0) {
+      return null;
+    }
+    return xs.slice(0, xs.length - 1);
+  }
+  if (typeof xs === "string") {
+    return xs.substr(0, xs.length - 1);
+  }
+  throw new Error("Data not ready for butlast");
+};
+
+export let initCrTernary = (x: string): CrDataValue => {
+  console.warn("Ternary for js not implemented yet!");
+  return null;
+};
+
+export let _AND_or = (x: boolean, y: boolean): boolean => {
+  return x || y;
+};
+export let _AND_and = (x: boolean, y: boolean): boolean => {
+  return x && y;
+};
+
+export let _SHA__MAP_ = (...xs: CrDataValue[]): CrDataValue => {
+  var result = new Set<CrDataValue>();
+  for (let idx in xs) {
+    result.add(xs[idx]);
+  }
+  return result;
+};
+
+let idCounter = 0;
+
+export let generate_DASH_id_BANG_ = (): string => {
+  idCounter = idCounter + 1;
+  return `gen_id_${idCounter}`;
+};
+
+export let display_DASH_stack = (): null => {
+  console.trace();
+  return null;
+};
+
+export let slice = (
+  xs: CrDataValue[],
+  from: number,
+  to: number
+): CrDataValue => {
+  return xs.slice(from, to);
+};
+
+export let _AND_concat = (
+  xs: CrDataValue[],
+  ys: CrDataValue[]
+): CrDataValue[] => {
+  return xs.concat(ys);
+};
+
+export let reverse = (xs: CrDataValue[]): CrDataValue[] => {
+  if (xs == null) {
+    return null;
+  }
+  var result = new Array(xs.length);
+  for (let idx = 0; idx < xs.length; idx++) {
+    result[xs.length - idx - 1] = xs[idx];
+  }
+  return result;
+};
+
+export let format_DASH_ternary_DASH_tree = (): null => {
+  console.warn("No such function for js");
+  return null;
+};
+
+export let _AND__GT_ = (a: number, b: number): boolean => {
+  return a > b;
+};
+export let _AND__LT_ = (a: number, b: number): boolean => {
+  return a < b;
+};
+export let _AND__DASH_ = (a: number, b: number): number => {
+  return a - b;
+};
+
+export let rand_DASH_int = (n: number): number => {
+  return Math.round(Math.random() * n);
+};
+
+export let floor = (n: number): number => {
+  return Math.floor(n);
+};
+
 // TODO not handled correct in generated js
 export let reduce = foldl;
+export let conj = append;
