@@ -85,8 +85,14 @@ proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false)
     raise e
 
 # only load code of modules, ignore recursive deps
-proc loadModules(modulePath: string) =
-  let fullpath = getEnv("HOME").joinPath(".config/calcit/modules/", modulePath)
+proc loadModules(modulePath: string, baseDir: string) =
+  var fullpath: string
+  if modulePath.startsWith("./"):
+    fullpath = baseDir.joinPath(modulePath)
+  elif modulePath.startsWith("/"):
+    fullpath = modulePath
+  else:
+    fullpath = getEnv("HOME").joinPath(".config/calcit/modules/", modulePath)
   echo "Loading module: ", fullpath
   let snapshotInfo = loadSnapshot(fullpath)
 
@@ -97,7 +103,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   let snapshotInfo = loadSnapshot(snapshotFile)
 
   for modulePath in snapshotInfo.configs.modules:
-    loadModules(modulePath)
+    loadModules(modulePath, snapshotFile.parentDir)
 
   for fileNs, file in snapshotInfo.files:
     programCode[fileNs] = file

@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-macro)
+  :configs $ {} (:init-fn |test-macro.main/main!) (:reload-fn |test-macro.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-macro.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-macro.main $ :require
       :defs $ {}
 
         |log-title $ quote

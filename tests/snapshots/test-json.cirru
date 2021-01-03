@@ -1,11 +1,11 @@
 
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-json)
+  :configs $ {} (:init-fn |test-json.main/main!) (:reload-fn |test-json.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-json.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-json.main $ :require
       :defs $ {}
 
         |log-title $ quote

@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-lens)
+  :configs $ {} (:init-fn |test-lens.main/main!) (:reload-fn |test-lens.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-lens.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-lens.main $ :require
       :defs $ {}
 
         |log-title $ quote

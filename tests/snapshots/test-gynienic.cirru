@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-gynienic)
+  :configs $ {} (:init-fn |test-gynienic.main/main!) (:reload-fn |test-gynienic.main/reload!)
   :files $ {}
-    |app.lib $ {}
+    |test-gynienic.lib $ {}
       :ns $ quote
-        :ns app.lib
+        :ns test-gynienic.lib
       :defs $ {}
         |add-2 $ quote
           defn add-2 (x) (&+ x 2)
@@ -15,18 +15,23 @@
               echo "\"internal c:" a b c
               quote-replace $ do (echo "\"c is:" c)
                 [] (~ a) (~ b) (, c) (~ c) (add-2 8)
-    |app.main $ {}
+    |test-gynienic.main $ {}
       :ns $ quote
-        ns app.main $ :require ([] app.lib :refer $ [] add-11)
+        ns test-gynienic.main $ :require ([] test-gynienic.lib :refer $ [] add-11)
       :defs $ {}
         |try-hygienic $ quote
           defn try-hygienic ()
+            echo "|Testing gynienic"
             let
                 c 4
               assert=
                 add-11 1 2
                 [] 1 2 4 11 10
               , true
+
+        |main! $ quote
+          defn main! ()
+            try-hygienic
 
       :proc $ quote ()
       :configs $ {} (:extension nil)

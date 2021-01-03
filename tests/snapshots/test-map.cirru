@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-map)
+  :configs $ {} (:init-fn |test-map.main/main!) (:reload-fn |test-map.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-map.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-map.main $ :require
       :defs $ {}
 
         |test-maps $ quote
