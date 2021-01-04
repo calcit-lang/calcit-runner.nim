@@ -17,18 +17,27 @@
               assert "|check dict size" $ = 4 $ count dict
               assert |contains (contains? dict :a)
               assert "|not contains" $ not (contains? dict :a2)
-              ; echo $ keys dict
-              assert "|keys" $ = (keys dict) ([] :c :a :b :d)
+
+              when
+                = :nim $ &get-calcit-backend
+                ; echo $ keys dict
+                assert=
+                  keys dict
+                  [] :c :a :b :d
+
+                assert=
+                  vals $ {} (:a 1) (:b 2) (:c 2)
+                  [] 2 1 2
+
               assert |assoc $ = (assoc dict :h 10) $ {}
                 :a 1
                 :b 2
                 :c 3
                 :d 5
                 :h 10
-              assert |dissoc $ = (dissoc dict :a) $ {}
-                :b 2
-                :c 3
-                :d 5
+              assert=
+                dissoc dict :a
+                {,} :b 2 , :c 3 , :d 5
               assert |same $ = dict (dissoc dict :h)
               assert |merge $ =
                 merge
@@ -40,10 +49,6 @@
                   {}
                     :d 4
                 {} (:a 1) (:b 2) (:c 3) (:d 4)
-
-              assert |vals $ =
-                vals $ {} (:a 1) (:b 2) (:c 2)
-                [] 2 1 2
 
               assert=
                 merge-non-nil
@@ -86,9 +91,11 @@
 
         |test-native-map-syntax $ quote
           defn test-native-map-syntax ()
-            assert "|internally {} is a macro" $ =
-              macroexpand $ quote $ {} (:a 1)
-              quote $ &{} ([] :a 1)
+            when
+              = :nim $ &get-calcit-backend
+              assert=
+                macroexpand $ quote $ {} (:a 1)
+                quote $ &{} ([] :a 1)
 
         |log-title $ quote
           defn log-title (title)
@@ -99,9 +106,11 @@
         |test-map-comma $ quote
           fn ()
             log-title "|Testing {,}"
-            assert=
-              macroexpand $ quote $ {,} :a 1 , :b 2 , :c 3
-              quote $ pairs-map $ section-by 2 $ [] :a 1 :b 2 :c 3
+            when
+              = :nim $ &get-calcit-backend
+              assert=
+                macroexpand $ quote $ {,} :a 1 , :b 2 , :c 3
+                quote $ pairs-map $ section-by 2 $ [] :a 1 :b 2 :c 3
             assert=
               {,} :a 1 , :b 2 , :c 3
               {} (:a 1) (:b 2) (:c 3)

@@ -23,9 +23,11 @@
             assert "|string splitting" $ =
               split-lines "|a\nb\nc"
               [] |a |b |c
-            assert=
-              split |a中b文c |
-              [] |a |中 |b |文 |c
+            when
+              = :nim $ &get-calcit-backend
+              assert=
+                split |a中b文c |
+                [] |a |中 |b |文 |c
             assert= 4
               count |good
             assert= |56789 $ substr |0123456789 5
@@ -84,7 +86,10 @@
             log-title "|Test char"
 
             assert= 97 $ get-char-code |a
-            assert= 27721 $ get-char-code |汉
+
+            when
+              = :nim $ &get-calcit-backend
+              assert= 27721 $ get-char-code |汉
 
             assert= |a $ first |abc
             assert= |c $ last |abc

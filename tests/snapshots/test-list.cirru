@@ -247,20 +247,22 @@
           fn ()
             log-title "|Testing doseq"
 
-            =
-              macroexpand $ quote
-                &doseq (n (range 5))
-                  echo |doing: n
-                  swap! *counted &+ n
-              quote
-                apply
-                  defn doseq-fn% (xs)
-                    if (empty? xs) nil
-                      &let (n (first xs))
-                        echo |doing: n
-                        swap! *counted &+ n
-                        recur (rest xs)
-                  [] (range 5)
+            when
+              = :nim $ &get-calcit-backend
+              =
+                macroexpand $ quote
+                  &doseq (n (range 5))
+                    echo |doing: n
+                    swap! *counted &+ n
+                quote
+                  apply
+                    defn doseq-fn% (xs)
+                      if (empty? xs) nil
+                        &let (n (first xs))
+                          echo |doing: n
+                          swap! *counted &+ n
+                          recur (rest xs)
+                    [] (range 5)
 
 
             &doseq (n (range 5))

@@ -87,7 +87,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   of crDataNil:
     result = result & "null"
   of crDataKeyword:
-    result = result & varPrefix & "initCrKeyword(" & xs.keywordVal.escape() & ")"
+    result = result & varPrefix & "kwd(" & xs.keywordVal.escape() & ")"
   of crDataList:
     if xs.listVal.len == 0:
       echo "[WARNING] Unpexpected empty list"
@@ -126,7 +126,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
             result = result & x.toJsCode(ns, scopedDefs) & ";\n"
         return result & "})()"
       of ";":
-        return "// " & $body & "\n"
+        return "/* " & $CirruData(kind: crDataList, listVal: body) & " */"
       of "do":
         result = "(()=>{"
         for idx, x in body:
@@ -172,6 +172,12 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         return "/* Unpexpected macro " & $xs & " */"
       of "quote-replace":
         return "/* Unpexpected quote-replace " & $xs & " */"
+      of "raise":
+        # not core syntax, but treat as macro for better debugging experience
+        if body.len != 1:
+          raiseEvalError("expected a single argument", body.toSeq())
+        let message: string = $body[0]
+        return fmt"(()=> {cCurlyL} throw new Error({message.escape}) {cCurlyR})() "
       else:
         discard
     var argsCode = ""
@@ -216,20 +222,22 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
   var argsCode = ""
   var spreading = false
   for x in args:
+    if x.kind != crDataSymbol:
+      raiseEvalError("Expected symbol for arg", x)
     if spreading:
       if argsCode != "":
         argsCode = argsCode & ", "
-      localDefs.incl(($x).escapeVar())
-      argsCode = argsCode & "..." & ($x).escapeVar()
+      localDefs.incl(x.symbolVal)
+      argsCode = argsCode & "..." & x.symbolVal.escapeVar()
       spreading = false
     else:
-      if x.kind == crDataSymbol and x.symbolVal == "&":
+      if x.symbolVal == "&":
         spreading = true
         continue
       if argsCode != "":
         argsCode = argsCode & ", "
-      localDefs.incl(($x).escapeVar())
-      argsCode = argsCode & ($x).escapeVar
+      localDefs.incl(x.symbolVal)
+      argsCode = argsCode & x.symbolVal.escapeVar
 
   var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
   if body.len > 0 and body[^1].usesRecur():
@@ -249,7 +257,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.js".escape()
-    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
+    var content = fmt"{cLine}import {cCurlyL}kwd, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
     content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     if ns == "calcit.core":
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"

@@ -48,7 +48,7 @@ type CrDataValue =
 
 var keywordRegistery = new Map();
 
-export let initCrKeyword = (content: string) => {
+export let kwd = (content: string) => {
   if (keywordRegistery.has(content)) {
     return keywordRegistery.get(content);
   } else {
@@ -59,8 +59,6 @@ export let initCrKeyword = (content: string) => {
 };
 
 var atomsRegistry = new Map();
-
-let kwd = initCrKeyword;
 
 export let type_DASH_of = (x: any): CrDataKeyword => {
   if (typeof x === "string") {
@@ -115,6 +113,9 @@ export let count = (x: CrDataValue): number => {
   }
   if (t === kwd("map")) {
     return (x as Map<CrDataValue, CrDataValue>).size;
+  }
+  if (t === kwd("set")) {
+    return (x as Set<CrDataValue>).size;
   }
   throw new Error(`Unknown data ${x}`);
 };
@@ -237,6 +238,19 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       console.warn("Do not compare Recur");
       return false;
     }
+    if (tx === kwd("set")) {
+      let x2 = x as Set<CrDataValue>;
+      let y2 = y as Set<CrDataValue>;
+      if (x2.size !== y2.size) {
+        return false;
+      }
+      for (let v in x2.values()) {
+        if (!y2.has(v)) {
+          return false;
+        }
+      }
+      return true;
+    }
     throw new Error("Missing handler for this type");
   } else {
     return false;
@@ -251,7 +265,13 @@ export let raise = (x: string): void => {
   throw new Error(x);
 };
 
-export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue) => {
+export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
+  if (typeof xs === "string") {
+    if (typeof x !== "string") {
+      throw new Error("Expected string");
+    }
+    return xs.includes(x as string);
+  }
   if (xs instanceof Array) {
     for (let idx in xs) {
       let v = xs[idx];
@@ -262,6 +282,9 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue) => {
     return false;
   }
   if (xs instanceof Map) {
+    return xs.has(x);
+  }
+  if (xs instanceof Set) {
     return xs.has(x);
   }
 
@@ -286,6 +309,16 @@ export let get = (xs: CrDataValue, k: CrDataValue) => {
   throw new Error("Does not support `get` on this type");
 };
 
+let cloneMap = (
+  xs: Map<CrDataValue, CrDataValue>
+): Map<CrDataValue, CrDataValue> => {
+  var result: Map<CrDataValue, CrDataValue> = new Map();
+  xs.forEach((v, i) => {
+    result.set(i, v);
+  });
+  return result;
+};
+
 export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
   if (xs instanceof Array) {
     if (typeof k !== "number") {
@@ -296,7 +329,9 @@ export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
     return ys;
   }
   if (xs instanceof Map) {
-    return xs.set(k, v);
+    var result = cloneMap(xs);
+    result.set(k, v);
+    return result;
   }
 
   throw new Error("Does not support `get` on this type");
@@ -312,7 +347,9 @@ export let dissoc = (xs: CrDataValue, k: CrDataValue) => {
     return ys;
   }
   if (xs instanceof Map) {
-    return xs.delete(k);
+    var result = cloneMap(xs);
+    result.delete(k);
+    return result;
   }
 
   throw new Error("Does not support `get` on this type");
@@ -584,13 +621,233 @@ export let _AND__LT_ = (a: number, b: number): boolean => {
 export let _AND__DASH_ = (a: number, b: number): number => {
   return a - b;
 };
+export let _AND__SLSH_ = (a: number, b: number): number => {
+  return a / b;
+};
+export let mod = (a: number, b: number): number => {
+  return a % b;
+};
+export let _AND_str_DASH_concat = (a: string, b: string) => {
+  return `${a}${b}`;
+};
+export let sort = (f: CrDataFn, xs: CrDataValue[]) => {
+  let ys = cloneArray(xs);
+  return ys.sort(f as any); // TODO need check tests
+};
 
-export let rand_DASH_int = (n: number): number => {
-  return Math.round(Math.random() * n);
+export let rand = (n: number, m: number): number => {
+  if (m != null) {
+    return n + (m - n) * Math.random();
+  }
+  if (n != null) {
+    return Math.random() * n;
+  }
+  return Math.random() * 100;
+};
+
+export let rand_DASH_int = (n: number, m: number): number => {
+  if (m != null) {
+    return Math.round(n + Math.random() * (m - n));
+  }
+  if (n != null) {
+    return Math.round(Math.random() * n);
+  }
+  return Math.round(Math.random() * 100);
 };
 
 export let floor = (n: number): number => {
   return Math.floor(n);
+};
+
+export let _AND_merge = (
+  a: Map<CrDataValue, CrDataValue>,
+  b: Map<CrDataValue, CrDataValue>
+): Map<CrDataValue, CrDataValue> => {
+  var result = cloneMap(a);
+  b.forEach((v, k) => {
+    result.set(k, v);
+  });
+  return result;
+};
+
+export let _AND_merge_DASH_non_DASH_nil = (
+  a: Map<CrDataValue, CrDataValue>,
+  b: Map<CrDataValue, CrDataValue>
+): Map<CrDataValue, CrDataValue> => {
+  var result = cloneMap(a);
+  b.forEach((v, k) => {
+    if (v != null) {
+      result.set(k, v);
+    }
+  });
+  return result;
+};
+
+export let to_DASH_pairs = (
+  xs: Map<CrDataValue, CrDataValue>
+): [CrDataValue, CrDataValue][] => {
+  var result: [CrDataValue, CrDataValue][] = [];
+  xs.forEach((v, k) => {
+    result.push([k, v]);
+  });
+  return result;
+};
+
+export let sin = (n: number) => {
+  return Math.sin(n);
+};
+export let cos = (n: number) => {
+  return Math.cos(n);
+};
+export let pow = (n: number, m: number) => {
+  return Math.pow(n, m);
+};
+export let ceil = (n: number) => {
+  return Math.ceil(n);
+};
+export let round = (n: number) => {
+  return Math.round(n);
+};
+export let sqrt = (n: number) => {
+  return Math.sqrt(n);
+};
+
+export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
+  let result: Set<CrDataValue> = new Set();
+  xs.forEach((x) => {
+    result.add(x);
+  });
+  return result;
+};
+
+export let _AND_include = (
+  xs: Set<CrDataValue>,
+  y: CrDataValue
+): Set<CrDataValue> => {
+  var result = cloneSet(xs);
+  result.add(y);
+  return result;
+};
+
+export let _AND_exclude = (
+  xs: Set<CrDataValue>,
+  y: CrDataValue
+): Set<CrDataValue> => {
+  var result = cloneSet(xs);
+  result.delete(y);
+  return result;
+};
+
+export let _AND_difference = (
+  xs: Set<CrDataValue>,
+  ys: Set<CrDataValue>
+): Set<CrDataValue> => {
+  var result = cloneSet(xs);
+  ys.forEach((y) => {
+    if (result.has(y)) {
+      result.delete(y);
+    }
+  });
+  return result;
+};
+export let _AND_union = (
+  xs: Set<CrDataValue>,
+  ys: Set<CrDataValue>
+): Set<CrDataValue> => {
+  var result = cloneSet(xs);
+  ys.forEach((y) => {
+    if (!result.has(y)) {
+      result.add(y);
+    }
+  });
+  return result;
+};
+export let _AND_intersection = (
+  xs: Set<CrDataValue>,
+  ys: Set<CrDataValue>
+): Set<CrDataValue> => {
+  var result: Set<CrDataValue> = new Set();
+  ys.forEach((y) => {
+    if (xs.has(y)) {
+      result.add(y);
+    }
+  });
+  return result;
+};
+
+export let replace = (x: string, y: string, z: string): string => {
+  var result = x;
+  while (result.indexOf(y) >= 0) {
+    result = result.replace(y, z);
+  }
+  return result;
+};
+
+export let split = (xs: string, x: string): string[] => {
+  return xs.split(x);
+};
+export let split_DASH_lines = (xs: string): string[] => {
+  return xs.split("\n");
+};
+export let substr = (xs: string, m: number, n: number): string => {
+  if (n <= m) {
+    console.warn("endIndex too small");
+    return "";
+  }
+  return xs.substring(m, n);
+};
+
+export let str_DASH_find = (x: string, y: string): number => {
+  return x.indexOf(y);
+};
+
+export let parse_DASH_float = (x: string): number => {
+  return parseFloat(x);
+};
+export let trim = (x: string, c: string): string => {
+  if (c != null) {
+    if (c.length !== 1) {
+      throw new Error("Expceted c of a character");
+    }
+    var buffer = x;
+    var size = buffer.length;
+    var idx = 0;
+    while (idx < size && buffer[idx] == c) {
+      idx = idx + 1;
+    }
+    buffer = buffer.substring(idx);
+    var size = buffer.length;
+    var idx = size;
+    while (idx > 1 && buffer[idx - 1] == c) {
+      idx = idx - 1;
+    }
+    buffer = buffer.substring(0, idx);
+    return buffer;
+  }
+  return x.trim();
+};
+
+export let format_DASH_number = (x: number, n: number): string => {
+  return x.toFixed(n);
+};
+
+export let get_DASH_char_DASH_code = (c: string): number => {
+  if (typeof c !== "string" || c.length !== 1) {
+    throw new Error("Expected a character");
+  }
+  return c.charCodeAt(0);
+};
+
+export let re_DASH_matches = (re: string, content: string): boolean => {
+  return new RegExp(re).test(content);
+};
+
+export let re_DASH_find_DASH_index = (re: string, content: string): number => {
+  return content.search(new RegExp(re));
+};
+
+export let re_DASH_find_DASH_all = (re: string, content: string): string[] => {
+  return content.match(new RegExp(re, "g"));
 };
 
 // TODO not handled correct in generated js
