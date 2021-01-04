@@ -4,6 +4,7 @@ import parseopt
 import options
 
 import ./calcit_runner
+import ./calcit_runner/emit_js
 import ./calcit_runner/version
 import ./calcit_runner/color_echo
 
@@ -29,6 +30,8 @@ while true:
   of cmdLongOption:
     if cliArgs.key == "init-fn" and cliArgs.val != "":
       initFn = some(cliArgs.val)
+    if cliArgs.key == "emit-js":
+      jsMode = true
   of cmdArgument:
     snapshotFile = cliArgs.key
     dimEcho "Runner: specifying files", snapshotFile

@@ -21,6 +21,8 @@ jobs:
       run: >
         nimble jsgen
         && cd src/includes/ && npm install typescript
-        && ./node_modules/.bin/tsc && mv calcit.procs.js calcit.procs.mjs
-        && cd ../../ && cp example/main.mjs js-out/ && node js-out/main.mjs
+        && ./node_modules/.bin/tsc
+        && cd ../../
+        && cp src/includes/calcit.procs.js js-out/calcit.procs.mjs
+        && cp example/main.mjs js-out/ && node js-out/main.mjs
 
