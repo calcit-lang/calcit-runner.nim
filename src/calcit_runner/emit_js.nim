@@ -1,5 +1,6 @@
 
 import os
+import sets
 import strutils
 import tables
 import options
@@ -22,12 +23,23 @@ var jsEmitPath* = "js-out"
 proc toJsFileName(ns: string): string =
   ns & ".mjs"
 
+proc hasNsPart(x: string): bool =
+  let trySlashPos = x.find('/')
+  return trySlashPos >= 1 and trySlashPos < x.len - 1
+
 proc escapeVar(name: string): string =
+  if name.hasNsPart():
+    let pieces = name.split("/")
+    if pieces.len != 2:
+      raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+    let nsPart = pieces[0]
+    let defPart = pieces[1]
+    return nsPart.escapeVar() & "." & defPart.escapeVar()
   result = name
   .replace("-", "_DASH_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
-  .replace(">", "_SHR_")
+  # .replace(">", "_SHR_")
   .replace("*", "_STAR_")
   .replace("&", "_AND_")
   .replace("{}", "_MAP_")
@@ -44,27 +56,36 @@ proc escapeVar(name: string): string =
   .replace("<", "_LT_")
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
+  .replace("\\", "_BSL_")
   if result == "if": result = "_IF_"
   if result == "do": result = "_DO_"
   if result == "else": result = "_ELSE_"
   if result == "let": result = "_LET_"
+  if result == "case": result = "_CASE_"
 
 # handle recursion
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool): string
+proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
 
-proc toJsCode(xs: CirruData, ns: string): string =
+proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
   case xs.kind
   of crDataSymbol:
-    result = result & varPrefix & xs.symbolVal.escapeVar() & " "
+    if localDefs.contains(xs.symbolVal):
+      result = result & xs.symbolVal.escapeVar() & " "
+    elif xs.symbolVal.hasNsPart():
+      result = result & xs.symbolVal.escapeVar() & " "
+    else:
+      result = result & varPrefix & xs.symbolVal.escapeVar() & " "
   of crDataString:
-    result = result & "initCrString(" & xs.stringVal.escape() & ") "
+    result = result & xs.stringVal.escape()
   of crDataBool:
-    result = result & "initCrBool(" & $xs.boolVal & ") "
+    result = result & $xs.boolVal
   of crDataNumber:
-    result = result & "initCrNumber(" & $xs.numberVal & ") "
+    result = result & $xs.numberVal
+  of crDataTernary:
+    result = result & "initCrTernary(" & ($xs.ternaryVal).escape() & ")"
   of crDataNil:
-    result = result & "initCrNil() "
+    result = result & "null"
   of crDataKeyword:
     result = result & varPrefix & "initCrKeyword(" & xs.keywordVal.escape() & ")"
   of crDataList:
@@ -78,8 +99,8 @@ proc toJsCode(xs: CirruData, ns: string): string =
       of "if":
         if body.len < 2:
           raiseEvalError("need branches for if", xs)
-        let falseBranch = if body.len >= 3: body[2].toJsCode(ns) else: "null"
-        return body[0].toJsCode(ns) & "?" & body[1].toJsCode(ns) & ":" & falseBranch
+        let falseBranch = if body.len >= 3: body[2].toJsCode(ns, localDefs) else: "null"
+        return body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch
       of "&let":
         result = result & "(()=>{"
         if body.len <= 1:
@@ -94,18 +115,27 @@ proc toJsCode(xs: CirruData, ns: string): string =
         if defName.kind != crDataSymbol:
           raiseEvalError("Expected symbol behind let", pair)
         # TODO `let` inside expressions makes syntax error
-        result = result & fmt"let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns)};{cLine}"
-        for x in content:
-          result = result & x.toJsCode(ns) & "\n"
+        result = result & fmt"let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns, localDefs)};{cLine}"
+        # defined new local variable
+        var scopedDefs = localDefs
+        scopedDefs.incl(defName.symbolVal.escapeVar())
+        for idx, x in content:
+          if idx == content.len - 1:
+            result = result & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
+          else:
+            result = result & x.toJsCode(ns, scopedDefs) & ";\n"
         return result & "})()"
       of ";":
         return "// " & $body & "\n"
       of "do":
         result = "(()=>{"
-        for x in body:
+        for idx, x in body:
           if result != "(":
             result = result & ";\n"
-          result = result & x.toJsCode(ns)
+          if idx == body.len - 1:
+            result = result & "return " & x.toJsCode(ns, localDefs)
+          else:
+            result = result & x.toJsCode(ns, localDefs)
         result = result & "})()"
         return result
 
@@ -123,7 +153,8 @@ proc toJsCode(xs: CirruData, ns: string): string =
         let name = atomName.symbolVal.escapeVar()
         let nsStates = "calcit_states:" & ns
         let varCode = fmt"window[{nsStates.escape}]"
-        return fmt"{cLine}({varCode}!=null) ? {varCode} = {varPrefix}defatom({atomExpr.toJsCode(ns)}) : null {cLine}"
+        let atomPath = (ns & "/" & atomName.symbolVal).escape()
+        return fmt"{cLine}({varCode}!=null) ? {varCode} = {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)}) : null {cLine}"
 
       of "defn":
         if body.len < 3:
@@ -135,7 +166,7 @@ proc toJsCode(xs: CirruData, ns: string): string =
           raiseEvalError("Expected function name in a symbol", xs)
         if funcArgs.kind != crDataList:
           raiseEvalError("Expected function args in a list", xs)
-        return genJsFunc(funcName.symbolVal, funcArgs.listVal, funcBody.toSeq(), ns, false)
+        return genJsFunc(funcName.symbolVal, funcArgs.listVal, funcBody.toSeq(), ns, false, localDefs)
 
       of "defmacro":
         return "/* Unpexpected macro " & $xs & " */"
@@ -153,24 +184,29 @@ proc toJsCode(xs: CirruData, ns: string): string =
           argsCode = argsCode & ", "
         if spreading:
           argsCode = argsCode & "..."
-        argsCode = argsCode & x.toJsCode(ns)
-    result = result & head.toJsCode(ns) & "(" & argsCode & ")"
+        argsCode = argsCode & x.toJsCode(ns, localDefs)
+    result = result & varPrefix & "callFunction(" & head.toJsCode(ns, localDefs) & "," & argsCode & ")"
   else:
     echo "[WARNING] unknown kind to gen js code: ", xs.kind
 
-proc toJsCode(xs: seq[CirruData], ns: string): string =
-  for x in xs:
+proc toJsCode(xs: seq[CirruData], ns: string, localDefs: HashSet[string]): string =
+  for idx, x in xs:
     # result = result & "// " & $x & "\n"
-    result = result & x.toJsCode(ns) & ";\n"
+    if idx == xs.len - 1:
+      result = result & "return " & x.toJsCode(ns, localDefs) & ";\n"
+    else:
+      result = result & x.toJsCode(ns, localDefs) & ";\n"
 
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool): string =
+proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
+  var localDefs = outerDefs
   var argsCode = ""
   var spreading = false
   for x in args:
     if spreading:
       if argsCode != "":
         argsCode = argsCode & ", "
-      argsCode = argsCode & "..." & $x
+      localDefs.incl(($x).escapeVar())
+      argsCode = argsCode & "..." & ($x).escapeVar()
       spreading = false
     else:
       if x.kind == crDataSymbol and x.symbolVal == "&":
@@ -178,9 +214,10 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
         continue
       if argsCode != "":
         argsCode = argsCode & ", "
+      localDefs.incl(($x).escapeVar())
       argsCode = argsCode & ($x).escapeVar
   var exportMark = if exported: "export " else: ""
-  fmt"{cLine}{exportMark}function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns)}{cCurlyR}{cLine}"
+  fmt"{cLine}{exportMark}function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}{cLine}"
 
 proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string): void =
   if dirExists(jsEmitPath).not:
@@ -190,8 +227,8 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     let nsStates = "calcit_states:" & ns
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
-    let procsLib = "./calcit.procs.mjs".escape()
-    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, initCrNil, initCrNumber, initCrBool, initCrString{cCurlyR} from {procsLib};{cLine}"
+    let procsLib = "./calcit.procs.js".escape()
+    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, callFunction{cCurlyR} from {procsLib};{cLine}"
     content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     if ns == "calcit.core":
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"
@@ -208,21 +245,28 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
         of importDef:
           content = content & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
         of importNs:
-          content = content & fmt"{cLine}import {importName.escapeVar} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
+          content = content & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
     else:
-      echo "[WARNING] no imports information for ", ns
+      # echo "[WARNING] no imports information for ", ns
+      discard
+
+    var defNames: HashSet[string]
+    for def in file.defs.keys:
+      defNames.incl(def)
 
     for def, f in file.defs:
+
       case f.kind
       of crDataProc:
         content = content & fmt"{cLine}var {def.escapeVar} = _calcit_procs_.{def.escapeVar};{cLine}"
       of crDataFn:
-        content = content & genJsFunc(def, f.fnArgs, f.fnCode, ns, true)
+        content = content & genJsFunc(def, f.fnArgs, f.fnCode, ns, true, defNames)
       of crDataThunk:
-        content = content & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns)};{cLine}"
+        content = content & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
       of crDataMacro:
-        # macro should be handled during compilation
-        discard
+        # macro should be handled during compilation, psuedo code
+        content = content & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR};{cLine}"
+        content = content & fmt"{cLine}{def.escapeVar}.isMacro = true;{cLine}"
       of crDataSyntax:
         # should he handled inside compiler
         discard

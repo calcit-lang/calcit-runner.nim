@@ -6,7 +6,7 @@ import cirru_edn
 import ./types
 import ./loader
 
-const coreSource = staticRead"../calcit-core.cirru"
+const coreSource = staticRead"../includes/calcit-core.cirru"
 
 proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
   let initialData = parseCirruEdn coreSource

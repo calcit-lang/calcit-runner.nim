@@ -317,6 +317,10 @@
           defn merge (x0 & xs)
             reduce &merge x0 xs
 
+        |merge-non-nil $ quote
+          defn merge-non-nil (x0 & xs)
+            reduce &merge-non-nil x0 xs
+
         |identity $ quote
           defn identity (x) x
 
@@ -643,7 +647,9 @@
         |println $ quote
           defn println (& xs)
             print & xs
-            print "|\n"
+            when
+              = (&get-calcit-backend) :nim
+              print "|\n"
 
         |echo $ quote
           def echo println
@@ -825,8 +831,8 @@
                       , items
                     ~@ body
 
-        |conf $ quote
-          def conf append
+        |conj $ quote
+          def conj append
 
         |turn-str $ quote
           def turn-str turn-string

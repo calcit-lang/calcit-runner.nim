@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-list)
+  :configs $ {} (:init-fn |test-list.main/main!) (:reload-fn |test-list.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-list.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-list.main $ :require
       :defs $ {}
 
         |test-list $ quote
@@ -14,6 +14,7 @@
               assert "|compare list" $ = a $ [] 1 2 3
               assert "|prepend" $ = (prepend a 4) $ [] 4 1 2 3
               assert "|append" $ = (append a 4) $ [] 1 2 3 4
+              assert "|conj" $ = (conj a 4) $ [] 1 2 3 4
               assert "|first" $ = 1 (first a)
               assert "|last" $ = 3 (last a)
               assert "|gets nil" $ nil? (first $ [])

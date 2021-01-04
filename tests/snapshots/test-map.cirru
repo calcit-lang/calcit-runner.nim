@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-map)
+  :configs $ {} (:init-fn |test-map.main/main!) (:reload-fn |test-map.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-map.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-map.main $ :require
       :defs $ {}
 
         |test-maps $ quote
@@ -44,6 +44,13 @@
               assert |vals $ =
                 vals $ {} (:a 1) (:b 2) (:c 2)
                 [] 2 1 2
+
+              assert=
+                merge-non-nil
+                  {,} :a 1 , :b 2 , :c 3
+                  {,} :a nil , :b 12
+                  {,} :c nil , :d 14
+                {,} :a 1 , :b 12 , :c 3 , :d 14
 
         |test-pairs $ quote
           fn ()

@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-ternary)
+  :configs $ {} (:init-fn |test-ternary.main/main!) (:reload-fn |test-ternary.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-ternary.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-ternary.main $ :require
       :defs $ {}
 
         |log-title $ quote

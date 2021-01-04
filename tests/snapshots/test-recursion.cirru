@@ -1,10 +1,10 @@
 
-{} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!)
+{} (:package |test-recursion)
+  :configs $ {} (:init-fn |test-recursion.main/main!) (:reload-fn |test-recursion.main/reload!)
   :files $ {}
-    |app.main $ {}
+    |test-recursion.main $ {}
       :ns $ quote
-        ns app.main $ :require
+        ns test-recursion.main $ :require
       :defs $ {}
 
         |log-title $ quote
