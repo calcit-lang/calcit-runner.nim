@@ -33,9 +33,11 @@
             assert "|keyword function" $ =
               :a ({} (:a 1))
               , 1
-            &let
-              base $ {} (:a 1)
-              assert= 1 $ base :a
+            when
+              = :nim $ &get-calcit-backend
+              &let
+                base $ {} (:a 1)
+                assert= 1 $ base :a
 
         |test-id $ quote
           fn ()

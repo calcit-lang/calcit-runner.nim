@@ -130,7 +130,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       of "do":
         result = "(()=>{"
         for idx, x in body:
-          if result != "(":
+          if idx > 0:
             result = result & ";\n"
           if idx == body.len - 1:
             result = result & "return " & x.toJsCode(ns, localDefs)
@@ -185,7 +185,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if spreading:
           argsCode = argsCode & "..."
         argsCode = argsCode & x.toJsCode(ns, localDefs)
-    result = result & varPrefix & "callFunction(" & head.toJsCode(ns, localDefs) & "," & argsCode & ")"
+    result = result & head.toJsCode(ns, localDefs) & "(" & argsCode & ")"
   else:
     echo "[WARNING] unknown kind to gen js code: ", xs.kind
 
@@ -196,6 +196,20 @@ proc toJsCode(xs: seq[CirruData], ns: string, localDefs: HashSet[string]): strin
       result = result & "return " & x.toJsCode(ns, localDefs) & ";\n"
     else:
       result = result & x.toJsCode(ns, localDefs) & ";\n"
+
+proc usesRecur(xs: CirruData): bool =
+  case xs.kind
+  of crDataSymbol:
+    if xs.symbolVal == "recur":
+      return true
+    return false
+  of crDataList:
+    for x in xs.listVal:
+      if x.usesRecur():
+        return true
+    return false
+  else:
+    return false
 
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
   var localDefs = outerDefs
@@ -216,8 +230,15 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
         argsCode = argsCode & ", "
       localDefs.incl(($x).escapeVar())
       argsCode = argsCode & ($x).escapeVar
-  var exportMark = if exported: "export " else: ""
-  fmt"{cLine}{exportMark}function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}{cLine}"
+
+  var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
+  if body.len > 0 and body[^1].usesRecur():
+    let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
+    let exportMark = if exported: fmt"export let {name.escapeVar} = " else: ""
+    return fmt"{cLine}{exportMark}{varPrefix}wrapTailCall({fnDefinition}){cLine}"
+  else:
+    let exportMark = if exported: "export " else: ""
+    return fmt"{cLine}{exportMark}{fnDefinition}{cLine}"
 
 proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string): void =
   if dirExists(jsEmitPath).not:
@@ -228,7 +249,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.js".escape()
-    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, callFunction{cCurlyR} from {procsLib};{cLine}"
+    var content = fmt"{cLine}import {cCurlyL}initCrKeyword, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
     content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     if ns == "calcit.core":
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"

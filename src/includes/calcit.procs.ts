@@ -389,33 +389,29 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
   throw new Error("Does not support empty? on this type");
 };
 
-// recur has to be handled, so need to wrap functions
-export let callFunction = (
-  f: CrDataValue,
-  ...args: CrDataValue[]
-): CrDataValue => {
-  if (typeof f !== "function") {
-    if (f instanceof Map) {
-      return callFunction(get, f, ...args);
-    }
-    debugger;
-    throw new Error("Expected function to be called");
-  }
-  var result = f.apply(null, args);
-  var times = 0;
-  while (result instanceof CrDataRecur) {
-    if (f === recur) {
-      // do not recur on itself
-      break;
-    }
-    if (times > 1000) {
+export let wrapTailCall = (f: CrDataFn): CrDataFn => {
+  return (...args: CrDataFn[]): CrDataValue => {
+    if (typeof f !== "function") {
       debugger;
-      throw new Error("Expected tail recursion to exist quickly");
+      throw new Error("Expected function to be called");
     }
-    result = f.apply(null, result.args);
-    times = times + 1;
-  }
-  return result;
+
+    var result = f.apply(null, args);
+    var times = 0;
+    while (result instanceof CrDataRecur) {
+      if (f === recur) {
+        // do not recur on itself
+        break;
+      }
+      if (times > 1000) {
+        debugger;
+        throw new Error("Expected tail recursion to exist quickly");
+      }
+      result = f.apply(null, result.args);
+      times = times + 1;
+    }
+    return result;
+  };
 };
 
 export let first = (xs: CrDataValue): CrDataValue => {
