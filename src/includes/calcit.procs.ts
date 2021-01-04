@@ -850,6 +850,97 @@ export let re_DASH_find_DASH_all = (re: string, content: string): string[] => {
   return content.match(new RegExp(re, "g"));
 };
 
+export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
+  if (x === true || x === false) {
+    return x;
+  }
+  if (typeof x === "string") {
+    return x;
+  }
+  if (typeof x === "number") {
+    return x;
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.content;
+  }
+  if (Array.isArray(x)) {
+    var result: any[] = [];
+    for (let idx in x) {
+      result.push(to_DASH_js_DASH_data(x[idx]));
+    }
+    return result;
+  }
+  if (x instanceof Map) {
+    let result: any = {};
+    x.forEach((v, k) => {
+      var key = to_DASH_js_DASH_data(k);
+      if (typeof key === "string") {
+        // ok
+      } else if (key instanceof CrDataKeyword) {
+        key = key.content;
+      } else if (typeof key === "number") {
+        // ok
+      } else {
+        throw new Error("Does not support key");
+      }
+      result[key] = to_DASH_js_DASH_data(v);
+    });
+    return result;
+  }
+  if (x instanceof Set) {
+    let result = new Set();
+    x.forEach((v) => {
+      result.add(to_DASH_js_DASH_data(v));
+    });
+    return result;
+  }
+  throw new Error("Unknown data to js");
+};
+
+export let to_DASH_calcit_DASH_data = (x: any) => {
+  if (typeof x === "number") {
+    return x;
+  }
+  if (typeof x === "string") {
+    return x;
+  }
+  if (x === true || x === false) {
+    return x;
+  }
+  if (Array.isArray(x)) {
+    var result: any[] = [];
+    x.forEach((v) => {
+      result.push(to_DASH_calcit_DASH_data(v));
+    });
+    return result;
+  }
+  if (x instanceof Set) {
+    let result: Set<CrDataValue> = new Set();
+    x.forEach((v) => {
+      result.add(to_DASH_calcit_DASH_data(v));
+    });
+    return result;
+  }
+  // detects object
+  if (x === Object(x)) {
+    let result: Map<CrDataValue, CrDataValue> = new Map();
+    Object.keys(x).forEach((k) => {
+      result.set(to_DASH_calcit_DASH_data(k), to_DASH_calcit_DASH_data(x[k]));
+    });
+    return result;
+  }
+
+  throw new Error("Unexpected data for converting");
+};
+
+export let parse_DASH_json = (x: string): CrDataValue => {
+  return to_DASH_calcit_DASH_data(JSON.parse(x));
+};
+
+export let stringify_DASH_json = (x: CrDataValue): string => {
+  return JSON.stringify(to_DASH_js_DASH_data(x));
+};
+
 // TODO not handled correct in generated js
 export let reduce = foldl;
 export let conj = append;

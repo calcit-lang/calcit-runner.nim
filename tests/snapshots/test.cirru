@@ -122,9 +122,9 @@
               test-macro/main!
               test-gynienic/main!
               test-ternary/main!
-              test-cond/main!
-              test-json/main!
 
+            test-cond/main!
+            test-json/main!
             test-lens/main!
             test-list/main!
             test-map/main!

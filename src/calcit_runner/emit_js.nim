@@ -71,11 +71,11 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   case xs.kind
   of crDataSymbol:
     if localDefs.contains(xs.symbolVal):
-      result = result & xs.symbolVal.escapeVar() & " "
+      result = result & xs.symbolVal.escapeVar()
     elif xs.symbolVal.hasNsPart():
-      result = result & xs.symbolVal.escapeVar() & " "
+      result = result & xs.symbolVal.escapeVar()
     else:
-      result = result & varPrefix & xs.symbolVal.escapeVar() & " "
+      result = result & varPrefix & xs.symbolVal.escapeVar()
   of crDataString:
     result = result & xs.stringVal.escape()
   of crDataBool:
@@ -115,10 +115,10 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if defName.kind != crDataSymbol:
           raiseEvalError("Expected symbol behind let", pair)
         # TODO `let` inside expressions makes syntax error
-        result = result & fmt"let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns, localDefs)};{cLine}"
+        result = result & fmt"{cLine}let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns, localDefs)};{cLine}"
         # defined new local variable
         var scopedDefs = localDefs
-        scopedDefs.incl(defName.symbolVal.escapeVar())
+        scopedDefs.incl(defName.symbolVal)
         for idx, x in content:
           if idx == content.len - 1:
             result = result & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
@@ -128,7 +128,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       of ";":
         return "/* " & $CirruData(kind: crDataList, listVal: body) & " */"
       of "do":
-        result = "(()=>{"
+        result = "(()=>{" & cLine
         for idx, x in body:
           if idx > 0:
             result = result & ";\n"
@@ -136,7 +136,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
             result = result & "return " & x.toJsCode(ns, localDefs)
           else:
             result = result & x.toJsCode(ns, localDefs)
-        result = result & "})()"
+        result = result & cLine & "})()"
         return result
 
       of "quote":
