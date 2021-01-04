@@ -16,3 +16,11 @@ jobs:
         nim-version: "1.4.0"
     - name: Tests
       run: nimble test --threads:on --verbose -y
+
+    - name: "try js"
+      run: >
+        nimble jsgen
+        && cd src/includes/ && npm install typescript
+        && ./node_modules/.bin/tsc && mv calcit.procs.js calcit.procs.mjs
+        && cd ../../ && cp example/main.mjs js-out/ && node js-out/main.mjs
+

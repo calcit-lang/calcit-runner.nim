@@ -152,7 +152,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expects atomName in symbol", xs)
         let name = atomName.symbolVal.escapeVar()
         let nsStates = "calcit_states:" & ns
-        let varCode = fmt"window[{nsStates.escape}]"
+        let varCode = fmt"globalThis[{nsStates.escape}]"
         let atomPath = (ns & "/" & atomName.symbolVal).escape()
         return fmt"{cLine}({varCode}!=null) ? {varCode} = {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)}) : null {cLine}"
 
@@ -256,14 +256,15 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     let nsStates = "calcit_states:" & ns
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
-    let procsLib = "./calcit.procs.js".escape()
-    var content = fmt"{cLine}import {cCurlyL}kwd, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
-    content = content & fmt"{cLine}export * from {procsLib};{cLine}"
+    let procsLib = "./calcit.procs.mjs".escape()
+    var content = ""
     if ns == "calcit.core":
+      content = content & fmt"{cLine}import {cCurlyL}kwd, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
       content = content & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"
+      content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     else:
       content = content & fmt"{cLine}import * as _calcit_ from {coreLib};{cLine}"
-    content = content & fmt"window[{nsStates.escape}] = {cCurlyL}{cCurlyR};{cLine}"
+    content = content & fmt"globalThis[{nsStates.escape}] = {cCurlyL}{cCurlyR};{cLine}"
     echo ""
     echo ""
     if file.ns.isSome():
