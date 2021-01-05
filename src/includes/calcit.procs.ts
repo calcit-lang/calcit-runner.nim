@@ -694,10 +694,10 @@ export let _AND_merge_DASH_non_DASH_nil = (
 
 export let to_DASH_pairs = (
   xs: Map<CrDataValue, CrDataValue>
-): [CrDataValue, CrDataValue][] => {
-  var result: [CrDataValue, CrDataValue][] = [];
+): Set<[CrDataValue, CrDataValue]> => {
+  var result: Set<[CrDataValue, CrDataValue]> = new Set();
   xs.forEach((v, k) => {
-    result.push([k, v]);
+    result.add([k, v]);
   });
   return result;
 };
@@ -948,6 +948,14 @@ export let parse_DASH_json = (x: string): CrDataValue => {
 
 export let stringify_DASH_json = (x: CrDataValue): string => {
   return JSON.stringify(to_DASH_js_DASH_data(x));
+};
+
+export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataValue[] => {
+  var result: CrDataValue[] = [];
+  x.forEach((item) => {
+    result.push(item);
+  });
+  return result;
 };
 
 // TODO not handled correct in generated js

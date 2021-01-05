@@ -1253,6 +1253,17 @@ proc nativeTimeoutCall(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
 
+proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1:
+    raiseEvalError("set->list expects 1 argument", args)
+  let x = args[0]
+  if x.kind != crDataSet:
+    raiseEvalError("set->list expects a set", args)
+  var acc: seq[CirruData]
+  for y in x.setVal:
+    acc.add y
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1357,3 +1368,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
   programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
+  programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
