@@ -9,18 +9,18 @@
 
         |test-str $ quote
           defn test-str ()
-            assert "|string concat" $ = (&str-concat |a |b) |ab
-            assert "|string concat" $ = (&str-concat 1 2) |12
-            assert "|string concat" $ = (str |a |b |c) |abc
-            assert "|string concat" $ = (str 1 2 3) |123
-            assert |convert $ = (type-of (&str 1)) :string
-            assert "|string replace" $ =
+            assert= (&str-concat |a |b) |ab
+            assert= (&str-concat 1 2) |12
+            assert= (str |a |b |c) |abc
+            assert= (str 1 2 3) |123
+            assert= (type-of (&str 1)) :string
+            assert=
               replace "|this is a" |is |IS
               , "|thIS IS a"
-            assert "|string splitting" $ =
+            assert=
               split "|a,b,c" "|,"
               [] |a |b |c
-            assert "|string splitting" $ =
+            assert=
               split-lines "|a\nb\nc"
               [] |a |b |c
             when

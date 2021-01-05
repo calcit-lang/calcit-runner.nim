@@ -23,6 +23,6 @@ jobs:
         && cd src/includes/ && npm install typescript
         && ./node_modules/.bin/tsc
         && cd ../../
-        && cp src/includes/calcit.procs.js js-out/calcit.procs.mjs
-        && cp example/main.mjs js-out/ && node js-out/main.mjs
+        && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
+        && cp -v example/main.mjs js-out/ && node js-out/main.mjs
 

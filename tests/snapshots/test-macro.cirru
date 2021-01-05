@@ -21,10 +21,10 @@
                     (&> x 10) "|>10"
                     (&> x 5) "|>5"
                     true "|<=5"
-              assert "|try cond" $ &= (compare-x 11) "|>10"
-              assert "|try cond" $ &= (compare-x 10) "|>5"
-              assert "|try cond" $ &= (compare-x 6) "|>5"
-              assert "|try cond" $ &= (compare-x 4) "|<=5"
+              assert= (compare-x 11) "|>10"
+              assert= (compare-x 10) "|>5"
+              assert= (compare-x 6) "|>5"
+              assert= (compare-x 4) "|<=5"
 
         |test-case $ quote
           defn test-case ()
@@ -34,13 +34,13 @@
                     1 "|one"
                     2 "|two"
                     x "|else"
-              assert "|try case" $ &= (detect-x 1) "|one"
-              assert "|try case" $ &= (detect-x 2) "|two"
-              assert "|try case" $ &= (detect-x 3) "|else"
+              assert= (detect-x 1) "|one"
+              assert= (detect-x 2) "|two"
+              assert= (detect-x 3) "|else"
 
         |test-expr-in-case $ quote
           defn test-expr-in-case ()
-            assert "|try expr in case" $ = |5
+            assert= |5
               case (+ 1 4)
                 (+ 2 0) |2
                 (+ 2 1) |3
@@ -50,69 +50,69 @@
 
         |test-thread-macros $ quote
           defn test-thread-macros ()
-            assert "|try -> macro" $ &=
+            assert=
               macroexpand $ quote $ -> a b c
               quote (c (b a))
 
-            assert "|try -> macro" $ &=
+            assert=
               macroexpand $ quote $ -> a (b) c
               quote (c (b a))
 
-            assert "|try -> macro" $ &=
+            assert=
               macroexpand $ quote $ -> a (b c)
               quote (b a c)
 
-            assert "|try -> macro" $ &=
+            assert=
               macroexpand $ quote $ -> a (b c) (d e f)
               quote (d (b a c) e f)
 
-            assert "|try ->> macro" $ &=
+            assert=
               macroexpand $ quote $ ->> a b c
               quote (c (b a))
 
-            assert "|try ->> macro" $ &=
+            assert=
               macroexpand $ quote $ ->> a (b) c
               quote (c (b a))
 
-            assert "|try ->> macro" $ &=
+            assert=
               macroexpand $ quote $ ->> a (b c)
               quote (b c a)
 
-            assert "|try ->> macro" $ &=
+            assert=
               macroexpand $ quote $ ->> a (b c) (d e f)
               quote (d e f (b c a))
 
-            assert "|contains-symbol?" $ contains-symbol?
+            assert-detect identity $ contains-symbol?
               quote $ add $ + 1 %
               , '%
 
-            assert "|contains-symbol?" $ not $ contains-symbol?
+            assert-detect not $ contains-symbol?
               quote $ add $ + 1 2
               , '%
 
-            assert "|lambda" $ =
+            assert=
               map (\ + 1 %) (range 3)
               range 1 4
-            assert "|lambda" $ =
+            assert=
               map-indexed (\ [] % (&str %2)) (range 3)
               []
                 [] 0 |0
                 [] 1 |1
                 [] 2 |2
 
-            assert "|expand lambda" $ =
+            assert=
               macroexpand-all $ quote (\ + 2 %)
               quote $ defn f% (%) (+ 2 %)
 
-            assert "|expand lambda" $ =
+            assert=
               macroexpand-all $ quote $ \ x
               quote $ defn f% (%) (x)
 
-            assert "|expand lambda" $ =
+            assert=
               macroexpand-all $ quote $ \ + x %
               quote $ defn f% (%) (+ x %)
 
-            assert "|expand lambda" $ =
+            assert=
               macroexpand-all $ quote $ \ + x % %2
               quote $ defn f% (% %2) (+ x % %2)
 
@@ -264,6 +264,22 @@
                 (a b) base
                 + a b
 
+        |test-detector $ quote
+          fn ()
+            log-title "|Detector function"
+
+            &reset-gensym-index!
+
+            assert=
+              macroexpand $ quote $ assert-detect fn? $ fn () 1
+              quote
+                &let
+                  v__1 (fn () 1)
+                  if (fn? v__1) nil
+                    do (echo)
+                      echo (quote (fn () 1)) "|does not satisfy:" (quote fn?) "| <--------"
+                      echo "|  value is:" v__1
+
         |main! $ quote
           defn main! ()
             log-title "|Testing cond"
@@ -291,6 +307,8 @@
             test-assert
 
             test-extract
+
+            test-detector
 
             do true
 

@@ -46,11 +46,13 @@
 
         |test-detects $ quote
           defn test-detects ()
-            assert "|function" $ fn? $ fn () 1
-            assert "|function" $ fn? &=
-            assert "|function" $ macro? cond
+            assert-detect fn? $ fn? $ fn () 1
+            assert-detect bool? $ fn () 1
 
-            assert "|set" $ set? $ #{} 1 2 3
+            assert-detect fn? &=
+            assert-detect macro? cond
+
+            assert-detect set? $ #{} 1 2 3
 
             assert= 1 (either nil 1)
             assert= 2 (either 2 1)

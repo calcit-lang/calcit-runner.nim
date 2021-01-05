@@ -11,26 +11,26 @@
           defn test-list ()
             let
                 a $ [] 1 2 3
-              assert "|compare list" $ = a $ [] 1 2 3
-              assert "|prepend" $ = (prepend a 4) $ [] 4 1 2 3
-              assert "|append" $ = (append a 4) $ [] 1 2 3 4
-              assert "|conj" $ = (conj a 4) $ [] 1 2 3 4
-              assert "|first" $ = 1 (first a)
-              assert "|last" $ = 3 (last a)
-              assert "|gets nil" $ nil? (first $ [])
-              assert "|gets nil" $ nil?  (last $ [])
-              assert "|rest" $ = (rest a) $ [] 2 3
-              assert |rest $ nil? (rest $ [])
-              assert |butlast $ = (butlast a) ([] 1 2)
-              assert |butlast $ nil? (butlast $ [])
-              assert |range $ = (range 0) $ []
-              assert |range $ = (range 1) $ [] 0
-              assert |range $ = (range 4) $ [] 0 1 2 3
-              assert |range $ = (range 4 5) $ [] 4
-              assert |range $ = (range 4 10) $ [] 4 5 6 7 8 9
-              assert |slice $ = (slice (range 10) 0 10) (range 10)
-              assert |slice $ = (slice (range 10) 5 7) ([] 5 6)
-              assert |&concat $ =
+              assert= a $ [] 1 2 3
+              assert= (prepend a 4) $ [] 4 1 2 3
+              assert= (append a 4) $ [] 1 2 3 4
+              assert= (conj a 4) $ [] 1 2 3 4
+              assert= 1 (first a)
+              assert= 3 (last a)
+              assert-detect nil? (first $ [])
+              assert-detect nil? (last $ [])
+              assert= (rest a) $ [] 2 3
+              assert-detect nil? (rest $ [])
+              assert= (butlast a) ([] 1 2)
+              assert-detect nil? (butlast $ [])
+              assert= (range 0) $ []
+              assert= (range 1) $ [] 0
+              assert= (range 4) $ [] 0 1 2 3
+              assert= (range 4 5) $ [] 4
+              assert= (range 4 10) $ [] 4 5 6 7 8 9
+              assert= (slice (range 10) 0 10) (range 10)
+              assert= (slice (range 10) 5 7) ([] 5 6)
+              assert=
                 &concat (range 10) (range 4)
                 [] 0 1 2 3 4 5 6 7 8 9 0 1 2 3
               assert=
@@ -45,14 +45,14 @@
                 assoc-before (range 8) (, 4 22)
               ; echo $ format-ternary-tree
                 assoc-after (range 8) (, 4 22)
-              assert |assoc $ =
+              assert=
                 assoc (range 10) (, 4 55)
                 [] 0 1 2 3 55 5 6 7 8 9
-              assert |dissoc $ =
+              assert=
                 dissoc (range 10) 4
                 [] 0 1 2 3 5 6 7 8 9
               assert= (take 4 $ range 10) $ [] 0 1 2 3
-              assert |drop $ = (drop 4 $ range 10) ([] 4 5 6 7 8 9)
+              assert= (drop 4 $ range 10) ([] 4 5 6 7 8 9)
               echo $ format-ternary-tree $ reverse $ [] |a |b |c |d |e
               echo $ format-ternary-tree $ [] |e |d |c |b a
               assert |reverse $ =
@@ -77,56 +77,56 @@
                   []
                 []
 
-              assert |identity $ =
+              assert=
                 map identity $ range 10
                 range 10
 
-              assert |map-indexed $ =
+              assert=
                 map-indexed (fn (idx x) ([] idx (&str x))) (range 3)
                 []
                   [] 0 |0
                   [] 1 |1
                   [] 2 |2
 
-              assert |filter $ =
+              assert=
                 filter (fn (x) (&> x 3)) (range 10)
                 [] 4 5 6 7 8 9
 
-              assert |filter-not $ =
+              assert=
                 filter-not (fn (x) (&> x 3)) (range 10)
                 [] 0 1 2 3
 
-              assert |rand-nth $ <= 0
+              assert-detect identity $ <= 0
                 index-of (range 10) $ rand-nth $ range 10
 
-              assert |rand-nth $ nil? $ rand-nth ([])
+              assert-detect nil? $ rand-nth ([])
 
-              assert "|contains in list" $ contains? (range 10) 6
-              assert "|contains in list" $ not $ contains? (range 10) 16
+              assert-detect identity $ contains? (range 10) 6
+              assert-detect not $ contains? (range 10) 16
 
-              assert "|has-index?" $ has-index? (range 4) 3
-              assert "|has-index?" $ not $ has-index? (range 4) 4
-              assert "|has-index?" $ not $ has-index? (range 4) -1
+              assert-detect identity $ has-index? (range 4) 3
+              assert-detect not $ has-index? (range 4) 4
+              assert-detect not $ has-index? (range 4) -1
 
-              assert "|update map" $ =
+              assert=
                 update ({} (:a 1)) :a $ \ + % 10
                 {} (:a 11)
 
-              assert "|update map" $ =
+              assert=
                 update ({} (:a 1)) :c $ \ + % 10
                 {} (:a 1)
 
-              assert "|update list" $ =
+              assert=
                 update (range 4) 1 $ \ + % 10
                 [] 0 11 2 3
-              assert "|update list" $ =
+              assert=
                 update (range 4) 11 $ \ + % 10
                 range 4
 
         |test-groups $ quote
           defn test-groups ()
 
-            assert "|group-by" $ =
+            assert=
               group-by
                 \ mod % 3
                 range 10
@@ -135,14 +135,14 @@
                 1 $ [] 1 4 7
                 2 $ [] 2 5 8
 
-            assert "|frequencies" $ =
+            assert=
               frequencies $ [] 1 2 2 3 3 3
               {}
                 1 1
                 2 2
                 3 3
 
-            assert "|section-by" $ =
+            assert=
               section-by 2 $ range 10
               []
                 [] 0 1
@@ -150,7 +150,7 @@
                 [] 4 5
                 [] 6 7
                 [] 8 9
-            assert |section-by $ =
+            assert=
               section-by 3 $ range 10
               []
                 [] 0 1 2
@@ -159,7 +159,7 @@
                 [] 9
 
         |test-comma $ quote
-          assert "|allow commas in lists" $ =
+          assert=
             [] 1 2 3 4
             [,] 1 , 2 , 3 , 4
 
@@ -167,37 +167,37 @@
           defn test-every ()
             let
                 data $ [] 1 2 3 4
-              assert "|try every?" $ not $ every?
+              assert-detect not $ every?
                 fn (x) (&> x 1)
                 , data
-              assert "|try every?" $ every?
+              assert-detect identity $ every?
                 fn (x) (&> x 0)
                 , data
-              assert "|try any?" $ any?
+              assert-detect identity $ any?
                 fn (x) (&> x 3)
                 , data
-              assert "|try any?" $ not $ any?
+              assert-detect not $ any?
                 fn (x) (&> x 4)
                 , data
 
-            assert "|some?" $ some? 1
-            assert "|some?" $ not $ some? nil
+            assert-detect some? 1
+            assert-detect not $ some? nil
 
         |test-foldl $ quote
           defn test-foldl ()
-            assert "|get" $ = 1 $ get ([] 1 2 3) 0
-            assert "|foldl" $ = 6 $ foldl &+ 0 ([] 1 2 3)
-            assert |add $ = (+ 1 2 3 4 (+ 5 6 7)) 28
-            assert "|minus" $ = -1 (- 1 2)
-            assert |minus $ = -7 (- 4 5 6)
-            assert |minus $ = 91 (- 100 $ - 10 1)
-            assert "|compare" $ foldl-compare &< 0 ([] 1 2)
-            assert "|compare" (< 1 2 3 4)
-            assert |compare $ not (< 3 2)
-            assert |mutiply $ = (* 2 3) 6
-            assert |mutiply $ = (* 2 3 4) 24
-            assert |divide $ = (/ 2 3) (/ 4 6)
-            assert |divide $ = (/ 2 3 4) (/ 1 6)
+            assert= 1 $ get ([] 1 2 3) 0
+            assert= 6 $ foldl &+ 0 ([] 1 2 3)
+            assert= (+ 1 2 3 4 (+ 5 6 7)) 28
+            assert= -1 (- 1 2)
+            assert= -7 (- 4 5 6)
+            assert= 91 (- 100 $ - 10 1)
+            assert-detect identity $ foldl-compare &< 0 ([] 1 2)
+            assert-detect identity (< 1 2 3 4)
+            assert-detect not (< 3 2)
+            assert= (* 2 3) 6
+            assert= (* 2 3 4) 24
+            assert= (/ 2 3) (/ 4 6)
+            assert= (/ 2 3 4) (/ 1 6)
 
             assert=
               reduce + 2 ([] 3 4 5)

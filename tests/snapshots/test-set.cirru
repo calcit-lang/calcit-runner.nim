@@ -15,22 +15,22 @@
 
         |test-set $ quote
           defn test-set ()
-            assert "|init set" $ = 4 $ count $ #{} 1 2 3 4
-            assert "|contains" $ contains? (#{} 1 2 3) 2
-            assert "|not contains" $ = false $ contains? (#{} 1 2 3) 4
-            assert "|equals" $ = (#{} 1 2 3) (#{} 2 3 1)
-            assert "|include" $ = (include (#{} 1 2 3) 4) (#{} 1 2 3 4)
-            assert "|include" $ = (include (#{} 1 2) 3 4) (#{} 1 2 3 4)
-            assert "|exclude" $ = (exclude (#{} 1 2 3) 1) (#{} 2 3)
-            assert "|exclude" $ = (exclude (#{} 1 2 3) 1 2) (#{} 3)
+            assert= 4 $ count $ #{} 1 2 3 4
+            assert-detect identity $ contains? (#{} 1 2 3) 2
+            assert= false $ contains? (#{} 1 2 3) 4
+            assert= (#{} 1 2 3) (#{} 2 3 1)
+            assert= (include (#{} 1 2 3) 4) (#{} 1 2 3 4)
+            assert= (include (#{} 1 2) 3 4) (#{} 1 2 3 4)
+            assert= (exclude (#{} 1 2 3) 1) (#{} 2 3)
+            assert= (exclude (#{} 1 2 3) 1 2) (#{} 3)
 
-            assert "|difference" $ =
+            assert=
               difference (#{} 1 2 3) (#{} 1) (#{} 2)
               #{} 3
-            assert "|union" $ =
+            assert=
               union (#{} 1) (#{} 2) (#{} 3)
               #{} 1 2 3
-            assert "|intersection" $ =
+            assert=
               intersection (#{} 1 2 3) (#{} 2 3 4) (#{} 3 4 5)
               #{} 3
 
