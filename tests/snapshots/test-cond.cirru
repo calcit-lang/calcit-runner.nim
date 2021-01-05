@@ -15,10 +15,10 @@
                     (&> x 10) "|>10"
                     (&> x 5) "|>5"
                     true "|<=5"
-              assert "|try cond" $ &= (compare-x 11) "|>10"
-              assert "|try cond" $ &= (compare-x 10) "|>5"
-              assert "|try cond" $ &= (compare-x 6) "|>5"
-              assert "|try cond" $ &= (compare-x 4) "|<=5"
+              assert= (compare-x 11) "|>10"
+              assert= (compare-x 10) "|>5"
+              assert= (compare-x 6) "|>5"
+              assert= (compare-x 4) "|<=5"
 
         |test-case $ quote
           defn test-case ()
@@ -28,9 +28,9 @@
                     1 "|one"
                     2 "|two"
                     x "|else"
-              assert "|try case" $ &= (detect-x 1) "|one"
-              assert "|try case" $ &= (detect-x 2) "|two"
-              assert "|try case" $ &= (detect-x 3) "|else"
+              assert= (detect-x 1) "|one"
+              assert= (detect-x 2) "|two"
+              assert= (detect-x 3) "|else"
 
         |log-title $ quote
           defn log-title (title)

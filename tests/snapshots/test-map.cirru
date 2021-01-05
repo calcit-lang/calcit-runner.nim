@@ -9,14 +9,14 @@
 
         |test-maps $ quote
           defn test-maps ()
-            assert "|check map size" $ = 2 $ count $ {} (:a 1) (:b 2)
+            assert= 2 $ count $ {} (:a 1) (:b 2)
             let
                 dict $ merge
                   {} (:a 1) (:b 2)
                   {} (:c 3) (:d 5)
-              assert "|check dict size" $ = 4 $ count dict
-              assert |contains (contains? dict :a)
-              assert "|not contains" $ not (contains? dict :a2)
+              assert= 4 $ count dict
+              assert-detect identity (contains? dict :a)
+              assert-detect not (contains? dict :a2)
 
               when
                 = :nim $ &get-calcit-backend
@@ -29,7 +29,7 @@
                   vals $ {} (:a 1) (:b 2) (:c 2)
                   [] 2 1 2
 
-              assert |assoc $ = (assoc dict :h 10) $ {}
+              assert= (assoc dict :h 10) $ {}
                 :a 1
                 :b 2
                 :c 3
@@ -38,8 +38,8 @@
               assert=
                 dissoc dict :a
                 {,} :b 2 , :c 3 , :d 5
-              assert |same $ = dict (dissoc dict :h)
-              assert |merge $ =
+              assert= dict (dissoc dict :h)
+              assert=
                 merge
                   {}
                     :a 1
@@ -60,13 +60,13 @@
         |test-pairs $ quote
           fn ()
 
-            assert |pairs-map $ =
+            assert=
               pairs-map $ []
                 [] :a 1
                 [] :b 2
               {} (:a 1) (:b 2)
 
-            assert |zipmap $ =
+            assert=
               zipmap
                 [] :a :b :c
                 [] 1 2 3
@@ -75,7 +75,7 @@
                 :b 2
                 :c 3
 
-            assert |to-pairs $ =
+            assert=
               to-pairs $ {}
                 :a 1
                 :b 2

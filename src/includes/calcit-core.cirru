@@ -513,6 +513,19 @@
                       echo "|      " $ quote ~b
                       raise "|Not equal!"
 
+        |assert-detect $ quote
+          defmacro assert-detect (f code)
+            &let
+              v $ gensym |v
+              quote-replace
+                &let
+                  ~v ~code
+                  if (~f ~v) nil
+                    do
+                      echo
+                      echo (quote ~code) "|does not satisfy:" (quote ~f) "| <--------"
+                      echo "|  value is:" ~v
+
         |swap! $ quote
           defmacro swap! (a f & args)
             quote-replace

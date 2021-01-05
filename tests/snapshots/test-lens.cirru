@@ -15,31 +15,31 @@
 
         |test-lens $ quote
           defn test-lens ()
-            assert "|assoc-in" $ =
+            assert=
               assoc-in
                 {} $ :a $ {} $ :b $ {}
                 [] :a :b
                 , 10
               {} $ :a $ {} $ :b 10
-            assert "|assoc-in" $ =
+            assert=
               assoc-in
                 {} $ :a $ [] 1 2 3
                 [] :a 1
                 , 10
               {} $ :a $ [] 1 10 3
-            assert "|update-in" $ =
+            assert=
               update-in
                 {} $ :a $ {} $ :b $ {} $ :c 2
                 [] :a :b :c
                 , inc
               {} $ :a $ {} $ :b $ {} $ :c 3
-            assert "|update-in" $ =
+            assert=
               update-in
                 {} $ :a $ [] 1 2 3
                 [] :a 1
                 , inc
               {} $ :a $ [] 1 3 3
-            assert |dissoc-in $ =
+            assert=
               dissoc-in
                 {} $ :a $ {} $ :b $ {} $ :c 2
                 [] :a :b :c
