@@ -2,6 +2,7 @@
 import os
 import sets
 import strutils
+import unicode
 import tables
 import options
 import strformat
@@ -66,6 +67,22 @@ proc escapeVar(name: string): string =
 # handle recursion
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
 
+# based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
+# strutils.escape turns Chinese into longer something "\xE6\xB1\x89",
+# so... this is a simplified one according to Cirru Parser
+proc escapeCirruStr*(s: string): string =
+  result = newStringOfCap(s.len + s.len shr 2)
+  result.add('"')
+  for idx in 0..<s.runeLen():
+    let c = $s.runeAtPos(idx)
+    case c
+    of "\\": result.add("\\\\")
+    of "\"": result.add("\\\"")
+    of "\t": result.add("\\t")
+    of "\n": result.add("\\n")
+    else: result.add(c)
+  result.add('"')
+
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
   case xs.kind
@@ -77,7 +94,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     else:
       result = result & varPrefix & xs.symbolVal.escapeVar()
   of crDataString:
-    result = result & xs.stringVal.escape()
+    result = result & xs.stringVal.escapeCirruStr()
   of crDataBool:
     result = result & $xs.boolVal
   of crDataNumber:
@@ -142,7 +159,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       of "quote":
         if body.len < 1:
           raiseEvalError("Unpexpected empty body", xs)
-        return ($body[0]).escape()
+        return ($body[0]).escapeCirruStr()
       of "defatom":
         if body.len != 2:
           raiseEvalError("defatom expects 2 nodes", xs)
