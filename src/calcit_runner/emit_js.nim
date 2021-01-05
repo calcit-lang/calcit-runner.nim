@@ -265,8 +265,6 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     else:
       content = content & fmt"{cLine}import * as _calcit_ from {coreLib};{cLine}"
     content = content & fmt"globalThis[{nsStates.escape}] = {cCurlyL}{cCurlyR};{cLine}"
-    echo ""
-    echo ""
     if file.ns.isSome():
       let importsInfo = file.ns.get()
       for importName, importRule in importsInfo:

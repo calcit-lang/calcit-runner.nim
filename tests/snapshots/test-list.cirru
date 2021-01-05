@@ -59,7 +59,7 @@
                 reverse $ [] |a |b |c |d |e
                 [] |e |d |c |b |a
 
-              assert "|map and concat" $ =
+              assert=
                 mapcat
                   fn (x) (range x)
                   [] 1 2 3 4
@@ -80,6 +80,10 @@
               assert=
                 map identity $ range 10
                 range 10
+
+              assert=
+                map inc $ #{} 1 2 3
+                #{} 2 3 4
 
               assert=
                 map-indexed (fn (idx x) ([] idx (&str x))) (range 3)
