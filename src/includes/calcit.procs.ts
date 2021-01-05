@@ -155,18 +155,27 @@ export let deref = (x: CrDataAtom): CrDataValue => {
 export let foldl = (
   f: CrDataFn,
   acc: CrDataValue,
-  xs: CrDataValue[]
+  xs: CrDataValue
 ): CrDataValue => {
   if (f == null) {
     debugger;
     throw new Error("Expected function for folding");
   }
-  var result = acc;
-  for (let idx in xs) {
-    let item = xs[idx];
-    result = f(result, item);
+  if (xs instanceof Array) {
+    var result = acc;
+    for (let idx in xs) {
+      let item = xs[idx];
+      result = f(result, item);
+    }
+    return result;
   }
-  return result;
+  if (xs instanceof Set) {
+    let result = acc;
+    xs.forEach((item) => {
+      result = f(result, item);
+    });
+    return result;
+  }
 };
 
 export let _AND__ADD_ = (x: number, y: number): number => {

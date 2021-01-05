@@ -846,19 +846,29 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if xs.kind == crDataNil:
     return acc
 
-  if xs.kind != crDataList:
+  if xs.kind == crDataList:
+    for item in xs.listVal:
+      case f.kind
+      of crDataProc:
+        acc = f.procVal(@[acc, item], interpret, scope, ns)
+      of crDataFn:
+        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+      else:
+        raiseEvalError("Unexpected f to call in foldl", args)
+    return acc
+  elif xs.kind == crDataSet:
+    for item in xs.setVal:
+      # reused code above...
+      case f.kind
+      of crDataProc:
+        acc = f.procVal(@[acc, item], interpret, scope, ns)
+      of crDataFn:
+        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+      else:
+        raiseEvalError("Unexpected f to call in foldl", args)
+    return acc
+  else:
     raiseEvalError("Expects xs to be a list but got " & $xs.kind, args)
-
-  for item in xs.listVal:
-    case f.kind
-    of crDataProc:
-      acc = f.procVal(@[acc, item], interpret, scope, ns)
-    of crDataFn:
-      acc = evaluteFnData(f, @[acc, item], interpret, ns)
-    else:
-      raiseEvalError("Unexpected f to call in foldl", args)
-
-  return acc
 
 proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   case args.len
@@ -935,11 +945,11 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
   let base = args[0]
   if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
-  var acc: seq[CirruData]
+  var acc: HashSet[CirruData]
   for pair in base.mapVal.toPairs:
     let list = initTernaryTreeList[CirruData](@[pair.k, pair.v])
-    acc.add CirruData(kind: crDataList, listVal: list)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
+    acc.incl CirruData(kind: crDataList, listVal: list)
+  return CirruData(kind: crDataSet, setVal: acc)
 
 proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var value = initTable[CirruData, CirruData]()

@@ -18,16 +18,14 @@
               assert-detect identity (contains? dict :a)
               assert-detect not (contains? dict :a2)
 
-              when
-                = :nim $ &get-calcit-backend
-                ; echo $ keys dict
-                assert=
-                  keys dict
-                  [] :c :a :b :d
+              ; echo $ keys dict
+              assert=
+                keys dict
+                #{} :c :a :b :d
 
-                assert=
-                  vals $ {} (:a 1) (:b 2) (:c 2)
-                  [] 2 1 2
+              assert=
+                vals $ {} (:a 1) (:b 2) (:c 2)
+                #{} 2 1
 
               assert= (assoc dict :h 10) $ {}
                 :a 1
@@ -79,7 +77,7 @@
               to-pairs $ {}
                 :a 1
                 :b 2
-              []
+              #{}
                 [] :a 1
                 [] :b 2
 
@@ -87,7 +85,9 @@
               map-kv
                 fn (k v) ([] k (+ v 1))
                 {} (:a 1) (:b 2)
-              [][] (:a 2) (:b 3)
+              #{}
+                [] :a 2
+                [] :b 3
 
         |test-native-map-syntax $ quote
           defn test-native-map-syntax ()

@@ -46,8 +46,8 @@
 
         |test-detects $ quote
           defn test-detects ()
-            assert-detect fn? $ fn? $ fn () 1
-            assert-detect bool? $ fn () 1
+            assert-detect fn? $ fn () 1
+            assert-detect not $ bool? $ fn () 1
 
             assert-detect fn? &=
             assert-detect macro? cond
