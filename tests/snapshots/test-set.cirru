@@ -34,6 +34,11 @@
               intersection (#{} 1 2 3) (#{} 2 3 4) (#{} 3 4 5)
               #{} 3
 
+            &let
+              v $ set->list $ #{} 1 2 3
+              assert-detect list? v
+              assert= 3 $ count v
+
         |main! $ quote
           defn main! ()
             log-title "|Testing set"

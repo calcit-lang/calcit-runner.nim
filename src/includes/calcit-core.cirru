@@ -118,10 +118,17 @@
 
         |map $ quote
           defn map (f xs)
-            reduce
-              fn (acc x) $ append acc (f x)
-              []
-              , xs
+            cond
+              (list? xs)
+                reduce
+                  fn (acc x) $ append acc (f x)
+                  , ([]) xs
+              (set? xs)
+                reduce
+                  fn (acc x) $ include acc (f x)
+                  , (#{}) xs
+              true
+                raise "|expects list or set for map function"
 
         |take $ quote
           defn take (n xs)
@@ -511,7 +518,7 @@
                       echo "|      " $ quote ~a
                       echo "|Right:" ~vb
                       echo "|      " $ quote ~b
-                      raise "|Not equal!"
+                      raise "|Not equal in assertion!"
 
         |assert-detect $ quote
           defmacro assert-detect (f code)
@@ -525,6 +532,7 @@
                       echo
                       echo (quote ~code) "|does not satisfy:" (quote ~f) "| <--------"
                       echo "|  value is:" ~v
+                      raise "|Not satisfied in assertion!"
 
         |swap! $ quote
           defmacro swap! (a f & args)

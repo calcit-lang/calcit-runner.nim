@@ -846,19 +846,29 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if xs.kind == crDataNil:
     return acc
 
-  if xs.kind != crDataList:
+  if xs.kind == crDataList:
+    for item in xs.listVal:
+      case f.kind
+      of crDataProc:
+        acc = f.procVal(@[acc, item], interpret, scope, ns)
+      of crDataFn:
+        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+      else:
+        raiseEvalError("Unexpected f to call in foldl", args)
+    return acc
+  elif xs.kind == crDataSet:
+    for item in xs.setVal:
+      # reused code above...
+      case f.kind
+      of crDataProc:
+        acc = f.procVal(@[acc, item], interpret, scope, ns)
+      of crDataFn:
+        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+      else:
+        raiseEvalError("Unexpected f to call in foldl", args)
+    return acc
+  else:
     raiseEvalError("Expects xs to be a list but got " & $xs.kind, args)
-
-  for item in xs.listVal:
-    case f.kind
-    of crDataProc:
-      acc = f.procVal(@[acc, item], interpret, scope, ns)
-    of crDataFn:
-      acc = evaluteFnData(f, @[acc, item], interpret, ns)
-    else:
-      raiseEvalError("Unexpected f to call in foldl", args)
-
-  return acc
 
 proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   case args.len
@@ -935,11 +945,11 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
   let base = args[0]
   if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
-  var acc: seq[CirruData]
+  var acc: HashSet[CirruData]
   for pair in base.mapVal.toPairs:
     let list = initTernaryTreeList[CirruData](@[pair.k, pair.v])
-    acc.add CirruData(kind: crDataList, listVal: list)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
+    acc.incl CirruData(kind: crDataList, listVal: list)
+  return CirruData(kind: crDataSet, setVal: acc)
 
 proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var value = initTable[CirruData, CirruData]()
@@ -1243,6 +1253,17 @@ proc nativeTimeoutCall(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
 
+proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1:
+    raiseEvalError("set->list expects 1 argument", args)
+  let x = args[0]
+  if x.kind != crDataSet:
+    raiseEvalError("set->list expects a set", args)
+  var acc: seq[CirruData]
+  for y in x.setVal:
+    acc.add y
+  CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1347,3 +1368,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
   programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
+  programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)

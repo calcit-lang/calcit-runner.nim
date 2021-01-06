@@ -279,6 +279,7 @@
                     do (echo)
                       echo (quote (fn () 1)) "|does not satisfy:" (quote fn?) "| <--------"
                       echo "|  value is:" v__1
+                      raise "|Not satisfied in assertion!"
 
         |main! $ quote
           defn main! ()
