@@ -23,9 +23,11 @@ class CrDataRecur {
 
 class CrDataAtom {
   value: CrDataValue;
+  path: string;
   listeners: Map<CrDataValue, CrDataFn>;
-  constructor(x: CrDataValue) {
+  constructor(x: CrDataValue, path: string) {
     this.value = x;
+    this.path = path;
     this.listeners = new Map();
   }
 }
@@ -58,7 +60,7 @@ export let kwd = (content: string) => {
   }
 };
 
-var atomsRegistry = new Map();
+var atomsRegistry = new Map<string, CrDataAtom>();
 
 export let type_DASH_of = (x: any): CrDataKeyword => {
   if (typeof x === "string") {
@@ -143,13 +145,21 @@ export let _AND__MAP_ = (
 };
 
 export let defatom = (path: string, x: CrDataValue): CrDataValue => {
-  let v = new CrDataAtom(x);
+  let v = new CrDataAtom(x, path);
   atomsRegistry.set(path, v);
   return v;
 };
 
+export let peekDefatom = (path: string): CrDataAtom => {
+  return atomsRegistry.get(path);
+};
+
 export let deref = (x: CrDataAtom): CrDataValue => {
-  return x.value;
+  let a = atomsRegistry.get(x.path);
+  if (!(a instanceof CrDataAtom)) {
+    console.warn("Can not find atom:", x);
+  }
+  return a.value;
 };
 
 export let foldl = (

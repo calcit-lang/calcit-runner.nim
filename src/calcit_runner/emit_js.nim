@@ -175,10 +175,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if atomName.kind != crDataSymbol:
           raiseEvalError("expects atomName in symbol", xs)
         let name = atomName.symbolVal.escapeVar()
-        let nsStates = "calcit_states:" & ns
-        let varCode = fmt"globalThis[{nsStates.escape}]"
         let atomPath = (ns & "/" & atomName.symbolVal).escape()
-        return fmt"{cLine}({varCode}!=null) ? {varCode} = {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)}) : null {cLine}"
+        return fmt"{cLine}({varPrefix}peekDefatom({atomPath}) ?? {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)})){cLine}"
 
       of "defn":
         if body.len < 3:
@@ -296,7 +294,6 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     createDir(jsEmitPath)
   for ns, file in programData:
     let jsFilePath = joinPath(jsEmitPath, ns.toJsFileName())
-    let nsStates = "calcit_states:" & ns
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.mjs".escape()
@@ -307,7 +304,9 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
       content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     else:
       content = content & fmt"{cLine}import * as _calcit_ from {coreLib};{cLine}"
-    content = content & fmt"globalThis[{nsStates.escape}] = {cCurlyL}{cCurlyR};{cLine}"
+
+    var defNames: HashSet[string] # multiple parts of scoped defs need to be tracked
+
     if file.ns.isSome():
       let importsInfo = file.ns.get()
       for importName, importRule in importsInfo:
@@ -315,13 +314,14 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
         case importRule.kind
         of importDef:
           content = content & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+          defNames.incl(importName)
         of importNs:
           content = content & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
     else:
       # echo "[WARNING] no imports information for ", ns
       discard
 
-    var defNames: HashSet[string]
+    # tracking top levep scope definitions
     for def in file.defs.keys:
       defNames.incl(def)
 
