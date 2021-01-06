@@ -958,6 +958,13 @@ export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataValue[] => {
   return result;
 };
 
+export let aget = (x: any, name: string): any => {
+  return x[name];
+};
+export let aset = (x: any, name: string, v: any): any => {
+  return (x[name] = v);
+};
+
 // TODO not handled correct in generated js
 export let reduce = foldl;
 export let conj = append;

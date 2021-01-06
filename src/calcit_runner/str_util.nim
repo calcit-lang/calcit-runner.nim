@@ -90,3 +90,19 @@ proc matchesSimpleVar*(xs: string): bool =
       continue
     return false
   return true
+
+proc matchesJsVar*(xs: string): bool =
+  if xs.len == 0:
+    return false
+  for idx, x in xs:
+    if x.isLetter():
+      continue
+    if idx > 0:
+      if x.isDigit():
+        continue
+      elif x == '_':
+        continue
+      elif x == '$':
+        continue
+    return false
+  return true

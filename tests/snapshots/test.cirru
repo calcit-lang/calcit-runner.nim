@@ -4,7 +4,7 @@
     :modules $ [] |./test-cond.cirru |./test-gynienic.cirru |./test-json.cirru
       , |./test-lens.cirru |./test-list.cirru |./test-macro.cirru |./test-map.cirru
       , |./test-math.cirru |./test-recursion.cirru |./test-set.cirru
-      , |./test-string.cirru |./test-ternary.cirru
+      , |./test-string.cirru |./test-ternary.cirru |./test-js.cirru
   :files $ {}
     |app.main $ {}
       :ns $ quote
@@ -21,6 +21,7 @@
           [] test-set.main :as test-set
           [] test-string.main :as test-string
           [] test-ternary.main :as test-ternary
+          [] test-js.main :as test-js
       :defs $ {}
         |log-title $ quote
           defn log-title (title)
@@ -134,6 +135,10 @@
             test-recursion/main!
             test-set/main!
             test-string/main!
+
+            when
+              = :js $ &get-calcit-backend
+              test-js/main!
 
             do true
 
