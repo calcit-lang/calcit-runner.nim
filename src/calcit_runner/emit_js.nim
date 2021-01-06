@@ -150,7 +150,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
             result = result & x.toJsCode(ns, scopedDefs) & ";\n"
         return result & "})()"
       of ";":
-        return "/* " & $CirruData(kind: crDataList, listVal: body) & " */"
+        return "(/* " & $CirruData(kind: crDataList, listVal: body) & " */ null)"
       of "do":
         result = "(()=>{" & cLine
         for idx, x in body:

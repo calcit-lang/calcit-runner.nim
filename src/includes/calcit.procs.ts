@@ -427,6 +427,9 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
   if (xs instanceof Map) {
     return xs.size === 0;
   }
+  if (xs instanceof Set) {
+    return xs.size === 0;
+  }
   if (xs == null) {
     return true;
   }
@@ -470,6 +473,13 @@ export let first = (xs: CrDataValue): CrDataValue => {
   if (typeof xs === "string") {
     return xs[0];
   }
+  if (xs instanceof Set) {
+    if (xs.size === 0) {
+      return null;
+    }
+    let it = xs.values();
+    return it.next().value;
+  }
   throw new Error("Expects something sequential");
 };
 
@@ -493,6 +503,16 @@ export let rest = (xs: CrDataValue): CrDataValue => {
   }
   if (typeof xs === "string") {
     return xs.substr(1);
+  }
+  if (xs instanceof Set) {
+    if (xs.size == 0) {
+      return null;
+    }
+    let it = xs.values();
+    let x0 = it.next().value;
+    let ys = cloneSet(xs);
+    ys.delete(x0);
+    return ys;
   }
   throw new Error("Expects something sequential");
 };
