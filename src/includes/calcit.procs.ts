@@ -985,6 +985,14 @@ export let aset = (x: any, name: string, v: any): any => {
   return (x[name] = v);
 };
 
+export let get_DASH_env = (name: string): string => {
+  if ((globalThis as any)["process"] != null) {
+    // only available for Node.js
+    return (globalThis as any)["process"].env[name];
+  }
+  return null;
+};
+
 // TODO not handled correct in generated js
 export let reduce = foldl;
 export let conj = append;
