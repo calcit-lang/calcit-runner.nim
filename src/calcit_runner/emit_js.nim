@@ -124,7 +124,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if body.len < 2:
           raiseEvalError("need branches for if", xs)
         let falseBranch = if body.len >= 3: body[2].toJsCode(ns, localDefs) else: "null"
-        return body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch
+        return "(" & body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch & ")"
       of "&let":
         result = result & "(()=>{"
         if body.len <= 1:

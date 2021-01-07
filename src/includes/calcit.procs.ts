@@ -1,16 +1,19 @@
 class CrDataKeyword {
-  content: string;
+  value: string;
   constructor(x: string) {
-    this.content = x;
+    this.value = x;
   }
   toString() {
-    return `:${this.content}`;
+    return `:${this.value}`;
   }
-  // get [Symbol.toStringTag]() {
-  //   return `:${this.content}`;
-  // }
-  [Symbol.toPrimitive]() {
-    return `:${this.content}`;
+}
+class CrDataSymbol {
+  value: string;
+  constructor(x: string) {
+    this.value = x;
+  }
+  toString() {
+    return `'${this.value}`;
   }
 }
 
@@ -43,6 +46,7 @@ type CrDataValue =
   | Array<CrDataValue>
   // TODO set
   | CrDataKeyword
+  | CrDataSymbol
   | CrDataAtom
   | CrDataFn
   | CrDataRecur // should not be exposed to function
@@ -83,6 +87,9 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   }
   if (x instanceof CrDataAtom) {
     return kwd("atom");
+  }
+  if (x instanceof CrDataSymbol) {
+    return kwd("symbol");
   }
   if (x instanceof Set) {
     return kwd("set");
@@ -900,7 +907,7 @@ export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
     return x;
   }
   if (x instanceof CrDataKeyword) {
-    return x.content;
+    return x.value;
   }
   if (Array.isArray(x)) {
     var result: any[] = [];
@@ -916,7 +923,7 @@ export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
       if (typeof key === "string") {
         // ok
       } else if (key instanceof CrDataKeyword) {
-        key = key.content;
+        key = key.value;
       } else if (typeof key === "number") {
         // ok
       } else {
@@ -1001,6 +1008,78 @@ export let get_DASH_env = (name: string): string => {
     return (globalThis as any)["process"].env[name];
   }
   return null;
+};
+
+export let turn_DASH_keyword = (x: CrDataValue): CrDataKeyword => {
+  if (typeof x === "string") {
+    return new CrDataKeyword(x);
+  }
+  if (x instanceof CrDataKeyword) {
+    return x;
+  }
+  if (x instanceof CrDataSymbol) {
+    return new CrDataKeyword(x.value);
+  }
+  throw new Error("Unexpected data for keyword");
+};
+
+export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
+  if (typeof x === "string") {
+    return new CrDataSymbol(x);
+  }
+  if (x instanceof CrDataSymbol) {
+    return x;
+  }
+  if (x instanceof CrDataKeyword) {
+    return new CrDataSymbol(x.value);
+  }
+  throw new Error("Unexpected data for symbol");
+};
+
+let toString = (x: CrDataValue): string => {
+  if (typeof x === "string") {
+    return x;
+  }
+  if (typeof x === "number") {
+    return x.toString();
+  }
+  if (typeof x === "boolean") {
+    return x.toString();
+  }
+  if (x instanceof CrDataSymbol) {
+    return x.value;
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.value;
+  }
+  if (x instanceof Array) {
+    return `(${x.map(toString).join(" ")})`;
+  }
+  if (x instanceof Set) {
+    let itemsCode = "";
+    x.forEach((child, idx) => {
+      if (idx > 0) {
+        itemsCode = `${itemsCode} `;
+      }
+      itemsCode = `${itemsCode}${child.toString()}`;
+    });
+    return `#{${itemsCode}}`;
+  }
+  if (x instanceof Map) {
+    let itemsCode = "";
+    x.forEach((v, k) => {
+      if (itemsCode !== "") {
+        itemsCode = `${itemsCode} ,`;
+      }
+      itemsCode = `${itemsCode}${k.toString()} ${v.toString()}`;
+    });
+    return `#{${itemsCode}}`;
+  }
+  throw new Error("Unexpected data for toString");
+};
+
+export let pr_DASH_str = (...args: CrDataValue[]): string => {
+  return args.map(toString).join(" ");
 };
 
 // TODO not handled correct in generated js
