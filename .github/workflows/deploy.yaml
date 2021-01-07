@@ -15,6 +15,13 @@ jobs:
     - name: Build binary
       run: nimble build --threads:on --verbose -y
 
+    - name: "generate procs.js"
+      run: >
+        cd src/includes/ && npm install typescript
+        && ./node_modules/.bin/tsc
+        && cd ../../  && mkdir js-out/
+        && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
+
     - name: Deploy to server
       id: deploy
       uses: Pendect/action-rsyncer@v1.1.0
@@ -29,3 +36,18 @@ jobs:
 
     - name: Display status from deploy
       run: echo "${{ steps.deploy.outputs.status }}"
+
+    - name: Upload js
+      id: procs
+      uses: Pendect/action-rsyncer@v1.1.0
+      env:
+        DEPLOY_KEY: ${{secrets.rsync_private_key}}
+      with:
+        flags: '-avzr --progress'
+        options: ''
+        ssh_options: ''
+        src: 'js-out/calcit.procs.mjs'
+        dest: 'rsync-user@calcit-lang.org:/web-assets/repo/calcit-lang/js/'
+
+    - name: Display status from deploy
+      run: echo "${{ steps.procs.outputs.status }}"
