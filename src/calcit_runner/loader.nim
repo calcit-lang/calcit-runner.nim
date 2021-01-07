@@ -230,9 +230,19 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
     let vectorSymbol = importDec[0]
     if vectorSymbol.kind != crDataSymbol or vectorSymbol.symbolVal != "[]":
       raiseEvalError("Expects [] in import rule", importDec)
+
     let nsPart = importDec[1]
-    if nsPart.kind != crDataSymbol:
-      raiseEvalError("Expects ns field in string", importDec)
+    var nsName: string
+    var nsInStr = false
+    case nsPart.kind
+    of crDataSymbol:
+      nsName = nsPart.symbolVal
+    of crDataString:
+      nsName = nsPart.stringVal
+      nsInStr = true
+    else:
+      raiseEvalError("Expects ns field in symbol/string", importDec)
+
     let importOp = importDec[2]
     if not importOp.isKeyword:
       raiseEvalError("Expects import op in keyword", importOp)
@@ -240,8 +250,8 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
     of "as":
       let aliasName = importDec[3]
       if aliasName.kind != crDataSymbol:
-        raiseEvalError("Expects alias name in string", aliasName)
-      dict[aliasName.symbolVal] = ImportInfo(kind: importNs, ns: nsPart.symbolVal)
+        raiseEvalError("Expects alias name in symbol", aliasName)
+      dict[aliasName.symbolVal] = ImportInfo(kind: importNs, ns: nsName, nsInStr: nsInStr)
     of "refer":
       let defsList = importDec[3]
       if defsList.kind != crDataList:
@@ -254,7 +264,7 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
       for defName in defsList[1..^1]:
         if defName.kind != crDataSymbol:
           raiseEvalError("Expects a def string to refer", defName)
-        dict[defName.symbolVal] = ImportInfo(kind: importDef, ns: nsPart.symbolVal, def: defName.symbolVal)
+        dict[defName.symbolVal] = ImportInfo(kind: importDef, ns: nsName, nsInStr: nsInStr, def: defName.symbolVal)
 
   return dict
 

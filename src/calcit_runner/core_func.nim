@@ -180,6 +180,16 @@ proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
     if a.len == 0:
       return CirruData(kind: crDataNil)
     return CirruData(kind: crDataList, listVal: a.listVal.rest)
+  of crDataSet:
+    if a.setVal.len == 0:
+      return CirruData(kind: crDataNil)
+    var item: CirruData
+    for x in a.setVal:
+      item = x
+      break
+    var newSet: HashSet[CirruData] = a.setVal
+    newSet.excl(item)
+    return CirruData(kind: crDataSet, setVal: newSet)
   else:
     raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
@@ -344,6 +354,12 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       return CirruData(kind: crDataNil)
     else:
       return CirruData(kind: crDataString, stringVal: base.stringVal.runeAtPos(0).toUTF8())
+  of crDataSet:
+    if base.setVal.len == 0:
+      return CirruData(kind: crDataNil)
+    else:
+      for item in base.setVal:
+        return item # just return a item with a reproduceable method
   else:
     raiseEvalError("first requires a list but got " & $base.kind, args)
 

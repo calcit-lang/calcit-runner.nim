@@ -39,6 +39,17 @@
               assert-detect list? v
               assert= 3 $ count v
 
+            assert=
+              map
+                fn (x) (inc x)
+                #{} 1 2 3
+              #{} 2 3 4
+
+            assert-detect identity
+              every?
+                \ > % 0
+                #{} 1 2 3
+
         |main! $ quote
           defn main! ()
             log-title "|Testing set"

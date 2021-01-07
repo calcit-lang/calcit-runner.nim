@@ -19,6 +19,7 @@ type ImportKind* = enum
   importNs, importDef
 type ImportInfo* = object
   ns*: string
+  nsInStr*: bool # js modules uses a string based path
   case kind*: ImportKind
   of importNs:
     discard
@@ -52,7 +53,7 @@ type
 
   FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
 
-  ResolvedPath* = tuple[ns: string, def: string]
+  ResolvedPath* = tuple[ns: string, def: string, nsInStr: bool]
 
   CirruData* = object
     case kind*: CirruDataKind

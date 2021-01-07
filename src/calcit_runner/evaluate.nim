@@ -216,55 +216,67 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
     if code.dynamic:
       return code
 
-    if localDefs.contains(code.symbolVal):
-      return code
-    elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@" or code.symbolVal == "eval":
-      return code
-    else:
+    if code.symbolVal.contains("/") and code.symbolVal[0] != '/' and code.symbolVal[^1] != '/':
       var sym = code
-
-      let coreDefs = programData[coreNs].defs
-      if coreDefs.contains(sym.symbolVal):
-        sym.resolved = some((coreNs, sym.symbolVal))
-        return sym
-
-      if hasNsAndDef(coreNs, sym.symbolVal):
-        preprocessSymbolByPath(coreNs, sym.symbolVal)
-        sym.resolved = some((coreNs, sym.symbolVal))
-        return sym
-
-      if hasNsAndDef(sym.ns, sym.symbolVal):
-        preprocessSymbolByPath(sym.ns, sym.symbolVal)
-        sym.resolved = some((sym.ns, sym.symbolVal))
-        return sym
-      elif sym.ns.startsWith("calcit."):
-        raiseEvalError(fmt"Cannot find symbol in core lib: {sym}", sym)
-      else:
-        let importDict = loadImportDictByNs(sym.ns)
-        if sym.symbolVal[0] != '/' and sym.symbolVal.contains("/"):
-          let pieces = sym.symbolVal.split('/')
-          if pieces.len != 2:
-            raiseEvalError("Expects token in ns/def", sym)
-          let nsPart = pieces[0]
-          let defPart = pieces[1]
-          if importDict.hasKey(nsPart):
-            let importTarget = importDict[nsPart]
-            case importTarget.kind:
-            of importNs:
-              preprocessSymbolByPath(importTarget.ns, defPart)
-              sym.resolved = some((importTarget.ns, defPart))
-              return sym
-            of importDef:
-              raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
+      let pieces = sym.symbolVal.split('/')
+      if pieces.len != 2:
+        raiseEvalError("Expects token in ns/def", sym)
+      let nsPart = pieces[0]
+      let defPart = pieces[1]
+      let importDict = loadImportDictByNs(sym.ns)
+      if importDict.hasKey(nsPart):
+        let importTarget = importDict[nsPart]
+        case importTarget.kind:
+        of importNs:
+          if importTarget.nsInStr: # js module, do not process inside current program
+            sym.resolved = some((importTarget.ns, defPart, true))
           else:
-            raiseEvalError("no such ns: " & nsPart, sym)
+            preprocessSymbolByPath(importTarget.ns, defPart)
+            sym.resolved = some((importTarget.ns, defPart, false))
+          return sym
+        of importDef:
+          raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
+      elif nsPart == "js":
+        sym.resolved = some(("js", defPart, false))
+        return sym # js specific operators
+      else:
+        raiseEvalError("no such ns: " & nsPart, sym)
+    elif code.symbolVal.len == 0:
+      raiseEvalError("Empty token is not valid", code)
+    elif code.symbolVal[0] == '.':
+      return code # only for code generation
+    else:
+
+      if localDefs.contains(code.symbolVal):
+        return code
+      elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@" or code.symbolVal == "eval":
+        return code
+      else:
+        var sym = code
+
+        let coreDefs = programData[coreNs].defs
+        if coreDefs.contains(sym.symbolVal):
+          sym.resolved = some((coreNs, sym.symbolVal, false))
+          return sym
+        elif hasNsAndDef(coreNs, sym.symbolVal):
+          preprocessSymbolByPath(coreNs, sym.symbolVal)
+          sym.resolved = some((coreNs, sym.symbolVal, false))
+          return sym
+
+        elif hasNsAndDef(sym.ns, sym.symbolVal):
+          preprocessSymbolByPath(sym.ns, sym.symbolVal)
+          sym.resolved = some((sym.ns, sym.symbolVal, false))
+          return sym
+        elif sym.ns.startsWith("calcit."):
+          raiseEvalError(fmt"Cannot find symbol in core lib: {sym}", sym)
         else:
+          let importDict = loadImportDictByNs(sym.ns)
           if importDict.hasKey(sym.symbolVal):
             let importTarget = importDict[sym.symbolVal]
             case importTarget.kind:
             of importDef:
               preprocessSymbolByPath(importTarget.ns, importTarget.def)
-              sym.resolved = some((importTarget.ns, importTarget.def))
+              sym.resolved = some((importTarget.ns, importTarget.def, false))
               return sym
             of importNs:
               raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
@@ -282,13 +294,17 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
 
       if value.kind == crDataSymbol and value.resolved.isSome:
         let path = value.resolved.get
-        value = programData[path.ns].defs[path.def]
 
-        # force extracting thunk of functions
-        if value.kind == crDataThunk:
-          while value.kind == crDataThunk:
-            value = interpret(value.thunkCode[], value.thunkScope, value.thunkNs)
-          programData[path.ns].defs[path.def] = value
+        if path.ns == "js" or path.nsInStr:
+          value = CirruData(kind: crDataProc, procVal: placeholderFunc) # a faked function
+        else:
+          value = programData[path.ns].defs[path.def]
+
+          # force extracting thunk of functions
+          if value.kind == crDataThunk:
+            while value.kind == crDataThunk:
+              value = interpret(value.thunkCode[], value.thunkScope, value.thunkNs)
+            programData[path.ns].defs[path.def] = value
 
       # echo "run into: ", code, " ", value
 

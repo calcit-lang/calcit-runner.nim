@@ -11,6 +11,7 @@ import ternary_tree
 
 import ./types
 import ./errors
+import ./str_util
 
 const cLine = "\n"
 const cCurlyL = "{"
@@ -35,7 +36,11 @@ proc escapeVar(name: string): string =
       raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
     let nsPart = pieces[0]
     let defPart = pieces[1]
-    return nsPart.escapeVar() & "." & defPart.escapeVar()
+    if nsPart == "js":
+      return defPart
+    else:
+      return nsPart.escapeVar() & "." & defPart.escapeVar()
+
   result = name
   .replace("-", "_DASH_")
   .replace("?", "_QUES_")
@@ -58,6 +63,7 @@ proc escapeVar(name: string): string =
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")
+  .replace(".", "_DOT_")
   if result == "if": result = "_IF_"
   if result == "do": result = "_DO_"
   if result == "else": result = "_ELSE_"
@@ -66,6 +72,7 @@ proc escapeVar(name: string): string =
 
 # handle recursion
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
+proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string
 
 # based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
 # strutils.escape turns Chinese into longer something "\xE6\xB1\x89",
@@ -143,7 +150,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
             result = result & x.toJsCode(ns, scopedDefs) & ";\n"
         return result & "})()"
       of ";":
-        return "/* " & $CirruData(kind: crDataList, listVal: body) & " */"
+        return "(/* " & $CirruData(kind: crDataList, listVal: body) & " */ null)"
       of "do":
         result = "(()=>{" & cLine
         for idx, x in body:
@@ -168,10 +175,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if atomName.kind != crDataSymbol:
           raiseEvalError("expects atomName in symbol", xs)
         let name = atomName.symbolVal.escapeVar()
-        let nsStates = "calcit_states:" & ns
-        let varCode = fmt"globalThis[{nsStates.escape}]"
         let atomPath = (ns & "/" & atomName.symbolVal).escape()
-        return fmt"{cLine}({varCode}!=null) ? {varCode} = {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)}) : null {cLine}"
+        return fmt"{cLine}({varPrefix}peekDefatom({atomPath}) ?? {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)})){cLine}"
 
       of "defn":
         if body.len < 3:
@@ -195,22 +200,41 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = $body[0]
         return fmt"(()=> {cCurlyL} throw new Error({message.escape}) {cCurlyR})() "
+
       else:
-        discard
-    var argsCode = ""
-    var spreading = false
-    for x in body:
-      if x.kind == crDataSymbol and x.symbolVal == "&":
-        spreading = true
-      else:
-        if argsCode != "":
-          argsCode = argsCode & ", "
-        if spreading:
-          argsCode = argsCode & "..."
-        argsCode = argsCode & x.toJsCode(ns, localDefs)
-    result = result & head.toJsCode(ns, localDefs) & "(" & argsCode & ")"
+        let token = head.symbolVal
+        if token.len > 2 and token[0..1] == ".-" and token[2..^1].matchesJsVar():
+          let name = token[2..^1]
+          if xs.listVal.len != 2:
+            raiseEvalError("property accessor takes only 1 argument", xs)
+          let obj = xs.listVal[1]
+          return obj.toJsCode(ns, localDefs) & "." & name
+        elif token.len > 1 and token[0] == '.' and token[1..^1].matchesJsVar():
+          let name = token[1..^1]
+          if xs.listVal.len < 2:
+            raiseEvalError("property accessor takes at least 1 argument", xs)
+          let obj = xs.listVal[1]
+          let args = xs.listVal.slice(2, xs.listVal.len)
+          let argsCode = genArgsCode(args, ns, localDefs)
+          return obj.toJsCode(ns, localDefs) & "." & name & "(" & argsCode & ")"
+        else:
+          discard
+    var argsCode = genArgsCode(body, ns, localDefs)
+    return head.toJsCode(ns, localDefs) & "(" & argsCode & ")"
   else:
-    echo "[WARNING] unknown kind to gen js code: ", xs.kind
+    raiseEvalError("[WARNING] unknown kind to gen js code: " & $xs.kind, xs)
+
+proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string =
+  var spreading = false
+  for x in body:
+    if x.kind == crDataSymbol and x.symbolVal == "&":
+      spreading = true
+    else:
+      if result != "":
+        result = result & ", "
+      if spreading:
+        result = result & "..."
+      result = result & x.toJsCode(ns, localDefs)
 
 proc toJsCode(xs: seq[CirruData], ns: string, localDefs: HashSet[string]): string =
   for idx, x in xs:
@@ -270,7 +294,6 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     createDir(jsEmitPath)
   for ns, file in programData:
     let jsFilePath = joinPath(jsEmitPath, ns.toJsFileName())
-    let nsStates = "calcit_states:" & ns
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
     let procsLib = "./calcit.procs.mjs".escape()
@@ -281,21 +304,24 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
       content = content & fmt"{cLine}export * from {procsLib};{cLine}"
     else:
       content = content & fmt"{cLine}import * as _calcit_ from {coreLib};{cLine}"
-    content = content & fmt"globalThis[{nsStates.escape}] = {cCurlyL}{cCurlyR};{cLine}"
+
+    var defNames: HashSet[string] # multiple parts of scoped defs need to be tracked
+
     if file.ns.isSome():
       let importsInfo = file.ns.get()
       for importName, importRule in importsInfo:
-        let importTarget = importRule.ns.toJsFileName()
+        let importTarget = if importRule.nsInStr: importRule.ns else: "./" & importRule.ns.toJsFileName()
         case importRule.kind
         of importDef:
-          content = content & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
+          content = content & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+          defNames.incl(importName)
         of importNs:
-          content = content & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}./{importTarget}{cDbQuote};{cLine}"
+          content = content & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
     else:
       # echo "[WARNING] no imports information for ", ns
       discard
 
-    var defNames: HashSet[string]
+    # tracking top levep scope definitions
     for def in file.defs.keys:
       defNames.incl(def)
 
