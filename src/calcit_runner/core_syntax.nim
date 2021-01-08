@@ -139,7 +139,11 @@ proc nativeDefMacro(exprList: seq[CirruData], interpret: FnInterpret, scope: Cir
   if macroName.kind != crDataSymbol: raiseEvalError("Expects macro name a symbol", exprList)
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects macro args to be a list", exprList)
-  return CirruData(kind: crDataMacro, macroName: macroName.symbolVal, macroArgs: argsList.listVal, macroCode: exprList[2..^1])
+  return CirruData(
+    kind: crDataMacro,
+    macroName: macroName.symbolVal, macroNs: ns,
+    macroArgs: argsList.listVal, macroCode: exprList[2..^1]
+  )
 
 proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if exprList.len != 2:

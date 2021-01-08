@@ -85,6 +85,9 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   raiseEvalError(fmt"Symbol not initialized or recognized: {sym.symbolVal}", sym)
 
 proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
+  if ns == "":
+    raiseEvalError("Expected non-empty ns", xs)
+
   case xs.kind
   of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataProc, crDataFn, crDataTernary:
     return xs
@@ -177,6 +180,8 @@ proc placeholderFunc(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   return CirruData(kind: crDataNil)
 
 proc preprocessSymbolByPath*(ns: string, def: string): void =
+  if ns == "":
+    raiseEvalError("Expected non-empty ns at " & def, @[])
   if not programData.hasKey(ns):
     var newFile = ProgramFile()
     programData[ns] = newFile
@@ -256,10 +261,12 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
 
         let coreDefs = programData[coreNs].defs
         if coreDefs.contains(sym.symbolVal):
+          sym.ns = coreNs
           sym.resolved = some((coreNs, sym.symbolVal, false))
           return sym
         elif hasNsAndDef(coreNs, sym.symbolVal):
           preprocessSymbolByPath(coreNs, sym.symbolVal)
+          sym.ns = coreNs
           sym.resolved = some((coreNs, sym.symbolVal, false))
           return sym
 

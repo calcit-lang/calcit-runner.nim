@@ -7,7 +7,7 @@ class CrDataKeyword {
     return `:${this.value}`;
   }
 }
-class CrDataSymbol {
+export class CrDataSymbol {
   value: string;
   constructor(x: string) {
     this.value = x;
