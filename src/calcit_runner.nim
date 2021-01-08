@@ -155,7 +155,11 @@ proc reloadProgram(snapshotFile: string): void =
     programCode[fileNs] = file
   clearProgramDefs(programData, codeConfigs.pkg)
   programCode[coreNs] = previousCoreSource
-  let pieces = codeConfigs.reloadFn.split('/')
+  var pieces = codeConfigs.reloadFn.split('/')
+
+  if jsMode:
+    # TODO only use :init-fn for js
+    pieces = codeConfigs.initFn.split('/')
 
   if pieces.len != 2:
     echo "Unknown initFn", pieces

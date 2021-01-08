@@ -21,6 +21,7 @@ const cDbQuote = "\""
 # TODO dirty states controlling js backend
 var jsMode* = false
 var jsEmitPath* = "js-out"
+var firstCompilation = true # track if it's the first compilation
 
 proc toJsFileName(ns: string): string =
   ns & ".mjs"
@@ -293,6 +294,13 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
   if dirExists(jsEmitPath).not:
     createDir(jsEmitPath)
   for ns, file in programData:
+
+    if not firstCompilation:
+      let appPkgName = entryNs.split('.')[0]
+      let pkgName = ns.split('.')[0]
+      if appPkgName != pkgName:
+        continue # since libraries do not have to be re-compiled
+
     let jsFilePath = joinPath(jsEmitPath, ns.toJsFileName())
     # let coreLib = "http://js.calcit-lang.org/calcit.core.mjs".escape()
     let coreLib = "./calcit.core.mjs".escape()
@@ -352,3 +360,5 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
 
     writeFile jsFilePath, content
     echo "Emitted mjs file: ", jsFilePath
+
+  firstCompilation = false
