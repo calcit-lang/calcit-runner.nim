@@ -257,8 +257,8 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       return x === y;
     }
     if (tx === kwd("fn")) {
-      console.warn("Do not compare functions");
-      return false;
+      // comparing functions by reference
+      return x === y;
     }
     if (tx === kwd("recur")) {
       console.warn("Do not compare Recur");
@@ -308,9 +308,24 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
     return false;
   }
   if (xs instanceof Map) {
-    return xs.has(x);
+    if (
+      typeof x === "string" ||
+      typeof x === "number" ||
+      typeof x === "boolean" ||
+      x instanceof CrDataKeyword
+    ) {
+      return xs.has(x);
+    }
+
+    for (let [k, v] of xs) {
+      if (_AND__EQ_(k, x)) {
+        return true;
+      }
+    }
+    return false;
   }
   if (xs instanceof Set) {
+    // TODO structure inside set
     return xs.has(x);
   }
 
@@ -326,9 +341,23 @@ export let get = (xs: CrDataValue, k: CrDataValue) => {
     return xs[k];
   }
   if (xs instanceof Map) {
-    if (xs.has(k)) {
-      return xs.get(k);
+    if (
+      typeof k === "string" ||
+      typeof k === "number" ||
+      typeof k === "boolean" ||
+      k instanceof CrDataKeyword
+    ) {
+      if (xs.has(k)) {
+        return xs.get(k);
+      }
     }
+
+    for (let [mk, v] of xs) {
+      if (_AND__EQ_(mk, k)) {
+        return v;
+      }
+    }
+
     return null;
   }
 
@@ -356,7 +385,30 @@ export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
   }
   if (xs instanceof Map) {
     var result = cloneMap(xs);
-    result.set(k, v);
+
+    if (
+      typeof k === "string" ||
+      typeof k === "number" ||
+      typeof k === "boolean" ||
+      k instanceof CrDataKeyword
+    ) {
+      result.set(k, v);
+    } else {
+      var exisitedKey = false;
+
+      for (let [mk, mv] of result) {
+        if (_AND__EQ_(mk, k)) {
+          result.set(mk, v);
+          exisitedKey = true;
+          break;
+        }
+      }
+
+      if (!exisitedKey) {
+        result.set(k, v);
+      }
+    }
+
     return result;
   }
 
@@ -374,7 +426,23 @@ export let dissoc = (xs: CrDataValue, k: CrDataValue) => {
   }
   if (xs instanceof Map) {
     var result = cloneMap(xs);
-    result.delete(k);
+
+    if (
+      typeof k === "string" ||
+      typeof k === "number" ||
+      typeof k === "boolean" ||
+      k instanceof CrDataKeyword
+    ) {
+      result.delete(k);
+    } else {
+      for (let [mk, mv] of result) {
+        if (_AND__EQ_(mk, k)) {
+          result.delete(mk);
+          break;
+        }
+      }
+    }
+
     return result;
   }
 
@@ -1088,6 +1156,14 @@ export let cpu_DASH_time = (): number => {
     return (globalThis as any).process?.uptime();
   }
   return performance.now();
+};
+
+export let quit = (): void => {
+  if ((globalThis as any).process != null) {
+    (globalThis as any).process.exit(1);
+  } else {
+    throw new Error("quit()");
+  }
 };
 
 // TODO not handled correct in generated js
