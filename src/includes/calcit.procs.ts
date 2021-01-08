@@ -1082,6 +1082,14 @@ export let pr_DASH_str = (...args: CrDataValue[]): string => {
   return args.map(toString).join(" ");
 };
 
+// time from app start
+export let cpu_DASH_time = (): number => {
+  if ((globalThis as any).process?.uptime) {
+    return (globalThis as any).process?.uptime();
+  }
+  return performance.now();
+};
+
 // TODO not handled correct in generated js
 export let reduce = foldl;
 export let conj = append;
