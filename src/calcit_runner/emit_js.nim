@@ -124,7 +124,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if body.len < 2:
           raiseEvalError("need branches for if", xs)
         let falseBranch = if body.len >= 3: body[2].toJsCode(ns, localDefs) else: "null"
-        return body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch
+        return "(" & body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch & ")"
       of "&let":
         result = result & "(()=>{"
         if body.len <= 1:
@@ -325,6 +325,8 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
     for def in file.defs.keys:
       defNames.incl(def)
 
+    var valsCode = ""
+
     for def, f in file.defs:
 
       case f.kind
@@ -333,7 +335,9 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
       of crDataFn:
         content = content & genJsFunc(def, f.fnArgs, f.fnCode, ns, true, defNames)
       of crDataThunk:
-        content = content & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
+        # TODO need topological sorting for accuracy
+        # values are called directly, put them after fns
+        valsCode = valsCode & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
       of crDataMacro:
         # macro should be handled during compilation, psuedo code
         content = content & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR};{cLine}"
@@ -342,6 +346,9 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
         # should he handled inside compiler
         discard
       else:
-        echo " ...well ", $f.kind
+        echo "[WARNING] strange case for generating a definition ", $f.kind
+
+    content = content & valsCode
+
     writeFile jsFilePath, content
     echo "Emitted mjs file: ", jsFilePath
