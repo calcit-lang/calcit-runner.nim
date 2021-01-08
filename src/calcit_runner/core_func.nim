@@ -1083,7 +1083,7 @@ proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   genSymIndex = genSymIndex + 1
   case args.len
   of 0:
-    return CirruData(kind: crDataSymbol, ns: ns, dynamic: true, symbolVal: "G__" & $genSymIndex)
+    return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: "G__" & $genSymIndex)
   of 1:
     let item = args[0]
     case item.kind

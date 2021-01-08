@@ -24,7 +24,7 @@ proc crData*(x: string, target: string = "string"): CirruData =
   of "keyword":
     CirruData(kind: crDataKeyword, keywordVal: loadKeyword(x))
   of "symbol":
-    CirruData(kind: crDataSymbol, symbolVal: x, ns: "user")
+    CirruData(kind: crDataSymbol, symbolVal: x, ns: "&crData") # use a special mark
   of "string":
     CirruData(kind: crDataString, stringVal: x)
   else:
