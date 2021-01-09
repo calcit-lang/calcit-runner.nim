@@ -34,6 +34,9 @@ proc hasNsPart(x: string): bool =
   let trySlashPos = x.find('/')
   return trySlashPos >= 1 and trySlashPos < x.len - 1
 
+# handle mutual recursion
+proc escapeNs(name: string): string
+
 proc escapeVar(name: string): string =
   if name.hasNsPart():
     let pieces = name.split("/")
@@ -44,7 +47,7 @@ proc escapeVar(name: string): string =
     if nsPart == "js":
       return defPart
     else:
-      return nsPart.escapeVar() & "." & defPart.escapeVar()
+      return nsPart.escapeNs() & "." & defPart.escapeVar()
 
   result = name
   .replace("-", "_DASH_")
@@ -74,6 +77,10 @@ proc escapeVar(name: string): string =
   if result == "else": result = "_ELSE_"
   if result == "let": result = "_LET_"
   if result == "case": result = "_CASE_"
+
+# use `$` to tell namespace from normal variables, thus able to use same token like clj
+proc escapeNs(name: string): string =
+  "$" & name.escapeVar()
 
 # handle recursion
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
@@ -228,6 +235,12 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = $body[0]
         return fmt"(()=> {cCurlyL} throw new Error({message.escape}) {cCurlyR})() "
+      of "exists?":
+        if body.len != 1: raiseEvalError("expected 1 argument", xs)
+        let item = body[0]
+        if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
+        # not core syntax, but treat as macro for better debugging experience
+        return fmt"(typeof {item.symbolVal.escapeVar} === 'undefined')"
 
       else:
         let token = head.symbolVal
@@ -312,10 +325,10 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
   if body.len > 0 and body[^1].usesRecur():
     let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
     let exportMark = if exported: fmt"export let {name.escapeVar} = " else: ""
-    return fmt"{cLine}{exportMark}{varPrefix}wrapTailCall({fnDefinition}){cLine}"
+    return fmt"{exportMark}{varPrefix}wrapTailCall({fnDefinition}){cLine}"
   else:
     let exportMark = if exported: "export " else: ""
-    return fmt"{cLine}{exportMark}{fnDefinition}{cLine}"
+    return fmt"{exportMark}{fnDefinition}{cLine}"
 
 proc containsSymbol(xs: CirruData, y: string): bool =
   case xs.kind
@@ -400,7 +413,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
           importCode = importCode & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
           defNames.incl(importName)
         of importNs:
-          importCode = importCode & fmt"{cLine}import * as {importName.escapeVar} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+          importCode = importCode & fmt"{cLine}import * as {importName.escapeNs} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
     else:
       # echo "[WARNING] no imports information for ", ns
       discard

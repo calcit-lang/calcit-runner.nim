@@ -111,15 +111,21 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
     }
     return kwd("fn");
   }
+  if (typeof x === "object") {
+    return kwd("js-object");
+  }
   throw new Error(`Unknown data ${x}`);
 };
 
-export let print = (...xs: string[]): any => {
+export let print = (...xs: string[]): void => {
   // TODO stringify each values
-  console.log(...xs);
+  console.log(xs.map((x) => toString(x, false)).join(" "));
 };
 
 export let count = (x: CrDataValue): number => {
+  if (x == null) {
+    return 0;
+  }
   let t = type_DASH_of(x);
   if (t === kwd("string")) {
     return (x as string).length;
@@ -341,6 +347,9 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
 };
 
 export let get = (xs: CrDataValue, k: CrDataValue) => {
+  if (typeof xs === "string") {
+    return xs[0];
+  }
   if (xs instanceof Array) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
@@ -374,6 +383,10 @@ export let get = (xs: CrDataValue, k: CrDataValue) => {
 let cloneMap = (
   xs: Map<CrDataValue, CrDataValue>
 ): Map<CrDataValue, CrDataValue> => {
+  if (!(xs instanceof Map)) {
+    throw new Error("Expected a map");
+  }
+
   var result: Map<CrDataValue, CrDataValue> = new Map();
   xs.forEach((v, i) => {
     result.set(i, v);
@@ -460,10 +473,10 @@ export let reset_BANG_ = (a: CrDataAtom, v: CrDataValue): null => {
   if (!(a instanceof CrDataAtom)) {
     throw new Error("Expected atom for reset!");
   }
+  let prev = a.value;
   a.value = v;
-  for (let k in a.listeners) {
-    let f = a.listeners.get(k);
-    f(v);
+  for (let [k, f] of a.listeners) {
+    f(v, prev);
   }
   return null;
 };
@@ -551,6 +564,9 @@ export let wrapTailCall = (f: CrDataFn): CrDataFn => {
       result = f.apply(null, result.args);
       times = times + 1;
     }
+    if (result instanceof CrDataRecur) {
+      throw new Error("Expected actual value to be returned");
+    }
     return result;
   };
 };
@@ -622,6 +638,9 @@ export let not = (x: boolean): boolean => {
 };
 
 let cloneArray = (xs: CrDataValue[]): CrDataValue[] => {
+  if (!(xs instanceof Array)) {
+    throw new Error("Expected an array");
+  }
   let ys: CrDataValue[] = new Array(xs.length);
   for (let idx in xs) {
     ys[idx] = xs[idx];
@@ -786,7 +805,28 @@ export let _AND_merge = (
 ): Map<CrDataValue, CrDataValue> => {
   var result = cloneMap(a);
   b.forEach((v, k) => {
-    result.set(k, v);
+    if (
+      typeof k === "string" ||
+      typeof k === "number" ||
+      typeof k === "boolean" ||
+      k instanceof CrDataKeyword
+    ) {
+      result.set(k, v);
+    } else {
+      var exisitedKey = false;
+
+      for (let [mk, mv] of result) {
+        if (_AND__EQ_(mk, k)) {
+          result.set(mk, v);
+          exisitedKey = true;
+          break;
+        }
+      }
+
+      if (!exisitedKey) {
+        result.set(k, v);
+      }
+    }
   });
   return result;
 };
@@ -798,7 +838,28 @@ export let _AND_merge_DASH_non_DASH_nil = (
   var result = cloneMap(a);
   b.forEach((v, k) => {
     if (v != null) {
-      result.set(k, v);
+      if (
+        typeof k === "string" ||
+        typeof k === "number" ||
+        typeof k === "boolean" ||
+        k instanceof CrDataKeyword
+      ) {
+        result.set(k, v);
+      } else {
+        var exisitedKey = false;
+
+        for (let [mk, mv] of result) {
+          if (_AND__EQ_(mk, k)) {
+            result.set(mk, v);
+            exisitedKey = true;
+            break;
+          }
+        }
+
+        if (!exisitedKey) {
+          result.set(k, v);
+        }
+      }
     }
   });
   return result;
@@ -1087,13 +1148,13 @@ export let get_DASH_env = (name: string): string => {
 
 export let turn_DASH_keyword = (x: CrDataValue): CrDataKeyword => {
   if (typeof x === "string") {
-    return new CrDataKeyword(x);
+    return kwd(x);
   }
   if (x instanceof CrDataKeyword) {
     return x;
   }
   if (x instanceof CrDataSymbol) {
-    return new CrDataKeyword(x.value);
+    return kwd(x.value);
   }
   throw new Error("Unexpected data for keyword");
 };
@@ -1111,12 +1172,16 @@ export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
   throw new Error("Unexpected data for symbol");
 };
 
-let toString = (x: CrDataValue): string => {
+let toString = (x: CrDataValue, escaped: boolean): string => {
   if (x == null) {
     return "nil";
   }
   if (typeof x === "string") {
-    return JSON.stringify(x);
+    if (escaped) {
+      return JSON.stringify(x);
+    } else {
+      return x;
+    }
   }
   if (typeof x === "number") {
     return x.toString();
@@ -1131,7 +1196,7 @@ let toString = (x: CrDataValue): string => {
     return x.toString();
   }
   if (x instanceof Array) {
-    return `[${x.map(toString).join(" ")}]`;
+    return `[${x.map((x) => toString(x, true)).join(" ")}]`;
   }
   if (x instanceof Set) {
     let itemsCode = "";
@@ -1139,7 +1204,7 @@ let toString = (x: CrDataValue): string => {
       if (idx > 0) {
         itemsCode = `${itemsCode} `;
       }
-      itemsCode = `${itemsCode}${toString(child)}`;
+      itemsCode = `${itemsCode}${toString(child, true)}`;
     });
     return `#{${itemsCode}}`;
   }
@@ -1149,16 +1214,20 @@ let toString = (x: CrDataValue): string => {
       if (itemsCode !== "") {
         itemsCode = `${itemsCode}, `;
       }
-      itemsCode = `${itemsCode}${toString(k)} ${toString(v)}`;
+      itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
     });
     return `{${itemsCode}}`;
   }
+  if (typeof x === "function") {
+    return `(&fn ...)`;
+  }
+
   console.error(x);
   throw new Error("Unexpected data for toString");
 };
 
 export let pr_DASH_str = (...args: CrDataValue[]): string => {
-  return args.map(toString).join(" ");
+  return args.map((x) => toString(x, true)).join(" ");
 };
 
 // time from app start
@@ -1175,6 +1244,32 @@ export let quit = (): void => {
   } else {
     throw new Error("quit()");
   }
+};
+
+export let turn_DASH_string = (x: CrDataValue): string => {
+  if (x == null) {
+    return "";
+  }
+  if (typeof x === "string") {
+    return x;
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.value;
+  }
+  if (x instanceof CrDataSymbol) {
+    return x.value;
+  }
+  if (typeof x === "number") {
+    return x.toString();
+  }
+  if (typeof x === "boolean") {
+    return x.toString();
+  }
+  throw new Error("Unexpected data to turn string");
+};
+
+export let identical_QUES_ = (x: CrDataValue, y: CrDataValue): boolean => {
+  return x === y;
 };
 
 // TODO not handled correct in generated js
