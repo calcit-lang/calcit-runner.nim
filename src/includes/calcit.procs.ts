@@ -22,6 +22,10 @@ class CrDataRecur {
   constructor(xs: CrDataValue[]) {
     this.args = xs;
   }
+
+  toString() {
+    return `(&recur ...)`;
+  }
 }
 
 class CrDataAtom {
@@ -32,6 +36,9 @@ class CrDataAtom {
     this.value = x;
     this.path = path;
     this.listeners = new Map();
+  }
+  toString(): string {
+    return `(&atom ${this.value.toString()})`;
   }
 }
 
@@ -1105,8 +1112,11 @@ export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
 };
 
 let toString = (x: CrDataValue): string => {
+  if (x == null) {
+    return "nil";
+  }
   if (typeof x === "string") {
-    return x;
+    return JSON.stringify(x);
   }
   if (typeof x === "number") {
     return x.toString();
@@ -1115,13 +1125,13 @@ let toString = (x: CrDataValue): string => {
     return x.toString();
   }
   if (x instanceof CrDataSymbol) {
-    return x.value;
+    return x.toString();
   }
   if (x instanceof CrDataKeyword) {
-    return x.value;
+    return x.toString();
   }
   if (x instanceof Array) {
-    return `(${x.map(toString).join(" ")})`;
+    return `[${x.map(toString).join(" ")}]`;
   }
   if (x instanceof Set) {
     let itemsCode = "";
@@ -1129,7 +1139,7 @@ let toString = (x: CrDataValue): string => {
       if (idx > 0) {
         itemsCode = `${itemsCode} `;
       }
-      itemsCode = `${itemsCode}${child.toString()}`;
+      itemsCode = `${itemsCode}${toString(child)}`;
     });
     return `#{${itemsCode}}`;
   }
@@ -1137,12 +1147,13 @@ let toString = (x: CrDataValue): string => {
     let itemsCode = "";
     x.forEach((v, k) => {
       if (itemsCode !== "") {
-        itemsCode = `${itemsCode} ,`;
+        itemsCode = `${itemsCode}, `;
       }
-      itemsCode = `${itemsCode}${k.toString()} ${v.toString()}`;
+      itemsCode = `${itemsCode}${toString(k)} ${toString(v)}`;
     });
-    return `#{${itemsCode}}`;
+    return `{${itemsCode}}`;
   }
+  console.error(x);
   throw new Error("Unexpected data for toString");
 };
 
