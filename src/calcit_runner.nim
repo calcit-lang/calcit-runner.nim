@@ -153,7 +153,9 @@ proc reloadProgram(snapshotFile: string): void =
   let snapshotInfo = loadSnapshot(snapshotFile)
   for fileNs, file in snapshotInfo.files:
     programCode[fileNs] = file
+  echo "clearing data under package: ", codeConfigs.pkg
   clearProgramDefs(programData, codeConfigs.pkg)
+  genSymIndex = 0 # make it a litter stabler
   programCode[coreNs] = previousCoreSource
   var pieces = codeConfigs.reloadFn.split('/')
 

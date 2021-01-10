@@ -31,7 +31,7 @@ proc hasNsAndDef(ns: string, def: string): bool =
 proc clearProgramDefs*(programData: var Table[string, ProgramFile], pkg: string): void =
   for ns, f in programData:
     if ns.startsWith(pkg):
-      echo "clearing: ", ns
+      # echo "clearing: ", ns
       programData[ns].ns = none(Table[string, ImportInfo])
       programData[ns].defs.clear
 

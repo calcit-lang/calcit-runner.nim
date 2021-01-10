@@ -372,9 +372,18 @@ proc sortByDeps(deps: Table[string, CirruData]): seq[string] =
       return 0
   )
 
+proc writeFileIfChanged(filename: string, content: string): bool =
+  if fileExists(filename) and readFile(filename) == content:
+    return false
+  writeFile filename, content
+  return true
+
 proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string): void =
   if dirExists(jsEmitPath).not:
     createDir(jsEmitPath)
+
+  var unchangedNs: HashSet[string]
+
   for ns, file in programData:
 
     # side-effects, reset tracking state
@@ -455,7 +464,13 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
           let importTarget = "./" & defNs.toJsFileName()
           importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
 
-    writeFile jsFilePath, importCode & cLine & defsCode & cLine & valsCode
-    echo "Emitted mjs file: ", jsFilePath
+    let wroteNew = writeFileIfChanged(jsFilePath, importCode & cLine & defsCode & cLine & valsCode)
+    if wroteNew:
+      echo "Emitted mjs file: ", jsFilePath
+    else:
+      unchangedNs.incl(ns)
+
+  if unchangedNs.len > 0:
+    echo "\n" & $(unchangedNs.len) & " files are not changed: " & $unchangedNs
 
   firstCompilation = false
