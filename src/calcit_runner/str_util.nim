@@ -97,12 +97,12 @@ proc matchesJsVar*(xs: string): bool =
   for idx, x in xs:
     if x.isLetter():
       continue
+    elif x == '_':
+      continue
+    elif x == '$':
+      continue
     if idx > 0:
       if x.isDigit():
-        continue
-      elif x == '_':
-        continue
-      elif x == '$':
         continue
     return false
   return true
