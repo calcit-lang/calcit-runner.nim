@@ -60,6 +60,7 @@ proc escapeVar(name: string): string =
   .replace("[]", "_LIST_")
   .replace("{", "_CURL_")
   .replace("}", "_CURR_")
+  .replace("'", "_SQUO_")
   .replace("[", "_SQRL_")
   .replace("]", "_SQRR_")
   .replace("!", "_BANG_")
@@ -240,7 +241,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
         # not core syntax, but treat as macro for better debugging experience
-        return fmt"(typeof {item.symbolVal.escapeVar} === 'undefined')"
+        return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
 
       else:
         let token = head.symbolVal
@@ -471,6 +472,6 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
       unchangedNs.incl(ns)
 
   if unchangedNs.len > 0:
-    echo "\n" & $(unchangedNs.len) & " files are not changed: " & $unchangedNs
+    echo "\n... and " & $(unchangedNs.len) & " files not changed."
 
   firstCompilation = false

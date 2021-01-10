@@ -366,6 +366,8 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)
+  of crDataNumber, crDataString, crDataNil, crDataBool:
+    return code
   else:
     # TODO supposed to be literals
     return code

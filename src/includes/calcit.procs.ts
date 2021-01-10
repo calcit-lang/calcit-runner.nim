@@ -466,7 +466,7 @@ export let dissoc = (xs: CrDataValue, k: CrDataValue) => {
     return result;
   }
 
-  throw new Error("Does not support `get` on this type");
+  throw new Error("Does not support `dissoc` on this type");
 };
 
 export let reset_BANG_ = (a: CrDataAtom, v: CrDataValue): null => {
@@ -539,8 +539,8 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
     return true;
   }
 
-  // TODO set not handled
-  throw new Error("Does not support empty? on this type");
+  console.error(xs);
+  throw new Error("Does not support `empty?` on this type");
 };
 
 export let wrapTailCall = (f: CrDataFn): CrDataFn => {
@@ -588,6 +588,7 @@ export let first = (xs: CrDataValue): CrDataValue => {
     let it = xs.values();
     return it.next().value;
   }
+  console.error(xs);
   throw new Error("Expects something sequential");
 };
 
@@ -622,6 +623,8 @@ export let rest = (xs: CrDataValue): CrDataValue => {
     ys.delete(x0);
     return ys;
   }
+  console.error(xs);
+
   throw new Error("Expects something sequential");
 };
 
@@ -673,6 +676,7 @@ export let last = (xs: CrDataValue): CrDataValue => {
   if (typeof xs === "string") {
     return xs[xs.length - 1];
   }
+  console.error(xs);
   throw new Error("Data not ready for last");
 };
 
@@ -686,11 +690,12 @@ export let butlast = (xs: CrDataValue): CrDataValue => {
   if (typeof xs === "string") {
     return xs.substr(0, xs.length - 1);
   }
+  console.error(xs);
   throw new Error("Data not ready for butlast");
 };
 
 export let initCrTernary = (x: string): CrDataValue => {
-  console.warn("Ternary for js not implemented yet!");
+  console.error("Ternary for js not implemented yet!");
   return null;
 };
 
@@ -1076,6 +1081,7 @@ export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
     });
     return result;
   }
+  console.error(x);
   throw new Error("Unknown data to js");
 };
 
@@ -1112,6 +1118,7 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
     return result;
   }
 
+  console.error(x);
   throw new Error("Unexpected data for converting");
 };
 
@@ -1143,6 +1150,9 @@ export let get_DASH_env = (name: string): string => {
     // only available for Node.js
     return (globalThis as any)["process"].env[name];
   }
+  if (typeof URLSearchParams != null) {
+    return new URLSearchParams(location.search).get("env");
+  }
   return null;
 };
 
@@ -1156,6 +1166,7 @@ export let turn_DASH_keyword = (x: CrDataValue): CrDataKeyword => {
   if (x instanceof CrDataSymbol) {
     return kwd(x.value);
   }
+  console.error(x);
   throw new Error("Unexpected data for keyword");
 };
 
@@ -1169,6 +1180,7 @@ export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
   if (x instanceof CrDataKeyword) {
     return new CrDataSymbol(x.value);
   }
+  console.error(x);
   throw new Error("Unexpected data for symbol");
 };
 
@@ -1265,11 +1277,16 @@ export let turn_DASH_string = (x: CrDataValue): string => {
   if (typeof x === "boolean") {
     return x.toString();
   }
+  console.error(x);
   throw new Error("Unexpected data to turn string");
 };
 
 export let identical_QUES_ = (x: CrDataValue, y: CrDataValue): boolean => {
   return x === y;
+};
+
+export let starts_DASH_with_QUES_ = (xs: string, y: string): boolean => {
+  return xs.startsWith(y);
 };
 
 // special procs have to be defined manually
