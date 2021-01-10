@@ -1272,6 +1272,6 @@ export let identical_QUES_ = (x: CrDataValue, y: CrDataValue): boolean => {
   return x === y;
 };
 
-// TODO not handled correct in generated js
+// special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;

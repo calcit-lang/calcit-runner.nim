@@ -28,6 +28,10 @@
           defmacro when (condition & body)
             quote-replace $ if ~condition (do ~@body)
 
+        |when-not $ quote
+          defmacro when-not (condition & body)
+            quote-replace $ if (not ~condition) (do ~@body)
+
         |+ $ quote
           defn + (x & ys) $ reduce &+ x ys
 
