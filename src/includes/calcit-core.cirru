@@ -6,9 +6,11 @@
       :ns $ quote
         ns calcit.core $ :require
       :defs $ {}
-        |unless $ quote
-          defmacro unless (cond true-branch false-branch)
-            quote-replace $ if ~cond ~false-branch ~true-branch
+        |if-not $ quote
+          defmacro if-not (cond true-branch & args)
+            &let
+              false-branch $ either (first args) nil
+              quote-replace $ if ~cond ~false-branch ~true-branch
 
         |/= $ quote
           defn /= (x y) $ not $ &= x y
@@ -358,7 +360,7 @@
           defn filter-not (f xs)
             reduce
               fn (acc x)
-                unless (f x) (append acc x) acc
+                if-not (f x) (append acc x) acc
               []
               , xs
 
