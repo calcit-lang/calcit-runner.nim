@@ -1,6 +1,6 @@
 
 out
-js-out
+js-out/
 
 example/.compact-inc.cirru
 .calcit-error.cirru
