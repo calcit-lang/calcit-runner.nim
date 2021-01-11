@@ -79,6 +79,14 @@
               and false (raise "|raise in and")
               , false
 
+            assert= 2
+              when-not (> 1 2) 1 2
+
+            assert= 2
+              if-not (> 1 2) 2 1
+            assert= 2
+              if-not (> 1 2) 2
+
         |test-time $ quote
           fn ()
             assert= 1605024000 $ parse-time |2020-11-11

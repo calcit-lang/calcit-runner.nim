@@ -60,6 +60,7 @@ proc escapeVar(name: string): string =
   .replace("[]", "_LIST_")
   .replace("{", "_CURL_")
   .replace("}", "_CURR_")
+  .replace("'", "_SQUO_")
   .replace("[", "_SQRL_")
   .replace("]", "_SQRR_")
   .replace("!", "_BANG_")
@@ -240,7 +241,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
         # not core syntax, but treat as macro for better debugging experience
-        return fmt"(typeof {item.symbolVal.escapeVar} === 'undefined')"
+        return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
 
       else:
         let token = head.symbolVal
@@ -372,9 +373,18 @@ proc sortByDeps(deps: Table[string, CirruData]): seq[string] =
       return 0
   )
 
+proc writeFileIfChanged(filename: string, content: string): bool =
+  if fileExists(filename) and readFile(filename) == content:
+    return false
+  writeFile filename, content
+  return true
+
 proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string): void =
   if dirExists(jsEmitPath).not:
     createDir(jsEmitPath)
+
+  var unchangedNs: HashSet[string]
+
   for ns, file in programData:
 
     # side-effects, reset tracking state
@@ -455,7 +465,13 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
           let importTarget = "./" & defNs.toJsFileName()
           importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
 
-    writeFile jsFilePath, importCode & cLine & defsCode & cLine & valsCode
-    echo "Emitted mjs file: ", jsFilePath
+    let wroteNew = writeFileIfChanged(jsFilePath, importCode & cLine & defsCode & cLine & valsCode)
+    if wroteNew:
+      echo "Emitted mjs file: ", jsFilePath
+    else:
+      unchangedNs.incl(ns)
+
+  if unchangedNs.len > 0:
+    echo "\n... and " & $(unchangedNs.len) & " files not changed."
 
   firstCompilation = false

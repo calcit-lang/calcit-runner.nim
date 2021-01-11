@@ -31,7 +31,7 @@ proc hasNsAndDef(ns: string, def: string): bool =
 proc clearProgramDefs*(programData: var Table[string, ProgramFile], pkg: string): void =
   for ns, f in programData:
     if ns.startsWith(pkg):
-      echo "clearing: ", ns
+      # echo "clearing: ", ns
       programData[ns].ns = none(Table[string, ImportInfo])
       programData[ns].defs.clear
 
@@ -366,8 +366,11 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)
+  of crDataNumber, crDataString, crDataNil, crDataBool, crDataKeyword, crDataTernary:
+    return code
   else:
     # TODO supposed to be literals
+    echo "[Warn] unexpected data during preprocess: " & $code
     return code
 
 proc getEvaluatedByPath*(ns: string, def: string, scope: CirruDataScope): CirruData =
