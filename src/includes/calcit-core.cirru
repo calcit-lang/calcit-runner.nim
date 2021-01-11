@@ -858,6 +858,37 @@
                       , items
                     ~@ body
 
+        |let[] $ quote
+          defmacro let[] (vars data & body)
+            assert "|expects a list of definitions"
+              and (list? vars)
+                &> (count vars) 0
+                every? symbol? vars
+            let
+                v $ gensym |v
+                defs $ apply-args
+                  [] ([]) vars 0
+                  defn let[]% (acc xs idx)
+                    if (empty? xs) acc
+                      do
+                        when-not
+                          symbol? (first xs)
+                          raise $ str "|Expected symbol for vars: " (first xs)
+                        if (&= (first xs) '&)
+                          do
+                            assert "|expected list spreading" (&= 2 (count xs))
+                            conj acc $ [] (get xs 1) (quote-replace (slice ~v ~idx))
+                          recur
+                            conj acc $ [] (first xs) (quote-replace (get ~v ~idx))
+                            rest xs
+                            inc idx
+              quote-replace
+                &let
+                  ~v ~data
+                  let
+                    ~ defs
+                    ~@ body
+
         |conj $ quote
           def conj append
 
