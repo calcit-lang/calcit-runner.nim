@@ -59,14 +59,14 @@ type CrDataValue =
   | CrDataRecur // should not be exposed to function
   | null;
 
-var keywordRegistery = new Map();
+var keywordRegistery: Record<string, CrDataKeyword> = {};
 
 export let kwd = (content: string) => {
-  if (keywordRegistery.has(content)) {
-    return keywordRegistery.get(content);
+  if (keywordRegistery[content] != null) {
+    return keywordRegistery[content];
   } else {
     let v = new CrDataKeyword(content);
-    keywordRegistery.set(content, v);
+    keywordRegistery[content] = v;
     return v;
   }
 };
@@ -126,17 +126,16 @@ export let count = (x: CrDataValue): number => {
   if (x == null) {
     return 0;
   }
-  let t = type_DASH_of(x);
-  if (t === kwd("string")) {
-    return (x as string).length;
+  if (typeof x === "string") {
+    return x.length;
   }
-  if (t === kwd("list")) {
-    return (x as CrDataValue[]).length;
+  if (x instanceof Array) {
+    return x.length;
   }
-  if (t === kwd("map")) {
+  if (x instanceof Map) {
     return (x as Map<CrDataValue, CrDataValue>).size;
   }
-  if (t === kwd("set")) {
+  if (x instanceof Set) {
     return (x as Set<CrDataValue>).size;
   }
   throw new Error(`Unknown data ${x}`);
@@ -217,25 +216,59 @@ export let _AND__STAR_ = (x: number, y: number): number => {
 };
 
 export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
-  let tx = type_DASH_of(x);
-  let ty = type_DASH_of(y);
-  if (tx === ty) {
-    if (tx === kwd("keyword")) {
-      return x === y;
-    }
-    if (tx === kwd("string")) {
-      return (x as string) === (y as string);
-    }
-    if (tx === kwd("bool")) {
-      return (x as boolean) === (y as boolean);
-    }
-    if (tx === kwd("number")) {
-      return (x as number) === (y as number);
-    }
-    if (tx === kwd("nil")) {
+  if (x == null) {
+    if (y == null) {
       return true;
     }
-    if (tx === kwd("map")) {
+    return false;
+  }
+
+  let tx = typeof x;
+  let ty = typeof y;
+
+  if (tx !== ty) {
+    return false;
+  }
+
+  if (tx === "string") {
+    return (x as string) === (y as string);
+  }
+  if (tx === "boolean") {
+    return (x as boolean) === (y as boolean);
+  }
+  if (tx === "number") {
+    return x === y;
+  }
+  if (tx === "function") {
+    // comparing functions by reference
+    return x === y;
+  }
+  if (x instanceof CrDataKeyword) {
+    if (y instanceof CrDataKeyword) {
+      return x === y;
+    }
+    return false;
+  }
+  if (x instanceof Array) {
+    if (y instanceof Array) {
+      let x2 = x as CrDataValue[];
+      let y2 = y as CrDataValue[];
+      if (x2.length !== y2.length) {
+        return false;
+      }
+      for (let idx in x2) {
+        let xItem = x2[idx];
+        let yItem = y2[idx];
+        if (!_AND__EQ_(xItem, yItem)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+  if (x instanceof Map) {
+    if (y instanceof Map) {
       let x2 = x as Map<CrDataValue, CrDataValue>;
       let y2 = y as Map<CrDataValue, CrDataValue>;
       if (x2.size !== y2.size) {
@@ -251,33 +284,16 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       }
       return true;
     }
-    if (tx === kwd("list")) {
-      let x2 = x as CrDataValue[];
-      let y2 = y as CrDataValue[];
-      if (x2.length !== y2.length) {
-        return false;
-      }
-      for (let idx in x2) {
-        let xItem = x2[idx];
-        let yItem = y2[idx];
-        if (!_AND__EQ_(xItem, yItem)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    if (tx === kwd("atom")) {
+    return false;
+  }
+  if (x instanceof CrDataAtom) {
+    if (y instanceof CrDataAtom) {
       return x === y;
     }
-    if (tx === kwd("fn")) {
-      // comparing functions by reference
-      return x === y;
-    }
-    if (tx === kwd("recur")) {
-      console.warn("Do not compare Recur");
-      return false;
-    }
-    if (tx === kwd("set")) {
+    return false;
+  }
+  if (x instanceof Set) {
+    if (y instanceof Set) {
       let x2 = x as Set<CrDataValue>;
       let y2 = y as Set<CrDataValue>;
       if (x2.size !== y2.size) {
@@ -290,10 +306,17 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       }
       return true;
     }
-    throw new Error("Missing handler for this type");
-  } else {
     return false;
   }
+  if (x instanceof CrDataRecur) {
+    if (y instanceof CrDataRecur) {
+      console.warn("Do not compare Recur");
+      return false;
+    }
+    return false;
+  }
+  throw new Error("Missing handler for this type");
+  return false;
 };
 
 export let _AND_str = (x: CrDataValue): string => {
@@ -386,12 +409,7 @@ let cloneMap = (
   if (!(xs instanceof Map)) {
     throw new Error("Expected a map");
   }
-
-  var result: Map<CrDataValue, CrDataValue> = new Map();
-  xs.forEach((v, i) => {
-    result.set(i, v);
-  });
-  return result;
+  return new Map(xs);
 };
 
 export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
@@ -900,11 +918,10 @@ export let sqrt = (n: number) => {
 };
 
 export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
-  let result: Set<CrDataValue> = new Set();
-  xs.forEach((x) => {
-    result.add(x);
-  });
-  return result;
+  if (!(xs instanceof Set)) {
+    throw new Error("Expected a set");
+  }
+  return new Set(xs);
 };
 
 export let _AND_include = (
