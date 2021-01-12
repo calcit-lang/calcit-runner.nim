@@ -75,8 +75,8 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   let coreDefs = programData[coreNs].defs
   if coreDefs.contains(sym.symbolVal):
     return coreDefs[sym.symbolVal]
-  let loadedSym = preprocess(sym, toHashset[string](@[]), ns)
 
+  let loadedSym = preprocess(sym, toHashset[string](@[]), ns)
   echo "[Warn] load unprocessed variable: ", sym
   if loadedSym.resolved.isSome:
     let path = loadedSym.resolved.get
