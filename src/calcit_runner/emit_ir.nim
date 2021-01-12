@@ -3,7 +3,7 @@ import os
 import options
 import tables
 
-import cirru_edn
+import json
 import ternary_tree
 
 import ./types
@@ -12,110 +12,108 @@ var irMode* = false
 var emitPath = "js-out"
 
 # mutual recursion
-proc dumpCode(xs: CirruData): CirruEdnValue
+proc dumpCode(xs: CirruData): JsonNode
 
-proc dumpCode(xs: seq[CirruData]): CirruEdnValue =
-  var ys: seq[CirruEdnValue]
+proc dumpCode(xs: seq[CirruData]): JsonNode =
+  var ys: seq[JsonNode]
   for item in xs:
     ys.add dumpCode(item)
 
-  CirruEdnValue(kind: crEdnList, listVal: ys)
+  %*ys
 
-proc dumpCode(xs: TernaryTreeList[CirruData]): CirruEdnValue =
-  var ys: seq[CirruEdnValue]
+proc dumpCode(xs: TernaryTreeList[CirruData]): JsonNode =
+  var ys: seq[JsonNode]
   for item in xs:
     ys.add dumpCode(item)
 
-  CirruEdnValue(kind: crEdnList, listVal: ys)
+  %*ys
 
-proc kwd(x: string): CirruEdnValue =
-  genCrEdnKeyword(x)
-
-proc dumpCode(xs: CirruData): CirruEdnValue =
+proc dumpCode(xs: CirruData): JsonNode =
   case xs.kind
   of crDataNumber:
-    genCrEdn(xs.numberVal)
+    %xs.numberVal
   of crDataNil:
-    genCrEdn()
+    newJNull()
   of crDataString:
-    genCrEdn(xs.stringVal)
+    %xs.stringVal
   of crDataBool:
-    genCrEdn(xs.boolVal)
+    %*xs.boolVal
   of crDataKeyword:
-    kwd(xs.keywordVal)
+    %* {
+      "kind": "keyword", "val": xs.keywordVal,
+    }
   of crDataProc:
-    genCrEdnMap(
-      kwd("kind"), kwd("proc"),
-    )
+    %* {
+      "kind": "proc",
+    }
   of crDataSymbol:
     var resolvedData =
       if xs.resolved.isSome():
         let resolved = xs.resolved.get()
-        genCrEdnMap(
-          kwd("ns"), genCrEdn(resolved.ns),
-          kwd("def"), genCrEdn(resolved.def),
-          kwd("ns-in-str?"), genCrEdn(resolved.nsInStr),
-        )
+        %* {
+          "ns": resolved.ns,
+          "def": resolved.def,
+          "nsInStr": resolved.nsInStr
+        }
       else:
-        genCrEdn()
-    genCrEdnMap(
-      kwd("kind"), kwd("symbol"),
-      kwd("val"), genCrEdn(xs.symbolVal),
-      kwd("ns"), genCrEdn(xs.ns),
-      kwd("dynamic?"), genCrEdn(xs.dynamic),
-      kwd("resolved"), resolvedData,
-    )
+        newJNull()
+    %* {
+      "kind": "symbol",
+      "val": xs.symbolVal,
+      "ns": xs.ns,
+      "dynamic": xs.dynamic,
+      "resolved": resolvedData
+    }
   of crDataFn:
-    genCrEdnMap(
-      kwd("kind"), kwd("fn"),
-      kwd("ns"), genCrEdn(xs.fnNs),
-      kwd("name"), genCrEdn(xs.fnName),
-      kwd("args"), dumpCode(xs.fnArgs),
-      kwd("code"), dumpCode(xs.fnCode)
-    )
+    %* {
+      "kind": "fn",
+      "ns": xs.fnNs,
+      "name": xs.fnName,
+      "args": dumpCode(xs.fnArgs),
+      "code": dumpCode(xs.fnCode),
+    }
   of crDataThunk:
     dumpCode(xs.thunkCode[])
   of crDataList:
     dumpCode(xs.listVal)
   else:
-    genCrEdn("...TODO")
+    %*("...TODO")
 
 proc emitIR*(programData: Table[string, ProgramFile], initFn, reloadFn: string): void =
-  var files = CirruEdnValue(kind: crEdnMap, mapVal: initTable[CirruEdnValue, CirruEdnValue]())
-  let configs = genCrEdnMap(
-    genCrEdn("init-fn"), genCrEdn(initFn),
-    genCrEdn("reload-fn"), genCrEdn(reloadFn),
-  )
-
+  var files = newJObject()
   for ns, file in programData:
 
-    var defsData = CirruEdnValue(kind: crEdnMap, mapVal: initTable[CirruEdnValue, CirruEdnValue]())
+    var defsData = newJObject()
     for def, defCode in file.defs:
-      defsData.mapVal[genCrEdn(def)] = dumpCode(defCode)
+      defsData[def] = dumpCode(defCode)
 
-    var nsData = CirruEdnValue(kind: crEdnMap, mapVal: initTable[CirruEdnValue, CirruEdnValue]())
+    var nsData = newJObject()
     if file.ns.isSome():
       for target, importRule in file.ns.get():
-        nsData.mapVal[genCrEdn(target)] = genCrEdnMap(
-          genCrEdn("ns"), genCrEdn(importRule.ns),
-          genCrEdn("ns-in-str?"), genCrEdn(importRule.nsInStr),
-          genCrEdn("def"), genCrEdn(),
-        )
+        let importKind = if importRule.kind == importDef: %"def" else: %"ns"
+        let importDef = if importRule.kind == importDef: %importRule.def else: newJNull()
+        nsData[target] = %* {
+          "ns": importRule.ns,
+          "nsInStr": importRule.nsInStr,
+          "kind": importKind,
+          "def": importDef,
+        }
 
-    let fileData = genCrEdnMap(
-      genCrEdn("ns"), nsData,
-      genCrEdn("defs"), defsData,
-    )
-    files.mapVal[genCrEdn(ns)] = fileData
+    let fileData = %* {
+      "ns": nsData, "defs": defsData
+    }
+    files[ns] = fileData
 
-  let data = genCrEdnMap(
-    genCrEdn("configs"), configs,
-    genCrEdn("files"), files,
-  )
+  let data = %* {
+    "configs": {
+      "initFn": initFn, "reloadFn": reloadFn,
+    },
+    "files": files
+  }
 
-  let content = data.formatToCirru(true)
+  let content = data.pretty()
   if dirExists(emitPath).not:
     createDir(emitPath)
 
-  writeFile (emitPath & "/program-ir.cirru"), content
-  echo "emitted to ", (emitPath & "/program-ir.cirru")
+  writeFile (emitPath & "/program-ir.json"), content
+  echo "emitted to ", (emitPath & "/program-ir.json")

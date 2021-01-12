@@ -56,6 +56,10 @@ cr compact.cirru --init-fn='app.main/main!' # specifying init-fn
 
 cr -e="range 100" # eval from CLI
 
+cr --emit-js # compile to js
+
+cr --emit-ir # compile to intermediate representation
+
 cr_once # bundled without wathcer and SDL2, for CI only
 ```
 
@@ -84,7 +88,10 @@ nimble once
 nimble e
 
 # for emitting js
-nimble jsgen
+nimble genjs
+
+# for emitting ir
+nimble genir
 ```
 
 ### Modules

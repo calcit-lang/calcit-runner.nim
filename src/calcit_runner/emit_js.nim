@@ -473,7 +473,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
 
     if implicitImports.len > 0 and file.ns.isSome():
       let importsInfo = file.ns.get()
-      echo "imports: ", implicitImports
+      # echo "imports: ", implicitImports
       for def, defNs in implicitImports:
         # if not importsInfo.contains(def):
         # echo "implicit import ", defNs, "/", def, " in ", ns
