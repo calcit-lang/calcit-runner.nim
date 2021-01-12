@@ -110,7 +110,7 @@ let builtInJsProc = toHashSet([
 ])
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
-  let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
+  let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   case xs.kind
   of crDataSymbol:
     if xs.symbolVal.hasNsPart():
@@ -124,11 +124,9 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     elif xs.ns == coreNs:
       # local variales inside calcit.core also uses this ns
       return varPrefix & xs.symbolVal.escapeVar()
-    elif xs.ns == ns:
-      return xs.symbolVal.escapeVar()
     elif xs.ns == "":
       raiseEvalError("Unpexpected ns at symbol", xs)
-    elif xs.ns != ns:
+    elif xs.ns != ns: # probably via macro
       # TODO ditry code
       if implicitImports.contains(xs.symbolVal):
         let prev = implicitImports[xs.symbolVal]
@@ -136,6 +134,18 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           echo implicitImports, " ", xs
           raiseEvalError("Conflicted implicit imports, probably via macro", xs)
       implicitImports[xs.symbolVal] = xs.ns
+      return xs.symbolVal.escapeVar()
+    elif xs.resolved.isSome():
+      # TODO ditry code
+      let resolved = xs.resolved.get()
+      if implicitImports.contains(xs.symbolVal):
+        let prev = implicitImports[xs.symbolVal]
+        if prev != resolved.ns:
+          echo implicitImports, " ", xs
+          raiseEvalError("Conflicted implicit imports", xs)
+      implicitImports[xs.symbolVal] = resolved.ns
+      return xs.symbolVal.escapeVar()
+    elif xs.ns == ns:
       return xs.symbolVal.escapeVar()
     else:
       echo "[WARNING] Unpexpected case of code gen for ", xs, " in ", ns
@@ -328,7 +338,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
 
   var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
   if body.len > 0 and body[^1].usesRecur():
-    let varPrefix = if ns == "calcit.core": "" else: "_calcit_."
+    let varPrefix = if ns == "calcit.core": "" else: "$calcit."
     let exportMark = if exported: fmt"export let {name.escapeVar} = " else: ""
     return fmt"{exportMark}{varPrefix}wrapTailCall({fnDefinition}){cLine}"
   else:
@@ -411,10 +421,10 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
 
     if ns == "calcit.core":
       importCode = importCode & fmt"{cLine}import {cCurlyL}kwd, wrapTailCall{cCurlyR} from {procsLib};{cLine}"
-      importCode = importCode & fmt"{cLine}import * as _calcit_procs_ from {procsLib};{cLine}"
+      importCode = importCode & fmt"{cLine}import * as $calcit_procs from {procsLib};{cLine}"
       importCode = importCode & fmt"{cLine}export * from {procsLib};{cLine}"
     else:
-      importCode = importCode & fmt"{cLine}import * as _calcit_ from {coreLib};{cLine}"
+      importCode = importCode & fmt"{cLine}import * as $calcit from {coreLib};{cLine}"
 
     var defNames: HashSet[string] # multiple parts of scoped defs need to be tracked
 
@@ -424,8 +434,8 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
         let importTarget = if importRule.nsInStr: importRule.ns else: "./" & importRule.ns.toJsFileName()
         case importRule.kind
         of importDef:
-          importCode = importCode & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
-          defNames.incl(importName)
+          # importCode = importCode & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+          discard
         of importNs:
           importCode = importCode & fmt"{cLine}import * as {importName.escapeNs} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
     else:
@@ -444,7 +454,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
 
       case f.kind
       of crDataProc:
-        defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = _calcit_procs_.{def.escapeVar};{cLine}"
+        defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
       of crDataFn:
         defsCode = defsCode & genJsFunc(def, f.fnArgs, f.fnCode, ns, true, defNames)
       of crDataThunk:
@@ -463,11 +473,12 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string)
 
     if implicitImports.len > 0 and file.ns.isSome():
       let importsInfo = file.ns.get()
+      echo "imports: ", implicitImports
       for def, defNs in implicitImports:
-        if not importsInfo.contains(def):
-          echo "implicit import via macro ", defNs, "/", def, " in ", ns
-          let importTarget = "./" & defNs.toJsFileName()
-          importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+        # if not importsInfo.contains(def):
+        # echo "implicit import ", defNs, "/", def, " in ", ns
+        let importTarget = "./" & defNs.toJsFileName()
+        importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
 
     let wroteNew = writeFileIfChanged(jsFilePath, importCode & cLine & defsCode & cLine & valsCode)
     if wroteNew:
