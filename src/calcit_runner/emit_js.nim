@@ -393,7 +393,7 @@ proc writeFileIfChanged(filename: string, content: string): bool =
   writeFile filename, content
   return true
 
-proc emitJs*(programData: Table[string, ProgramFile], entryNs, entryDef: string): void =
+proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
   if dirExists(jsEmitPath).not:
     createDir(jsEmitPath)
 

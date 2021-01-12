@@ -107,6 +107,9 @@
             log-title "|Testing display stack"
             display-stack "|show stack here"
 
+        |reload! $ quote
+          defn reload! () nil
+
         |main! $ quote
           defn main! ()
             log-title "|Testing keyword function"

@@ -24,6 +24,7 @@ import calcit_runner/evaluate
 import calcit_runner/eval_util
 import calcit_runner/gen_code
 import calcit_runner/emit_js
+import calcit_runner/emit_ir
 import calcit_runner/color_echo
 
 export CirruData, CirruDataKind, `==`, crData
@@ -66,12 +67,38 @@ proc displayErrorMessage(message: string) =
 
 proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
   try:
-    if jsMode:
-      preprocessSymbolByPath(ns, def)
-      emitJs(programData, ns, def)
-    else:
-      return evaluateDefCode(ns, def, argData, dropArg)
+    return evaluateDefCode(ns, def, argData, dropArg)
 
+  except CirruEvalError as e:
+    displayErrorMessage(e.msg & " " & $e.code)
+    raise e
+
+  except ValueError as e:
+    displayErrorMessage(e.msg)
+    raise e
+
+  except Defect as e:
+    displayErrorMessage("Failed assertion")
+    raise e
+
+proc emitCode(initFn, reloadFn: string): void =
+  let initPair = initFn.split('/')
+  let reloadPair = reloadFn.split('/')
+  if initPair.len != 2:
+    echo "Unknown initFn", initFn
+    raise newException(ValueError, "Unknown initFn")
+  if reloadPair.len != 2:
+    echo "Unknown reloadFn", reloadFn
+    raise newException(ValueError, "Unknown reloadFn")
+  preprocessSymbolByPath(initPair[0], initPair[1])
+  preprocessSymbolByPath(reloadPair[0], reloadPair[1])
+  try:
+    if jsMode:
+      emitJs(programData, initPair[0])
+    elif irMode:
+      emitIR(programData, initFn, reloadFn)
+    else:
+      raise newException(ValueError, "Unknown mode")
   except CirruEvalError as e:
     displayErrorMessage(e.msg & " " & $e.code)
     raise e
@@ -123,16 +150,20 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   for procName, tempProc in onLoadPluginProcs:
     programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
 
-  let pieces = if initFn.isSome:
-    initFn.get.split("/")
+  if jsMode or irMode:
+    emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
+    CirruData(kind: crDataNil)
   else:
-   codeConfigs.initFn.split('/')
+    let pieces = if initFn.isSome:
+      initFn.get.split("/")
+    else:
+     codeConfigs.initFn.split('/')
 
-  if pieces.len != 2:
-    echo "Unknown initFn", pieces
-    raise newException(ValueError, "Unknown initFn")
+    if pieces.len != 2:
+      echo "Unknown initFn", pieces
+      raise newException(ValueError, "Unknown initFn")
 
-  runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
+    runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
 proc runEventListener*(event: CirruEdnValue) =
   let ns = codeConfigs.initFn.split('/')[0]
@@ -159,15 +190,14 @@ proc reloadProgram(snapshotFile: string): void =
   programCode[coreNs] = previousCoreSource
   var pieces = codeConfigs.reloadFn.split('/')
 
-  if jsMode:
-    # TODO only use :init-fn for js
-    pieces = codeConfigs.initFn.split('/')
+  if jsMode or irMode:
+    emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
+  else:
+    if pieces.len != 2:
+      echo "Unknown initFn", pieces
+      raise newException(ValueError, "Unknown initFn")
 
-  if pieces.len != 2:
-    echo "Unknown initFn", pieces
-    raise newException(ValueError, "Unknown initFn")
-
-  discard runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
+    discard runCode(pieces[0], pieces[1], CirruData(kind: crDataNil), true)
 
 proc handleFileChange*(snapshotFile: string, incrementFile: string): void =
   sleep 150

@@ -14,6 +14,7 @@ import ./calcit_runner/watcher
 import ./calcit_runner/version
 import ./calcit_runner/event_loop
 import ./calcit_runner/emit_js
+import ./calcit_runner/emit_ir
 import ./calcit_runner/color_echo
 
 var runOnce = false
@@ -86,10 +87,12 @@ while true:
       if cliArgs.val == "" or cliArgs.val == "true":
         runOnce = true
         dimEcho "Runner: watching mode disabled."
-    if cliArgs.key == "init-fn" and cliArgs.val != "":
+    elif cliArgs.key == "init-fn" and cliArgs.val != "":
       initFn = some(cliArgs.val)
-    if cliArgs.key == "emit-js":
+    elif cliArgs.key == "emit-js":
       jsMode = true
+    elif cliArgs.key == "emit-ir":
+      irMode = true
   of cmdArgument:
     snapshotFile = cliArgs.key
     incrementFile = cliArgs.key.replace("compact", ".compact-inc")
