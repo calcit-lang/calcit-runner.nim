@@ -90,9 +90,9 @@ proc emitCode(initFn, reloadFn: string): void =
   if reloadPair.len != 2:
     echo "Unknown reloadFn", reloadFn
     raise newException(ValueError, "Unknown reloadFn")
-  preprocessSymbolByPath(initPair[0], initPair[1])
-  preprocessSymbolByPath(reloadPair[0], reloadPair[1])
   try:
+    preprocessSymbolByPath(initPair[0], initPair[1])
+    preprocessSymbolByPath(reloadPair[0], reloadPair[1])
     if jsMode:
       emitJs(programData, initPair[0])
     elif irMode:

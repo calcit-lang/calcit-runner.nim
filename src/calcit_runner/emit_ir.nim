@@ -100,7 +100,7 @@ proc emitIR*(programData: Table[string, ProgramFile], initFn, reloadFn: string):
         }
 
     let fileData = %* {
-      "ns": nsData, "defs": defsData
+      "import": nsData, "defs": defsData
     }
     files[ns] = fileData
 
