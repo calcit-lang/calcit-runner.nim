@@ -69,9 +69,9 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   var bindingBuffer = initTernaryTreeList[CirruData](@[])
 
   if pair.kind != crDataList:
-    raiseEvalError("Expects a list", pair)
+    raiseEvalError("Expects a list in &let", pair)
   if pair.len != 2:
-    raiseEvalError("Expects len =2", pair)
+    raiseEvalError("Expects pair len =2 in &let", pair)
 
   let defName = pair[0]
   let detail = pair[1]

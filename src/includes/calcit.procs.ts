@@ -1289,6 +1289,107 @@ export let starts_DASH_with_QUES_ = (xs: string, y: string): boolean => {
   return xs.startsWith(y);
 };
 
+type CirruEdnFormat = string | CirruEdnFormat[];
+
+export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
+  if (x == null) {
+    return "nil";
+  }
+  if (typeof x === "string") {
+    return `|${x}`;
+  }
+  if (typeof x === "number") {
+    return x.toString();
+  }
+  if (typeof x === "boolean") {
+    return x.toString();
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.toString();
+  }
+  if (x instanceof CrDataSymbol) {
+    return x.toString();
+  }
+  if (x instanceof Array) {
+    return (["[]"] as CirruEdnFormat[]).concat(x.map(to_DASH_cirru_DASH_edn));
+  }
+  if (x instanceof Map) {
+    let buffer: CirruEdnFormat = ["{}"];
+    for (let [k, v] of x) {
+      buffer.push([to_DASH_cirru_DASH_edn(k), to_DASH_cirru_DASH_edn(v)]);
+    }
+    return buffer;
+  }
+  if (x instanceof Set) {
+    let buffer: CirruEdnFormat = ["#{}"];
+    for (let y of x) {
+      buffer.push(to_DASH_cirru_DASH_edn(y));
+    }
+    return buffer;
+  }
+  console.error(x);
+  throw new Error("Unexpected data to to-cirru-edn");
+};
+
+export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
+  if (typeof x === "string") {
+    if (x === "nil") {
+      return null;
+    }
+    if (x === "true") {
+      return true;
+    }
+    if (x === "false") {
+      return false;
+    }
+    if (x == "") {
+      throw new Error("cannot be empty");
+    }
+    if (x[0] === "|" || x[0] === '"') {
+      return x.slice(1);
+    }
+    if (x[0] === ":") {
+      return kwd(x.substr(1));
+    }
+    if (x[0] === "'") {
+      return new CrDataSymbol(x.substr(1));
+    }
+    if (x.match(/(-?)\d+(\.\d*)?/)) {
+      return parseFloat(x);
+    }
+  }
+  if (x instanceof Array) {
+    if (x.length === 0) {
+      throw new Error("Cannot be empty");
+    }
+    if (x[0] === "{}") {
+      let result = new Map<CrDataValue, CrDataValue>();
+      x.slice(1).forEach((pair) => {
+        if (pair instanceof Array && pair.length == 2) {
+          result.set(
+            extract_DASH_cirru_DASH_edn(pair[0]),
+            extract_DASH_cirru_DASH_edn(pair[1])
+          );
+        } else {
+          throw new Error("Expected pairs for map");
+        }
+      });
+      return result;
+    }
+    if (x[0] === "[]") {
+      return x.slice(1).map(extract_DASH_cirru_DASH_edn);
+    }
+    if (x[0] === "#{}") {
+      return new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn));
+    }
+    if (x[0] === "do" && x.length === 2) {
+      return extract_DASH_cirru_DASH_edn(x[1]);
+    }
+  }
+  console.error(x);
+  throw new Error("Unexpected data from cirru-edn");
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;

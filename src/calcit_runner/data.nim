@@ -201,7 +201,7 @@ proc toCirruData*(xs: CirruNode, ns: string): CirruData =
 proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
   var noSpread = true
   for x in xs:
-    if x.kind == crDataSymbol and x.symbolVal == "&":
+    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
       noSpread = false
       break
   if noSpread:
@@ -216,7 +216,7 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
       for y in x:
         args.add y
       spreadMode = false
-    elif x.isSymbol and x.symbolVal == "&":
+    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
       spreadMode = true
     else:
       args.add x
@@ -225,7 +225,7 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
 proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): seq[CirruData] =
   var noSpread = true
   for x in xs:
-    if x.kind == crDataSymbol and x.symbolVal == "&":
+    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
       noSpread = false
       break
   if noSpread:
@@ -244,7 +244,7 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       for y in ys.listVal:
         args.add y
       spreadMode = false
-    elif x.isSymbol and x.symbolVal == "&":
+    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
       spreadMode = true
     else:
       args.add interpret(x, scope, ns)

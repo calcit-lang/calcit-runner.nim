@@ -103,7 +103,11 @@ proc escapeCirruStr*(s: string): string =
     else: result.add(c)
   result.add('"')
 
-let builtInJsProc = toHashSet(["aget", "aset"])
+let builtInJsProc = toHashSet([
+  "aget", "aset",
+  "extract-cirru-edn",
+  "to-cirru-edn",
+])
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "_calcit_."

@@ -275,6 +275,23 @@
             assert= 10 (deref *counted)
             assert= 10 @*counted
 
+        |test-let[] $ quote
+          fn ()
+            log-title "|Testing let[]"
+            when
+              = :nim $ &get-calcit-backend
+              echo $ macroexpand $ quote
+                let[] (a b c & d) ([] 1 2 3 4 5)
+                  echo a
+                  echo b
+                  echo c
+                  echo d
+            let[] (a b c & d) ([] 1 2 3 4 5)
+              assert= 1 a
+              assert= 2 b
+              assert= 3 c
+              assert= ([] 4 5) d
+
         |main! $ quote
           defn main! ()
 
@@ -303,6 +320,7 @@
             test-sort
 
             test-doseq
+            test-let[]
 
             do true
 
