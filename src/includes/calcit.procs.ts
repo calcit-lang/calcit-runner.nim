@@ -216,6 +216,9 @@ export let _AND__STAR_ = (x: number, y: number): number => {
 };
 
 export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
+  if (x === y) {
+    return true;
+  }
   if (x == null) {
     if (y == null) {
       return true;
@@ -403,13 +406,18 @@ export let get = (xs: CrDataValue, k: CrDataValue) => {
   throw new Error("Does not support `get` on this type");
 };
 
+// shallow copy
 let cloneMap = (
   xs: Map<CrDataValue, CrDataValue>
 ): Map<CrDataValue, CrDataValue> => {
   if (!(xs instanceof Map)) {
     throw new Error("Expected a map");
   }
-  return new Map(xs);
+  var result: Map<CrDataValue, CrDataValue> = new Map();
+  for (let [k, v] of xs) {
+    result.set(k, v);
+  }
+  return result;
 };
 
 export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
@@ -921,7 +929,11 @@ export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
   if (!(xs instanceof Set)) {
     throw new Error("Expected a set");
   }
-  return new Set(xs);
+  var result: Set<CrDataValue> = new Set();
+  for (let v of xs) {
+    result.add(v);
+  }
+  return result;
 };
 
 export let _AND_include = (
