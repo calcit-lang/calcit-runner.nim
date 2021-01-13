@@ -834,6 +834,12 @@ export let _AND_merge = (
   a: Map<CrDataValue, CrDataValue>,
   b: Map<CrDataValue, CrDataValue>
 ): Map<CrDataValue, CrDataValue> => {
+  if (a == null) {
+    return b;
+  }
+  if (b == null) {
+    return a;
+  }
   var result = cloneMap(a);
   b.forEach((v, k) => {
     if (

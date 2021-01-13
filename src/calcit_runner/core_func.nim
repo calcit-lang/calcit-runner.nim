@@ -144,7 +144,7 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   of crDataString:
     return CirruData(kind: crDataNumber, numberVal: a.stringVal.len.float)
   else:
-    raiseEvalError("Cannot count data", a)
+    raiseEvalError("Cannot count data of type: " & $a.kind, a)
 
 proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native get", args)
