@@ -1280,6 +1280,17 @@ proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     acc.add y
   CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
 
+proc nativeBlankQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1:
+    raiseEvalError("blank? expects 1 argument", args)
+  let x = args[0]
+  if x.kind == crDataNil:
+    return CirruData(kind: crDataBool, boolVal: true)
+  elif x.kind == crDataString:
+    return CirruData(kind: crDataBool, boolVal: x.stringVal.isEmptyOrWhitespace)
+  else:
+    raiseEvalError("Expected string for blank?", args)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1385,3 +1396,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
   programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
+  programData[coreNs].defs["blank?"] = CirruData(kind: crDataProc, procVal: nativeBlankQuestion)

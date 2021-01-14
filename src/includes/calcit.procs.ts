@@ -1136,7 +1136,7 @@ export let to_DASH_js_DASH_data = (
   if (x instanceof Set) {
     let result = new Set();
     x.forEach((v) => {
-      result.add(to_DASH_js_DASH_data(v), addColon);
+      result.add(to_DASH_js_DASH_data(v, addColon));
     });
     return result;
   }
@@ -1453,6 +1453,17 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
   }
   console.error(x);
   throw new Error("Unexpected data from cirru-edn");
+};
+
+export let blank_QUE_ = (x: string): boolean => {
+  if (x == null) {
+    return true;
+  }
+  if (typeof x === "string") {
+    return x.trim() === "";
+  } else {
+    throw new Error("Expected a string");
+  }
 };
 
 // special procs have to be defined manually
