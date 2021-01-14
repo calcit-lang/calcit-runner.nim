@@ -7,6 +7,7 @@ import tables
 import options
 import strformat
 import algorithm
+import sequtils
 
 import ternary_tree
 
@@ -378,14 +379,16 @@ proc sortByDeps(deps: Table[string, CirruData]): seq[string] =
         depsInfo.incl(k2)
     depsGraph[k] = depsInfo
   # echo depsGraph
-  return defNames.sorted(proc (x, y: string): int =
-    if depsGraph.contains(x) and depsGraph[x].contains(y):
-      return 1
-    elif depsGraph.contains(y) and depsGraph[y].contains(x):
-      return -1
-    else:
-      return 0
-  )
+  for x in defNames.sorted():
+    var inserted = false
+    for idx, y in result:
+      if depsGraph.contains(y) and depsGraph[y].contains(x):
+        result.insert(@[x], idx)
+        inserted = true
+        break
+    if inserted:
+      continue
+    result.add x
 
 proc writeFileIfChanged(filename: string, content: string): bool =
   if fileExists(filename) and readFile(filename) == content:
