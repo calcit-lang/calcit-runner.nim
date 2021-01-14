@@ -87,6 +87,11 @@
             assert= 2
               if-not (> 1 2) 2
 
+            assert-detect identity
+              /= 1 2
+            assert-detect identity
+              not= 1 2
+
         |test-time $ quote
           fn ()
             assert= 1605024000 $ parse-time |2020-11-11

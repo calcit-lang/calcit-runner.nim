@@ -900,3 +900,6 @@
 
         |dbt $ quote
           def dbt dual-balanced-ternary
+
+        |not= $ quote
+          def not= /=
