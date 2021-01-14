@@ -1455,7 +1455,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
   throw new Error("Unexpected data from cirru-edn");
 };
 
-export let blank_QUE_ = (x: string): boolean => {
+export let blank_QUES_ = (x: string): boolean => {
   if (x == null) {
     return true;
   }
