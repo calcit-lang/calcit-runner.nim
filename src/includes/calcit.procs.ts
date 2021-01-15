@@ -181,11 +181,15 @@ export let deref = (x: CrDataAtom): CrDataValue => {
   return a.value;
 };
 
-export let foldl = (
+export let foldl = function (
   f: CrDataFn,
   acc: CrDataValue,
   xs: CrDataValue
-): CrDataValue => {
+): CrDataValue {
+  if (arguments.length !== 3) {
+    throw new Error("foldl takes 3 arguments");
+  }
+
   if (f == null) {
     debugger;
     throw new Error("Expected function for folding");
@@ -277,11 +281,11 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       if (x2.size !== y2.size) {
         return false;
       }
-      for (let k in x2) {
+      for (let [k, v] of x2) {
         if (!y2.has(k)) {
           return false;
         }
-        if (!_AND__EQ_(x2.get(k), y2.get(k))) {
+        if (!_AND__EQ_(v, get(y2, k))) {
           return false;
         }
       }
@@ -372,7 +376,11 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   throw new Error("Does not support contains? on this type");
 };
 
-export let get = (xs: CrDataValue, k: CrDataValue) => {
+export let get = function (xs: CrDataValue, k: CrDataValue) {
+  if (arguments.length !== 2) {
+    throw new Error("get takes 2 arguments");
+  }
+
   if (typeof xs === "string") {
     return xs[0];
   }
@@ -420,7 +428,10 @@ let cloneMap = (
   return result;
 };
 
-export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
+export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
+  if (arguments.length !== 3) {
+    throw new Error("assoc takes 3 arguments");
+  }
   if (xs instanceof Array) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
@@ -461,7 +472,11 @@ export let assoc = (xs: CrDataValue, k: CrDataValue, v: CrDataValue) => {
   throw new Error("Does not support `get` on this type");
 };
 
-export let dissoc = (xs: CrDataValue, k: CrDataValue) => {
+export let dissoc = function (xs: CrDataValue, k: CrDataValue) {
+  if (arguments.length !== 2) {
+    throw new Error("dissoc takes 2 arguments");
+  }
+
   if (xs instanceof Array) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
@@ -533,7 +548,7 @@ export let remove_DASH_watch = (a: CrDataAtom, k: CrDataKeyword): null => {
 export let range = (n: number, m: number, m2: number): number[] => {
   var result: number[] = [];
   if (m2 != null) {
-    // TODO
+    console.warn("TODO range with 3 arguments"); // TODO
   }
   if (m != null) {
     var idx = n;
@@ -905,6 +920,9 @@ export let _AND_merge_DASH_non_DASH_nil = (
 export let to_DASH_pairs = (
   xs: Map<CrDataValue, CrDataValue>
 ): Set<[CrDataValue, CrDataValue]> => {
+  if (!(xs instanceof Map)) {
+    throw new Error("Expected a map");
+  }
   var result: Set<[CrDataValue, CrDataValue]> = new Set();
   xs.forEach((v, k) => {
     result.add([k, v]);
@@ -1072,7 +1090,10 @@ export let re_DASH_find_DASH_all = (re: string, content: string): string[] => {
   return content.match(new RegExp(re, "g"));
 };
 
-export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
+export let to_DASH_js_DASH_data = (
+  x: CrDataValue,
+  addColon: boolean = false
+): any => {
   if (x === true || x === false) {
     return x;
   }
@@ -1083,19 +1104,22 @@ export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
     return x;
   }
   if (x instanceof CrDataKeyword) {
+    if (addColon) {
+      return `:${x.value}`;
+    }
     return x.value;
   }
   if (Array.isArray(x)) {
     var result: any[] = [];
     for (let idx in x) {
-      result.push(to_DASH_js_DASH_data(x[idx]));
+      result.push(to_DASH_js_DASH_data(x[idx]), addColon);
     }
     return result;
   }
   if (x instanceof Map) {
     let result: any = {};
     x.forEach((v, k) => {
-      var key = to_DASH_js_DASH_data(k);
+      var key = to_DASH_js_DASH_data(k, addColon);
       if (typeof key === "string") {
         // ok
       } else if (key instanceof CrDataKeyword) {
@@ -1105,14 +1129,14 @@ export let to_DASH_js_DASH_data = (x: CrDataValue): any => {
       } else {
         throw new Error("Does not support key");
       }
-      result[key] = to_DASH_js_DASH_data(v);
+      result[key] = to_DASH_js_DASH_data(v, addColon);
     });
     return result;
   }
   if (x instanceof Set) {
     let result = new Set();
     x.forEach((v) => {
-      result.add(to_DASH_js_DASH_data(v));
+      result.add(to_DASH_js_DASH_data(v, addColon));
     });
     return result;
   }
@@ -1125,6 +1149,9 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
     return x;
   }
   if (typeof x === "string") {
+    if (x[0] === ":" && x.slice(1).match(/^[\w\d_\?\!\-]+$/)) {
+      return kwd(x.slice(1));
+    }
     return x;
   }
   if (x === true || x === false) {
@@ -1161,8 +1188,11 @@ export let parse_DASH_json = (x: string): CrDataValue => {
   return to_DASH_calcit_DASH_data(JSON.parse(x));
 };
 
-export let stringify_DASH_json = (x: CrDataValue): string => {
-  return JSON.stringify(to_DASH_js_DASH_data(x));
+export let stringify_DASH_json = (
+  x: CrDataValue,
+  addColon: boolean = false
+): string => {
+  return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
 };
 
 export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataValue[] => {
@@ -1423,6 +1453,17 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
   }
   console.error(x);
   throw new Error("Unexpected data from cirru-edn");
+};
+
+export let blank_QUES_ = (x: string): boolean => {
+  if (x == null) {
+    return true;
+  }
+  if (typeof x === "string") {
+    return x.trim() === "";
+  } else {
+    throw new Error("Expected a string");
+  }
 };
 
 // special procs have to be defined manually

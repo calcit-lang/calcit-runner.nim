@@ -107,6 +107,20 @@
             assert= ([] |1 |2 |3) $ re-find-all |\d+ |1a2a3
             assert= ([] |1 |2 |34) $ re-find-all |\d+ |1a2a34
 
+        |test-whitespace $ quote
+          fn ()
+            log-title "|Test blank?"
+
+            assert-detect identity $ blank? |
+            assert-detect identity $ blank? "\""
+            assert-detect identity $ blank? "| "
+            assert-detect identity $ blank? "|  "
+            assert-detect identity $ blank? "|\n"
+            assert-detect identity $ blank? "|\n "
+            assert-detect not $ blank? |1
+            assert-detect not $ blank? "| 1"
+            assert-detect not $ blank? "|1 "
+
         |main! $ quote
           defn main! ()
             log-title "|Testing str"
@@ -126,6 +140,8 @@
             test-char
 
             test-re
+
+            test-whitespace
 
             do true
 

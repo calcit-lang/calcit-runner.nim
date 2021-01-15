@@ -108,6 +108,8 @@ let builtInJsProc = toHashSet([
   "aget", "aset",
   "extract-cirru-edn",
   "to-cirru-edn",
+  "to-js-data",
+  "to-calcit-data",
 ])
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
