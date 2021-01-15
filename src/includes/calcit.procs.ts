@@ -1,3 +1,6 @@
+let inNodeJs =
+  typeof process !== "undefined" && process?.release?.name === "node";
+
 class CrDataKeyword {
   value: string;
   constructor(x: string) {
@@ -1211,9 +1214,9 @@ export let aset = (x: any, name: string, v: any): any => {
 };
 
 export let get_DASH_env = (name: string): string => {
-  if ((globalThis as any)["process"] != null) {
+  if (inNodeJs) {
     // only available for Node.js
-    return (globalThis as any)["process"].env[name];
+    return process.env[name];
   }
   if (typeof URLSearchParams != null) {
     return new URLSearchParams(location.search).get("env");
@@ -1309,15 +1312,15 @@ export let pr_DASH_str = (...args: CrDataValue[]): string => {
 
 // time from app start
 export let cpu_DASH_time = (): number => {
-  if ((globalThis as any).process?.uptime) {
-    return (globalThis as any).process?.uptime();
+  if (inNodeJs) {
+    return process.uptime();
   }
   return performance.now();
 };
 
 export let quit = (): void => {
-  if ((globalThis as any).process != null) {
-    (globalThis as any).process.exit(1);
+  if (inNodeJs) {
+    process.exit(1);
   } else {
     throw new Error("quit()");
   }
