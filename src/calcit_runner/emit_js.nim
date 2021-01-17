@@ -26,7 +26,8 @@ var jsEmitPath* = "js-out"
 var firstCompilation = true # track if it's the first compilation
 
 # TODO mutable way of collect things
-var implicitImports: Table[string, string]
+type ImplicitImportItem = tuple[ns: string, justNs: bool]
+var implicitImports: Table[string, ImplicitImportItem]
 
 proc toJsFileName(ns: string): string =
   ns & ".mjs"
@@ -117,6 +118,16 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   case xs.kind
   of crDataSymbol:
     if xs.symbolVal.hasNsPart():
+      let nsPart = xs.symbolVal.split("/")[0]
+      # TODO ditry code
+      if nsPart != "js":
+        if implicitImports.contains(nsPart):
+          let prev = implicitImports[nsPart]
+          if prev.justNs.not or prev.ns != nsPart:
+            echo implicitImports, " ", xs
+            raiseEvalError("Conflicted implicit ns import", xs)
+        else:
+          implicitImports[nsPart] = (ns: nsPart, justNs: true)
       return xs.symbolVal.escapeVar()
     elif xs.dynamic:
       return "new " & varPrefix & "CrDataSymbol(" & xs.symbolVal.escape() & ")"
@@ -133,20 +144,22 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       # TODO ditry code
       if implicitImports.contains(xs.symbolVal):
         let prev = implicitImports[xs.symbolVal]
-        if prev != xs.ns:
+        if prev.ns != xs.ns:
           echo implicitImports, " ", xs
           raiseEvalError("Conflicted implicit imports, probably via macro", xs)
-      implicitImports[xs.symbolVal] = xs.ns
+      else:
+        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
       return xs.symbolVal.escapeVar()
     elif xs.resolved.isSome():
       # TODO ditry code
       let resolved = xs.resolved.get()
       if implicitImports.contains(xs.symbolVal):
         let prev = implicitImports[xs.symbolVal]
-        if prev != resolved.ns:
+        if prev.ns != resolved.ns:
           echo implicitImports, " ", xs
           raiseEvalError("Conflicted implicit imports", xs)
-      implicitImports[xs.symbolVal] = resolved.ns
+      else:
+        implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
       return xs.symbolVal.escapeVar()
@@ -407,7 +420,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
   for ns, file in programData:
 
     # side-effects, reset tracking state
-    implicitImports = initTable[string, string]()
+    implicitImports = initTable[string, ImplicitImportItem]()
 
     if not firstCompilation:
       let appPkgName = entryNs.split('.')[0]
@@ -432,20 +445,6 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
       importCode = importCode & fmt"{cLine}import * as $calcit from {coreLib};{cLine}"
 
     var defNames: HashSet[string] # multiple parts of scoped defs need to be tracked
-
-    if file.ns.isSome():
-      let importsInfo = file.ns.get()
-      for importName, importRule in importsInfo:
-        let importTarget = if importRule.nsInStr: importRule.ns else: "./" & importRule.ns.toJsFileName()
-        case importRule.kind
-        of importDef:
-          # importCode = importCode & fmt"{cLine}import {cCurlyL}{importName.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
-          discard
-        of importNs:
-          importCode = importCode & fmt"{cLine}import * as {importName.escapeNs} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
-    else:
-      # echo "[WARNING] no imports information for ", ns
-      discard
 
     # tracking top level scope definitions
     for def in file.defs.keys:
@@ -479,11 +478,18 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
     if implicitImports.len > 0 and file.ns.isSome():
       let importsInfo = file.ns.get()
       # echo "imports: ", implicitImports
-      for def, defNs in implicitImports:
+      for def, item in implicitImports:
         # if not importsInfo.contains(def):
         # echo "implicit import ", defNs, "/", def, " in ", ns
-        let importTarget = "./" & defNs.toJsFileName()
-        importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+        if item.justNs:
+          if importsInfo.contains(item.ns).not:
+            raiseEvalError("Unknown import: " & item.ns, CirruData(kind: crDataNil))
+          let importRule = importsInfo[item.ns]
+          let importTarget = if importRule.nsInStr: importRule.ns else: "./" & importRule.ns.toJsFileName()
+          importCode = importCode & fmt"{cLine}import * as {item.ns.escapeNs} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
+        else:
+          let importTarget = "./" & item.ns.toJsFileName()
+          importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {cDbQuote}{importTarget}{cDbQuote};{cLine}"
 
     let wroteNew = writeFileIfChanged(jsFilePath, importCode & cLine & defsCode & cLine & valsCode)
     if wroteNew:
