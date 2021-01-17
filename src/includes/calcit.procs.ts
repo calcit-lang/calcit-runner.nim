@@ -385,11 +385,15 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
   }
 
   if (typeof xs === "string") {
-    return xs[0];
+    if (typeof k === "number") {
+      return xs[k];
+    } else {
+      throw new Error("Expected number index for a string");
+    }
   }
   if (xs instanceof Array) {
     if (typeof k !== "number") {
-      throw new Error("Expected number index for lists");
+      throw new Error("Expected number index for a list");
     }
     return xs[k];
   }
@@ -570,6 +574,9 @@ export let range = (n: number, m: number, m2: number): number[] => {
 };
 
 export let empty_QUES_ = (xs: CrDataValue): boolean => {
+  if (typeof xs == "string") {
+    return xs.length == 0;
+  }
   if (xs instanceof Array) {
     return xs.length == 0;
   }
