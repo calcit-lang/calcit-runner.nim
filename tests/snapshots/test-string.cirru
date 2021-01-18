@@ -32,6 +32,9 @@
             assert= |567 $ substr |0123456789 5 8
             assert= | $ substr |0123456789 10
             assert= | $ substr |0123456789 9 1
+            assert= -1 $ compare-string |a |b
+            assert= 1 $ compare-string |b |a
+            assert= 0 $ compare-string |a |a
 
         |test-contains $ quote
           fn ()

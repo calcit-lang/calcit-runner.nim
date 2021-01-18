@@ -18,6 +18,7 @@ import deques
 
 import ternary_tree
 import cirru_edn
+import cirru_parser
 import dual_balanced_ternary
 
 import ./types
@@ -274,7 +275,9 @@ proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: Ci
     if args[1].kind != crDataBool: raiseEvalError("expects boolean for addColon option", args)
     addColon = args[1].boolVal
 
-  let jsonString = args[0].toJson(addColon).pretty()
+  # let jsonString = args[0].toJson(addColon).pretty()
+  var jsonString: string
+  jsonString.toUgly args[0].toJson(addColon)
   return CirruData(kind: crDataString, stringVal: jsonString)
 
 proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
@@ -750,6 +753,16 @@ proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
     raiseEvalError("parse-cirru-edn requires a string", content)
   let ednData = parseCirruEdn(content.stringVal)
   return ednData.toCirruData(ns, some(scope))
+
+proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1:
+    raiseEvalError("parse-cirru requires a string", args)
+  let content = args[0]
+  if content.kind != crDataString:
+    raiseEvalError("parse-cirru-edn requires a string", content)
+
+  let raw = parseCirru(content.stringVal)
+  return raw.toCirruData(ns)
 
 proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
@@ -1291,6 +1304,15 @@ proc nativeBlankQuestion(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   else:
     raiseEvalError("Expected string for blank?", args)
 
+proc nativeCompareString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2:
+    raiseEvalError("compare-string expects 2 arguments", args)
+  let left = args[0]
+  let right = args[1]
+  if left.kind != crDataString or right.kind != crDataString:
+    raiseEvalError("expects strings to compare", args)
+  return CirruData(kind: crDataNumber, numberVal: cmp(left.stringVal, right.stringVal).float)
+
 # injecting functions to calcit.core directly
 proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
@@ -1343,6 +1365,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["escape"] = CirruData(kind: crDataProc, procVal: nativeEscape)
   programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataProc, procVal: nativeStrConcat)
   programData[coreNs].defs["parse-cirru-edn"] = CirruData(kind: crDataProc, procVal: nativeParseCirruEdn)
+  programData[coreNs].defs["parse-cirru"] = CirruData(kind: crDataProc, procVal: nativeParseCirru)
   programData[coreNs].defs["sqrt"] = CirruData(kind: crDataProc, procVal: nativeSqrt)
   programData[coreNs].defs["ceil"] = CirruData(kind: crDataProc, procVal: nativeCeil)
   programData[coreNs].defs["floor"] = CirruData(kind: crDataProc, procVal: nativeFloor)
@@ -1397,3 +1420,4 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
   programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
   programData[coreNs].defs["blank?"] = CirruData(kind: crDataProc, procVal: nativeBlankQuestion)
+  programData[coreNs].defs["compare-string"] = CirruData(kind: crDataProc, procVal: nativeCompareString)

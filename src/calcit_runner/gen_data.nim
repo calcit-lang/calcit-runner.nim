@@ -62,7 +62,7 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
     CirruData(kind: crDataList, listVal: ys)
   of crEdnSet:
     var ys: seq[CirruData] = @[]
-    for item in xs.listVal:
+    for item in xs.setVal:
       ys.add item.toCirruData(ns, scope)
     CirruData(kind: crDataSet, setVal: toHashSet(ys))
   of crEdnMap:

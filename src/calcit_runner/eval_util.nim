@@ -80,7 +80,7 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
   of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword:
     discard
   else:
-    raiseEvalError("expects a list or a liternal from defmacro", quoted)
+    raiseEvalError("expects a list or a liternal from defmacro, but got: " & $quoted.kind, quoted)
 
   return quoted
 

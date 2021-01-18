@@ -1429,9 +1429,12 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
     if (x[0] === "'") {
       return new CrDataSymbol(x.substr(1));
     }
-    if (x.match(/(-?)\d+(\.\d*)?/)) {
+    if (x.match(/^(-?)\d+(\.\d*$)?/)) {
       return parseFloat(x);
     }
+    // allow things cannot be parsed accepted as raw strings
+    // turned on since Cirru nodes passed from macros uses this
+    return x;
   }
   if (x instanceof Array) {
     if (x.length === 0) {
@@ -1460,6 +1463,12 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
     if (x[0] === "do" && x.length === 2) {
       return extract_DASH_cirru_DASH_edn(x[1]);
     }
+    if (x[0] === "quote") {
+      if (x.length !== 2) {
+        throw new Error("quote expects 1 argument");
+      }
+      return x[1];
+    }
   }
   console.error(x);
   throw new Error("Unexpected data from cirru-edn");
@@ -1474,6 +1483,16 @@ export let blank_QUES_ = (x: string): boolean => {
   } else {
     throw new Error("Expected a string");
   }
+};
+
+export let compare_DASH_string = (x: string, y: string) => {
+  if (x < y) {
+    return -1;
+  }
+  if (x > y) {
+    return 1;
+  }
+  return 0;
 };
 
 // special procs have to be defined manually
