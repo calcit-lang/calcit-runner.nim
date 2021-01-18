@@ -12,6 +12,7 @@ tests/test_expr
 tests/run_calcit
 tests/prof
 tests/gynienic
+tests/large_json
 
 src/*.out
 

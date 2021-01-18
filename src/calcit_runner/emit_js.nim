@@ -2,7 +2,7 @@
 import os
 import sets
 import strutils
-import unicode
+# import unicode
 import tables
 import options
 import strformat
@@ -92,18 +92,36 @@ proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSe
 # based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
 # strutils.escape turns Chinese into longer something "\xE6\xB1\x89",
 # so... this is a simplified one according to Cirru Parser
-proc escapeCirruStr*(s: string): string =
+
+proc escapeCirruStr*(s: string, prefix = "\"", suffix = "\""): string =
   result = newStringOfCap(s.len + s.len shr 2)
-  result.add('"')
-  for idx in 0..<s.runeLen():
-    let c = $s.runeAtPos(idx)
+  result.add(prefix)
+  for c in items(s):
     case c
-    of "\\": result.add("\\\\")
-    of "\"": result.add("\\\"")
-    of "\t": result.add("\\t")
-    of "\n": result.add("\\n")
-    else: result.add(c)
-  result.add('"')
+    # disabled since not sure if useful for Cirru
+    # of '\0'..'\31', '\127'..'\255':
+    #   add(result, "\\x")
+    #   add(result, toHex(ord(c), 2))
+    of '\\': add(result, "\\\\")
+    of '\"': add(result, "\\\"")
+    of '\n': add(result, "\\n")
+    of '\t': add(result, "\\t")
+    else: add(result, c)
+  add(result, suffix)
+
+# TODO slow rune version
+# proc escapeCirruStr*(s: string): string =
+#   result = newStringOfCap(s.len + s.len shr 2)
+#   result.add('"')
+#   for idx in 0..<s.runeLen():
+#     let c = s.runeAtPos(idx)
+#     case c
+#     of Rune('\\'.uint): result.add("\\\\")
+#     of Rune('"'.uint): result.add("\\\"")
+#     of Rune('\t'.uint): result.add("\\t")
+#     of Rune('\n'.uint): result.add("\\n")
+#     else: result.add(c)
+  # result.add('"')
 
 let builtInJsProc = toHashSet([
   "aget", "aset",
