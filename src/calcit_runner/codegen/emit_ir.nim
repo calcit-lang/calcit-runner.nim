@@ -6,7 +6,7 @@ import tables
 import json
 import ternary_tree
 
-import ./types
+import ../types
 
 var irMode* = false
 var emitPath = "js-out"

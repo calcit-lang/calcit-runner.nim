@@ -11,12 +11,13 @@ import ternary_tree
 
 import ./types
 import ./data
-import ./errors
 import ./loader
-import ./stack
 import ./preprocess
-import ./gen_code
-import ./eval_util
+
+import ./util/errors
+import ./util/stack
+import ./eval/arguments
+import ./eval/expression
 
 var programCode*: Table[string, FileSource]
 var programData*: Table[string, ProgramFile]

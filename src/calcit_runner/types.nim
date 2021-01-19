@@ -176,14 +176,6 @@ proc escapeString(x: string): string =
   else:
     "|" & x
 
-when defined(js):
-  # cheat compiler for js backend since those functions are missing
-  # https://github.com/nim-lang/Nim/blob/version-1-4/lib/system.nim#L2366-L2372
-  proc rawProc*[T: proc](x: T): pointer {.noSideEffect, inline.} =
-    discard
-  proc rawEnv*[T: proc](x: T): pointer {.noSideEffect, inline.} =
-    discard
-
 proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
   case val.kind:
     of crDataBool:

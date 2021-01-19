@@ -11,9 +11,9 @@ import sequtils
 
 import ternary_tree
 
-import ./types
-import ./errors
-import ./str_util
+import ../types
+import ../util/errors
+import ../util/str_util
 
 const cLine = "\n"
 const cCurlyL = "{"

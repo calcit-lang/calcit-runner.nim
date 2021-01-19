@@ -2,6 +2,7 @@
 import unittest
 
 import ./calcit_runner
+import ./calcit_runner/data/gen_data
 
 test "Basic add":
   check (runProgram("tests/snapshots/add.cirru") == crData(3))

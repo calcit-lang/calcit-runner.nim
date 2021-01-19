@@ -4,10 +4,10 @@ import parseopt
 import options
 
 import ./calcit_runner
-import ./calcit_runner/emit_js
-import ./calcit_runner/emit_ir
+import ./calcit_runner/codegen/emit_js
+import ./calcit_runner/codegen/emit_ir
 import ./calcit_runner/version
-import ./calcit_runner/color_echo
+import ./calcit_runner/util/color_echo
 
 var evalOnce = false
 var evalOnceCode: string

@@ -1,6 +1,5 @@
 
 import json
-import lists
 import sets
 import tables
 
@@ -9,8 +8,8 @@ import dual_balanced_ternary
 import cirru_edn
 import cirru_parser
 
-import ./types
-import ./errors
+import ../types
+import ../util/errors
 
 proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   case x.kind:
@@ -97,72 +96,3 @@ proc jsonToCirruData*(v: JsonNode): CirruData =
       let value = jsonToCirruData(value)
       table[keyContent] = value
     return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
-
-proc toCirruNode*(x: CirruData): CirruNode =
-  case x.kind
-  of crDataNil:
-    return CirruNode(kind: cirruString, text: "nil")
-  of crDataBool:
-    return CirruNode(kind: cirruString, text: $x.boolVal)
-  of crDataNumber:
-    return CirruNode(kind: cirruString, text: $x.numberVal)
-  of crDataString:
-    return CirruNode(kind: cirruString, text: "|" & x.stringVal)
-  of crDataKeyword:
-    return CirruNode(kind: cirruString, text: ":" & x.keywordVal)
-  of crDataList:
-    var elems: DoublyLinkedList[CirruNode]
-    for child in x.listVal:
-      elems.append toCirruNode(child)
-    return CirruNode(kind: cirruSeq, list: elems)
-
-  of crDataSymbol:
-    # not implement symbol in cirru-edn
-    return CirruNode(kind: cirruString, text: x.symbolVal)
-  of crDataTernary:
-    return CirruNode(kind: cirruString, text: $x.ternaryVal)
-
-  of crDataSet, crDataMap, crDataFn, crDataProc, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
-    raiseEvalError("Unexpect set to convert to CirruNode: ", x)
-  of crDataThunk:
-    raiseEvalError("must calculate thunk before converting", x)
-
-proc toEdn*(x: CirruData): CirruEdnValue =
-  case x.kind:
-  of crDataNil:
-    return CirruEdnValue(kind: crEdnNil)
-  of crDataBool:
-    return CirruEdnValue(kind: crEdnBool, boolVal: x.boolVal)
-  of crDataNumber:
-    return CirruEdnValue(kind: crEdnNumber, numberVal: x.numberVal)
-  of crDataString:
-    return CirruEdnValue(kind: crEdnString, stringVal: x.stringVal)
-  of crDataKeyword:
-    return CirruEdnValue(kind: crEdnKeyword, keywordVal: x.keywordVal)
-  of crDataList:
-    var elems: seq[CirruEdnValue] = @[]
-    for i, child in x.listVal:
-      elems.add toEdn(child)
-    return CirruEdnValue(kind: crEdnVector, vectorVal: elems)
-  of crDataSet:
-    var elems: HashSet[CirruEdnValue]
-    for child in x.setVal.items:
-      elems.incl toEdn(child)
-    return CirruEdnValue(kind: crEdnSet, setVal: elems)
-  of crDataMap:
-    var fields: Table[CirruEdnValue, CirruEdnValue]
-    for k, v in x.mapVal:
-      fields[toEdn(k)] = toEdn(v)
-    return CirruEdnValue(kind: crEdnMap, mapVal: fields)
-
-  of crDataSymbol:
-    # not implement symbol in cirru-edn
-    return CirruEdnValue(kind: crEdnString, stringVal: x.symbolVal)
-
-  of crDataTernary: return CirruEdnValue(kind: crEdnString, stringVal: $x.ternaryVal)
-
-  of crDataProc, crDataFn, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
-    return CirruEdnValue(kind: crEdnString, stringVal: "<<" & $x.kind & ">>\n" & $x)
-
-  of crDataThunk:
-    raiseEvalError("must calculate thunk before converting", x)

@@ -23,15 +23,18 @@ import dual_balanced_ternary
 
 import ./types
 import ./data
-import ./errors
-import ./to_json
-import ./gen_data
-import ./gen_code
-import ./eval_util
+import ./util/errors
+import ./util/stack
+import ./codegen/gen_code
+
+import ./data/to_json
+import ./data/to_edn
+import ./data/to_cirru
+
 import ./evaluate
-import ./atoms
-import ./stack
-import ./event_loop
+import ./eval/arguments
+import ./eval/expression
+import ./eval/atoms
 
 # init generator for rand
 randomize()
@@ -1268,17 +1271,6 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     ])))
   return CirruData(kind: crDataList, listVal: xs)
 
-proc nativeTimeoutCall(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: raiseEvalError("timeout-call expects 2 arguments", args)
-  let duration = args[0]
-  if duration.kind != crDataNumber: raiseEvalError("expects number value for timeout", args)
-  let cb = args[1]
-  if cb.kind != crDataFn and cb.kind != crDataProc: raiseEvalError("expects func value for timeout-call", args)
-
-  let taskId = setupTimeoutTask(duration.numberVal.int, cb, ns)
-
-  return CirruData(kind: crDataNumber, numberVal: taskId.float)
-
 proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
 
@@ -1416,7 +1408,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["re-find-all"] = CirruData(kind: crDataProc, procVal: nativeReFindAll)
   programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
-  programData[coreNs].defs["timeout-call"] = CirruData(kind: crDataProc, procVal: nativeTimeoutCall)
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
   programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
   programData[coreNs].defs["blank?"] = CirruData(kind: crDataProc, procVal: nativeBlankQuestion)

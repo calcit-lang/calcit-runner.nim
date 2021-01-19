@@ -15,19 +15,20 @@ import ternary_tree
 import calcit_runner/types
 import calcit_runner/core_syntax
 import calcit_runner/core_func
-import calcit_runner/core_abstract
-import calcit_runner/errors
+import calcit_runner/util/errors
 import calcit_runner/loader
-import calcit_runner/stack
-import calcit_runner/gen_data
+import calcit_runner/util/stack
 import calcit_runner/evaluate
-import calcit_runner/eval_util
-import calcit_runner/gen_code
-import calcit_runner/emit_js
-import calcit_runner/emit_ir
-import calcit_runner/color_echo
+import calcit_runner/eval/arguments
+import calcit_runner/codegen/gen_code
+import calcit_runner/codegen/emit_js
+import calcit_runner/codegen/emit_ir
+import calcit_runner/util/color_echo
+import calcit_runner/data/to_edn
 
-export CirruData, CirruDataKind, `==`, crData
+export CirruData, CirruDataKind, `==`
+
+const coreSource = staticRead"./includes/calcit-core.cirru"
 
 # slots for dynamic registering GUI functions
 var onLoadPluginProcs: Table[string, FnInData]
@@ -64,6 +65,19 @@ proc displayErrorMessage(message: string) =
   let def = "on-error"
   if programCode.hasKey(ns) and programCode[ns].defs.hasKey(def):
     discard evaluateDefCode(ns, def, CirruData(kind: crDataString, stringVal: message), false)
+
+proc loadCoreFuncs*(programCode: var Table[string, FileSource]) =
+  let initialData = parseCirruEdn coreSource
+
+  if initialData.kind != crEdnMap: raise newException(ValueError, "expects a map from calcit-core.cirru")
+  let files = initialData.get(genCrEdnKeyword("files"))
+
+  if files.kind != crEdnMap: raise newException(ValueError, "expects a map in :files of calcit-core.cirru")
+  for k, v in files.mapVal:
+    if k.kind != crEdnString:
+      raise newException(ValueError, "expects a string")
+    for defName, defCode in extractFile(v, k.stringVal).defs:
+      programCode[k.stringVal].defs[defName] = defCode
 
 proc runCode(ns: string, def: string, argData: CirruData, dropArg: bool = false): CirruData =
   try:

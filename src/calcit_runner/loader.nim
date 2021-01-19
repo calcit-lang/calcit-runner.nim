@@ -9,8 +9,10 @@ import cirru_parser
 
 import ./types
 import ./data
-import ./errors
-import ./color_echo
+import ./data/to_cirru
+import ./data/to_edn
+import ./util/errors
+import ./util/color_echo
 
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:

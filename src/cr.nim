@@ -9,13 +9,13 @@ import tables
 import cirru_edn
 import edn_paint
 
-import ./calcit_runner/canvas
 import ./calcit_runner/watcher
 import ./calcit_runner/version
-import ./calcit_runner/event_loop
-import ./calcit_runner/emit_js
-import ./calcit_runner/emit_ir
-import ./calcit_runner/color_echo
+import ./calcit_runner/injection/canvas
+import ./calcit_runner/injection/event_loop
+import ./calcit_runner/codegen/emit_js
+import ./calcit_runner/codegen/emit_ir
+import ./calcit_runner/util/color_echo
 
 var runOnce = false
 var evalOnce = false
@@ -25,6 +25,7 @@ var initFn = none(string)
 registerCoreProc("init-canvas", nativeInitCanvas)
 registerCoreProc("draw-canvas", nativeDrawCanvas)
 registerCoreProc("draw-error-message", nativeDrawErrorMessage)
+registerCoreProc("timeout-call", nativeTimeoutCall)
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =

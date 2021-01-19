@@ -4,8 +4,8 @@ import sequtils
 
 import ternary_tree
 
-import ./types
-import ./data
+import ../types
+import ../data
 
 var genSymIndex* = 0
 
@@ -42,23 +42,6 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   else:
     echo "Unexpected type: ", v
     raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
-
-proc checkExprStructure*(exprList: CirruData): bool =
-  case exprList.kind
-  of crDataSymbol: return true
-  of crDataNumber: return true
-  of crDataBool: return true
-  of crDataNil: return true
-  of crDataString: return true
-  of crDataKeyword: return true
-  of crDataTernary: return true
-  of crDataList:
-    for item in exprList:
-      if not checkExprStructure(item):
-        return false
-    return true
-  else:
-    return false
 
 proc shortenCode*(code: string, n: int): string =
   if code.len > n:
