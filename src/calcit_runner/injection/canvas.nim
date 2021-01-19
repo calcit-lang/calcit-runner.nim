@@ -5,9 +5,9 @@ import edn_paint
 import cirru_edn
 import ternary_tree
 
-import ./types
-import ./errors
-import ./to_json
+import ../types
+import ../util/errors
+import ../data/to_edn
 
 proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len == 0:

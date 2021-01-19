@@ -4,10 +4,10 @@ import tables
 
 import ternary_tree
 
-import ./types
-import ./errors
-import ./eval_util
-import ./evaluate
+import ../types
+import ../util/errors
+import ../eval/arguments
+import ../evaluate
 
 type EventTaskParams* = tuple[id: int, params: seq[CirruData]]
 type EventTaskCallback* = tuple[ns: string, cb: CirruData]
@@ -61,3 +61,14 @@ proc setupTimeoutTask*(duration: int, f: CirruData, ns: string): int =
   createThread(eventLoopTasks[taskId], timeoutCallTask, info)
 
   return taskId
+
+proc nativeTimeoutCall*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("timeout-call expects 2 arguments", args)
+  let duration = args[0]
+  if duration.kind != crDataNumber: raiseEvalError("expects number value for timeout", args)
+  let cb = args[1]
+  if cb.kind != crDataFn and cb.kind != crDataProc: raiseEvalError("expects func value for timeout-call", args)
+
+  let taskId = setupTimeoutTask(duration.numberVal.int, cb, ns)
+
+  return CirruData(kind: crDataNumber, numberVal: taskId.float)

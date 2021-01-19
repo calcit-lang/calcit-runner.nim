@@ -2,7 +2,7 @@
 import tables
 import options
 
-import ./types
+import ../types
 
 type AtomDetails = object
   value*: CirruData

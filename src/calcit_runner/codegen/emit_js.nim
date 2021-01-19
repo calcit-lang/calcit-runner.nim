@@ -11,9 +11,9 @@ import sequtils
 
 import ternary_tree
 
-import ./types
-import ./errors
-import ./str_util
+import ../types
+import ../util/errors
+import ../util/str_util
 
 const cLine = "\n"
 const cCurlyL = "{"
@@ -88,40 +88,6 @@ proc escapeNs(name: string): string =
 # handle recursion
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
 proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string
-
-# based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
-# strutils.escape turns Chinese into longer something "\xE6\xB1\x89",
-# so... this is a simplified one according to Cirru Parser
-
-proc escapeCirruStr*(s: string, prefix = "\"", suffix = "\""): string =
-  result = newStringOfCap(s.len + s.len shr 2)
-  result.add(prefix)
-  for c in items(s):
-    case c
-    # disabled since not sure if useful for Cirru
-    # of '\0'..'\31', '\127'..'\255':
-    #   add(result, "\\x")
-    #   add(result, toHex(ord(c), 2))
-    of '\\': add(result, "\\\\")
-    of '\"': add(result, "\\\"")
-    of '\n': add(result, "\\n")
-    of '\t': add(result, "\\t")
-    else: add(result, c)
-  add(result, suffix)
-
-# TODO slow rune version
-# proc escapeCirruStr*(s: string): string =
-#   result = newStringOfCap(s.len + s.len shr 2)
-#   result.add('"')
-#   for idx in 0..<s.runeLen():
-#     let c = s.runeAtPos(idx)
-#     case c
-#     of Rune('\\'.uint): result.add("\\\\")
-#     of Rune('"'.uint): result.add("\\\"")
-#     of Rune('\t'.uint): result.add("\\t")
-#     of Rune('\n'.uint): result.add("\\n")
-#     else: result.add(c)
-  # result.add('"')
 
 let builtInJsProc = toHashSet([
   "aget", "aset",

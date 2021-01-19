@@ -5,7 +5,7 @@ import ternary_tree
 
 import ./types
 import ./data
-import ./errors
+import ./util/errors
 
 type
   FnPreprocess = proc(code: CirruData, localDefs: Hashset[string], ns: string): CirruData

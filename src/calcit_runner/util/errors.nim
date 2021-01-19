@@ -2,7 +2,7 @@
 import cirru_parser
 import ternary_tree
 
-import ./types
+import ../types
 
 type CirruEvalError* = ref object of ValueError
   code*: CirruData

@@ -6,8 +6,9 @@ import algorithm
 import ternary_tree
 import cirru_edn
 
-import ./types
-import ./to_json
+import ../types
+import ../data/to_edn
+import ../data/to_cirru
 
 type StackInfo* = object
   ns*: string

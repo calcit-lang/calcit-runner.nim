@@ -4,9 +4,61 @@ import strformat
 import ternary_tree
 import cirru_edn
 
-import ./types
-import ./data
-import ./errors
+import ../types
+import ../data
+import ../util/errors
+
+proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
+  var noSpread = true
+  for x in xs:
+    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
+      noSpread = false
+      break
+  if noSpread:
+    return xs
+
+  var args: seq[CirruData]
+  var spreadMode = false
+  for x in xs:
+    if spreadMode:
+      if x.isList.not:
+        raiseEvalError("Spread mode expects a list", xs)
+      for y in x:
+        args.add y
+      spreadMode = false
+    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
+      spreadMode = true
+    else:
+      args.add x
+  args
+
+proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): seq[CirruData] =
+  var noSpread = true
+  for x in xs:
+    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
+      noSpread = false
+      break
+  if noSpread:
+    var args = newSeq[CirruData](xs.len)
+    for idx, x in xs:
+      args[idx] = interpret(x, scope, ns)
+    return args
+
+  var args: seq[CirruData] = @[]
+  var spreadMode = false
+  for x in xs:
+    if spreadMode:
+      let ys = interpret(x, scope, ns)
+      if not ys.isList:
+        raiseEvalError("Spread mode expects a list", xs)
+      for y in ys.listVal:
+        args.add y
+      spreadMode = false
+    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
+      spreadMode = true
+    else:
+      args.add interpret(x, scope, ns)
+  args
 
 proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[CirruData]): CirruDataScope =
   var argsScope: CirruDataScope
@@ -83,15 +135,3 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
     raiseEvalError("expects a list or a liternal from defmacro, but got: " & $quoted.kind, quoted)
 
   return quoted
-
-# code of functions and macros
-proc isADefinition*(code: CirruData): bool =
-  if code.kind != crDataList:
-    return false
-  if code.listVal.len == 0:
-    raiseEvalError("expects some code other than empty", code)
-  if code.listVal[0].kind == crDataSymbol:
-    let text = code.listVal[0].symbolVal
-    if text == "defn" or text == "defmacro":
-      return true
-  return false

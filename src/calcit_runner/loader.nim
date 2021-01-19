@@ -9,15 +9,17 @@ import cirru_parser
 
 import ./types
 import ./data
-import ./errors
-import ./color_echo
+import ./data/to_cirru
+import ./data/to_edn
+import ./util/errors
+import ./util/color_echo
 
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:
     echo "current node: ", v.kind, " ", v
     raise newException(ValueError, "expected quoted cirru node")
 
-  return v.quotedVal.toCirruData(ns)
+  return v.quotedVal.nodesToCirruData(ns)
 
 proc extractDefs(defs: CirruEdnValue, ns: string): Table[string, CirruData] =
   result = initTable[string, CirruData]()
@@ -270,4 +272,4 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
 
 proc parseEvalMain*(code: string, ns: string): CirruData =
   let tree = parseCirru(code)
-  tree.toCirruData(ns)
+  tree.nodesToCirruData(ns)

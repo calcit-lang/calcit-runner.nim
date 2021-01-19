@@ -6,7 +6,6 @@ import sequtils
 import math
 import strutils
 import json
-import strformat
 
 import cirru_parser
 import cirru_edn
@@ -14,8 +13,8 @@ import ternary_tree
 import dual_balanced_ternary
 
 import ./types
-import ./errors
-import ./str_util
+import ./util/errors
+import ./util/str_util
 
 proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
 proc isList*(x: CirruData): bool = x.kind == crDataList
@@ -188,74 +187,3 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     ]))
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
-
-proc toCirruData*(xs: CirruNode, ns: string): CirruData =
-  if xs.kind == cirruString:
-    parseLiteral(xs.text, ns)
-  else:
-    var list = initTernaryTreeList[CirruData](@[])
-    for x in xs:
-      list = list.append x.toCirruData(ns)
-    CirruData(kind: crDataList, listVal: list)
-
-proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
-  var noSpread = true
-  for x in xs:
-    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
-      noSpread = false
-      break
-  if noSpread:
-    return xs
-
-  var args: seq[CirruData]
-  var spreadMode = false
-  for x in xs:
-    if spreadMode:
-      if x.isList.not:
-        raiseEvalError("Spread mode expects a list", xs)
-      for y in x:
-        args.add y
-      spreadMode = false
-    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
-      spreadMode = true
-    else:
-      args.add x
-  args
-
-proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): seq[CirruData] =
-  var noSpread = true
-  for x in xs:
-    if x.kind == crDataSymbol and x.symbolVal == "&" and not x.dynamic:
-      noSpread = false
-      break
-  if noSpread:
-    var args = newSeq[CirruData](xs.len)
-    for idx, x in xs:
-      args[idx] = interpret(x, scope, ns)
-    return args
-
-  var args: seq[CirruData] = @[]
-  var spreadMode = false
-  for x in xs:
-    if spreadMode:
-      let ys = interpret(x, scope, ns)
-      if not ys.isList:
-        raiseEvalError("Spread mode expects a list", xs)
-      for y in ys.listVal:
-        args.add y
-      spreadMode = false
-    elif x.isSymbol and x.symbolVal == "&" and not x.dynamic:
-      spreadMode = true
-    else:
-      args.add interpret(x, scope, ns)
-  args
-
-proc getKwd*(x: CirruEdnValue, k: string): CirruEdnValue =
-  if x.kind != crEdnMap:
-    raise newException(ValueError, "getKwd expects a map")
-  x.get(genCrEdnKeyword(k))
-
-proc containsKwd*(x: CirruEdnValue, k: string): bool =
-  if x.kind != crEdnMap:
-    raise newException(ValueError, "containsKwd expects a map")
-  x.contains(genCrEdnKeyword(k))

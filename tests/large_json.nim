@@ -3,7 +3,7 @@ import nimprof
 import times
 
 import ./calcit_runner
-import ./calcit_runner/emit_js
+import ./calcit_runner/codegen/emit_js
 
 jsMode = true
 
