@@ -9,16 +9,16 @@ import ./data
 
 var genSymIndex* = 0
 
-proc toCirruData(x: string, ns: string): CirruData =
+proc genCirruData(x: string, ns: string): CirruData =
   return parseLiteral(x, ns)
 
-proc toCirruData(x: int): CirruData =
+proc genCirruData(x: int): CirruData =
   CirruData(kind: crDataNumber, numberVal: x.float)
 
-proc toCirruData(x: float): CirruData =
+proc genCirruData(x: float): CirruData =
   CirruData(kind: crDataNumber, numberVal: x)
 
-proc toCirruData(xs: varargs[CirruData]): CirruData =
+proc genCirruData(xs: varargs[CirruData]): CirruData =
   var args: seq[CirruData]
   for x in xs:
     args.add x

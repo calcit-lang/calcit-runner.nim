@@ -66,7 +66,7 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
     raiseEvalError("must calculate thunk before to json", x)
 
 # notice that JSON does not have keywords or some other types
-proc toCirruData*(v: JsonNode): CirruData =
+proc jsonToCirruData*(v: JsonNode): CirruData =
   case v.kind
   of JString:
     if v.str.len > 0 and v.str[0] == ':':
@@ -84,7 +84,7 @@ proc toCirruData*(v: JsonNode): CirruData =
   of JArray:
     var arr = initTernaryTreeList[CirruData](@[])
     for v in v.elems:
-      arr = arr.append toCirruData(v)
+      arr = arr.append jsonToCirruData(v)
     return CirruData(kind: crDataList, listVal: arr)
   of JObject:
     var table = initTable[CirruData, CirruData]()
@@ -94,7 +94,7 @@ proc toCirruData*(v: JsonNode): CirruData =
           CirruData(kind: crDataKeyword, keywordVal: loadKeyword(key[1..^1]))
         else:
           CirruData(kind: crDataString, stringVal: key)
-      let value = toCirruData(value)
+      let value = jsonToCirruData(value)
       table[keyContent] = value
     return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(table))
 

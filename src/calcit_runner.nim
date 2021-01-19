@@ -173,7 +173,7 @@ proc runEventListener*(event: CirruEdnValue) =
     echo "Warning: " & ns & "/" & def & "does not exist"
     return
   try:
-    discard runCode(ns, def, event.toCirruData(ns, none(CirruDataScope)))
+    discard runCode(ns, def, event.ednToCirruData(ns, none(CirruDataScope)))
 
   except ValueError as e:
     coloredEcho fgRed, "Failed to handle event: ", e.msg

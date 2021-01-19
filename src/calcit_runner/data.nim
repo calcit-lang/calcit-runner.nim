@@ -189,13 +189,23 @@ proc parseLiteral*(token: string, ns: string): CirruData =
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
 
-proc toCirruData*(xs: CirruNode, ns: string): CirruData =
+proc nodesToCirruData*(xs: CirruNode, ns: string): CirruData =
   if xs.kind == cirruString:
     parseLiteral(xs.text, ns)
   else:
     var list = initTernaryTreeList[CirruData](@[])
     for x in xs:
-      list = list.append x.toCirruData(ns)
+      list = list.append x.nodesToCirruData(ns)
+    CirruData(kind: crDataList, listVal: list)
+
+# nodes using bare string
+proc toCirruNodesData*(xs: CirruNode): CirruData =
+  if xs.kind == cirruString:
+    CirruData(kind: crDataString, stringVal: xs.text)
+  else:
+    var list = initTernaryTreeList[CirruData](@[])
+    for x in xs:
+      list = list.append x.toCirruNodesData()
     CirruData(kind: crDataList, listVal: list)
 
 proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =

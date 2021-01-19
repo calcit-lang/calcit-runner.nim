@@ -261,7 +261,7 @@ proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     raiseEvalError("parse-json requires a string", content)
   try:
     let jsonData = parseJson(content.stringVal)
-    return jsonData.toCirruData()
+    return jsonData.jsonToCirruData()
   except JsonParsingError:
     echo "Failed to parse JSON", content
     raiseEvalError("Failed to parse file", args[0])
@@ -735,7 +735,7 @@ proc nativeEscape(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   let item = args[0]
   if not item.isString:
     raiseEvalError("escape expects a string", args)
-  return CirruData(kind: crDataString, stringVal: item.stringVal.escape)
+  return CirruData(kind: crDataString, stringVal: item.stringVal.escapeCirruStr)
 
 proc nativeStrConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
@@ -752,7 +752,7 @@ proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   if content.kind != crDataString:
     raiseEvalError("parse-cirru-edn requires a string", content)
   let ednData = parseCirruEdn(content.stringVal)
-  return ednData.toCirruData(ns, some(scope))
+  return ednData.ednToCirruData(ns, some(scope))
 
 proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -762,7 +762,7 @@ proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("parse-cirru-edn requires a string", content)
 
   let raw = parseCirru(content.stringVal)
-  return raw.toCirruData(ns)
+  return raw.toCirruNodesData()
 
 proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)

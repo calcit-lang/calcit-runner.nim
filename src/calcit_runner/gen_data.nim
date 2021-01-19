@@ -43,7 +43,7 @@ proc crData*(xs: HashSet[CirruData]): CirruData =
 proc crData*(xs: Table[CirruData, CirruData]): CirruData =
   CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(xs))
 
-proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
+proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
   case xs.kind
   of crEdnNil: CirruData(kind: crDataNil)
   of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
@@ -53,21 +53,21 @@ proc toCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]):
   of crEdnVector:
     var ys = initTernaryTreeList[CirruData](@[])
     for item in xs.vectorVal:
-      ys = ys.append item.toCirruData(ns, scope)
+      ys = ys.append item.ednToCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: ys)
   of crEdnList:
     var ys = initTernaryTreeList[CirruData](@[])
     for item in xs.listVal:
-      ys = ys.append item.toCirruData(ns, scope)
+      ys = ys.append item.ednToCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: ys)
   of crEdnSet:
     var ys: seq[CirruData] = @[]
     for item in xs.setVal:
-      ys.add item.toCirruData(ns, scope)
+      ys.add item.ednToCirruData(ns, scope)
     CirruData(kind: crDataSet, setVal: toHashSet(ys))
   of crEdnMap:
     var ys: Table[CirruData, CirruData]
     for key, value in xs.mapVal:
-      ys[key.toCirruData(ns, scope)] = value.toCirruData(ns, scope)
+      ys[key.ednToCirruData(ns, scope)] = value.ednToCirruData(ns, scope)
     CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
-  of crEdnQuotedCirru: xs.quotedVal.toCirruData(ns)
+  of crEdnQuotedCirru: xs.quotedVal.nodesToCirruData(ns)
