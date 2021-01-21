@@ -24,5 +24,5 @@ jobs:
         && ./node_modules/.bin/tsc
         && cd ../../
         && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
-        && cp -v example/main.mjs js-out/ && node js-out/main.mjs
-
+        && cp -v example/main.mjs js-out/
+        && cd js-out/ && yarn add @calcit/ternary-tree && node main.mjs
