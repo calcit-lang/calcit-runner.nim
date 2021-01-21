@@ -1590,3 +1590,26 @@ overwriteHashGenerator(hashFunction);
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
+
+let placeholder = (...xs: []) => {
+  /* placeholder */
+};
+
+// TODO these functions are not used by calcit-js, but added to fix missing imports
+export let _AND_reset_DASH_gensym_DASH_index_BANG_ = placeholder;
+export let assoc_DASH_after = placeholder;
+export let assoc_DASH_before = placeholder;
+export let dbt_DASH__GT_point = placeholder;
+export let dbt_DASH_digits = placeholder;
+export let dual_DASH_balanced_DASH_ternary = placeholder;
+export let escape = placeholder;
+export let format_DASH_time = placeholder;
+export let gensym = placeholder;
+export let macroexpand = placeholder;
+export let macroexpand_DASH_all = placeholder;
+export let now_BANG_ = placeholder;
+export let parse_DASH_cirru = placeholder;
+export let parse_DASH_cirru_DASH_edn = placeholder;
+export let parse_DASH_time = placeholder;
+export let read_DASH_file = placeholder;
+export let write_DASH_file = placeholder;
