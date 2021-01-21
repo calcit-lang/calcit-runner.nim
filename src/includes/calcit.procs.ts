@@ -16,6 +16,10 @@ import {
   contains,
   listItems,
   dissocList,
+  Hash,
+  overwriteHashGenerator,
+  valueHash,
+  mergeValueHash,
 } from "@calcit/ternary-tree";
 
 import * as ternaryTree from "@calcit/ternary-tree";
@@ -244,7 +248,7 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   throw new Error(`Unknown data ${x}`);
 };
 
-export let print = (...xs: string[]): void => {
+export let print = (...xs: CrDataValue[]): void => {
   // TODO stringify each values
   console.log(xs.map((x) => toString(x, false)).join(" "));
 };
@@ -526,21 +530,6 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
   throw new Error("Does not support `get` on this type");
 };
 
-// TODO
-// shallow copy
-let cloneMap = (
-  xs: Map<CrDataValue, CrDataValue>
-): Map<CrDataValue, CrDataValue> => {
-  if (!(xs instanceof Map)) {
-    throw new Error("Expected a map");
-  }
-  var result: Map<CrDataValue, CrDataValue> = new Map();
-  for (let [k, v] of xs) {
-    result.set(k, v);
-  }
-  return result;
-};
-
 export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
   if (arguments.length !== 3) {
     throw new Error("assoc takes 3 arguments");
@@ -687,6 +676,9 @@ export let first = (xs: CrDataValue): CrDataValue => {
     return null;
   }
   if (xs instanceof CrDataList) {
+    if (xs.isEmpty()) {
+      return null;
+    }
     return xs.first();
   }
   if (typeof xs === "string") {
@@ -752,18 +744,6 @@ export let not = (x: boolean): boolean => {
   return !x;
 };
 
-// TODO
-let cloneArray = (xs: CrDataValue[]): CrDataValue[] => {
-  if (!(xs instanceof Array)) {
-    throw new Error("Expected an array");
-  }
-  let ys: CrDataValue[] = new Array(xs.length);
-  for (let idx in xs) {
-    ys[idx] = xs[idx];
-  }
-  return ys;
-};
-
 export let prepend = (xs: CrDataValue, v: CrDataValue): CrDataList => {
   if (!(xs instanceof CrDataList)) {
     throw new Error("Expected array");
@@ -780,6 +760,9 @@ export let append = (xs: CrDataValue, v: CrDataValue): CrDataList => {
 
 export let last = (xs: CrDataValue): CrDataValue => {
   if (xs instanceof CrDataList) {
+    if (xs.isEmpty()) {
+      return null;
+    }
     return xs.get(xs.len() - 1);
   }
   if (typeof xs === "string") {
@@ -836,11 +819,22 @@ export let display_DASH_stack = (): null => {
 };
 
 export let slice = (xs: CrDataList, from: number, to: number): CrDataList => {
-  return xs.slice(from, to);
+  return xs.slice(from, to || xs.len());
 };
 
-export let _AND_concat = (xs: CrDataList, ys: CrDataList): CrDataList => {
-  return xs.concat(ys);
+export let _AND_concat = (...lists: CrDataList[]): CrDataList => {
+  let result = initTernaryTreeList<CrDataValue>([]);
+  for (let item of lists) {
+    if (item == null) {
+      continue;
+    }
+    if (item instanceof CrDataList) {
+      result = ternaryTree.concat(result, item.value);
+    } else {
+      throw new Error("Expected list for concatenation");
+    }
+  }
+  return new CrDataList(result);
 };
 
 export let reverse = (xs: CrDataList): CrDataList => {
@@ -877,9 +871,15 @@ export let mod = (a: number, b: number): number => {
 export let _AND_str_DASH_concat = (a: string, b: string) => {
   return `${a}${b}`;
 };
-export let sort = (f: CrDataFn, xs: CrDataValue[]) => {
-  let ys = cloneArray(xs);
-  return ys.sort(f as any); // TODO need check tests
+export let sort = (f: CrDataFn, xs: CrDataList): CrDataList => {
+  if (xs == null) {
+    return null;
+  }
+  if (xs instanceof CrDataList) {
+    let ys = xs.toArray();
+    return new CrDataList(initTernaryTreeList(ys.sort(f as any)));
+  }
+  throw new Error("Expected list");
 };
 
 export let rand = (n: number, m: number): number => {
@@ -943,13 +943,13 @@ export let _AND_merge_DASH_non_DASH_nil = (
   return new CrDataMap(a.mergeSkip(b, null));
 };
 
-export let to_DASH_pairs = (xs: CrDataMap): Set<[CrDataValue, CrDataValue]> => {
-  if (!(xs instanceof Map)) {
+export let to_DASH_pairs = (xs: CrDataMap): Set<CrDataList> => {
+  if (!(xs instanceof CrDataMap)) {
     throw new Error("Expected a map");
   }
-  var result: Set<[CrDataValue, CrDataValue]> = new Set();
+  var result: Set<CrDataList> = new Set();
   for (let [k, v] of xs.pairs()) {
-    result.add([k, v]);
+    result.add(new CrDataList(initTernaryTreeList([k, v])));
   }
   return result;
 };
@@ -1047,11 +1047,11 @@ export let replace = (x: string, y: string, z: string): string => {
   return result;
 };
 
-export let split = (xs: string, x: string): string[] => {
-  return xs.split(x);
+export let split = (xs: string, x: string): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs.split(x)));
 };
-export let split_DASH_lines = (xs: string): string[] => {
-  return xs.split("\n");
+export let split_DASH_lines = (xs: string): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs.split("\n")));
 };
 export let substr = (xs: string, m: number, n: number): string => {
   if (n <= m) {
@@ -1110,8 +1110,13 @@ export let re_DASH_find_DASH_index = (re: string, content: string): number => {
   return content.search(new RegExp(re));
 };
 
-export let re_DASH_find_DASH_all = (re: string, content: string): string[] => {
-  return content.match(new RegExp(re, "g"));
+export let re_DASH_find_DASH_all = (
+  re: string,
+  content: string
+): CrDataList => {
+  return new CrDataList(
+    initTernaryTreeList(content.match(new RegExp(re, "g")))
+  );
 };
 
 export let to_DASH_js_DASH_data = (
@@ -1141,6 +1146,7 @@ export let to_DASH_js_DASH_data = (
     return result;
   }
   if (x instanceof CrDataMap) {
+    let result: Record<string, CrDataValue> = {};
     for (let [k, v] of x.pairs()) {
       var key = to_DASH_js_DASH_data(k, addColon);
       result[key] = to_DASH_js_DASH_data(v, addColon);
@@ -1209,12 +1215,12 @@ export let stringify_DASH_json = (
   return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
 };
 
-export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataValue[] => {
+export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataList => {
   var result: CrDataValue[] = [];
   x.forEach((item) => {
     result.push(item);
   });
-  return result;
+  return new CrDataList(initTernaryTreeList(result));
 };
 
 export let aget = (x: any, name: string): any => {
@@ -1521,6 +1527,65 @@ export let listToArray = (xs: CrDataList): Array<CrDataValue> => {
     throw new Error("Expected list");
   }
 };
+
+let hashFunction = (x: CrDataValue): Hash => {
+  if (x == null) {
+    return valueHash("nil:");
+  }
+  if (typeof x === "number") {
+    let base = valueHash("number:");
+    return mergeValueHash(base, x);
+  }
+  if (typeof x === "string") {
+    let base = valueHash("string:");
+    return mergeValueHash(base, x);
+  }
+
+  if (x instanceof CrDataKeyword) {
+    let base = valueHash("keyword:");
+    return mergeValueHash(base, x.value);
+  }
+  if (x === true) {
+    return valueHash("true:");
+  }
+  if (x === false) {
+    return valueHash("false:");
+  }
+  if (x instanceof CrDataSymbol) {
+    let base = valueHash("symbol:");
+    return mergeValueHash(base, x.value);
+  }
+  if (x instanceof CrDataAtom) {
+    let base = valueHash("atom:");
+    return mergeValueHash(base, x.path);
+  }
+  if (x instanceof Set) {
+    let base = valueHash("set:");
+    for (let item of x) {
+      base = mergeValueHash(base, valueHash(item));
+    }
+    return base;
+  }
+  if (x instanceof CrDataList) {
+    let base = valueHash("list:");
+    for (let item of x.items()) {
+      base = mergeValueHash(base, valueHash(item));
+    }
+    return base;
+  }
+  if (x instanceof CrDataMap) {
+    let base = valueHash("map:");
+    for (let [k, v] of x.pairs()) {
+      base = mergeValueHash(base, valueHash(k));
+      base = mergeValueHash(base, valueHash(v));
+    }
+    return base;
+  }
+  throw new Error("Unknown data for hashing");
+};
+
+// Dirty code to change ternary-tree behavior
+overwriteHashGenerator(hashFunction);
 
 // special procs have to be defined manually
 export let reduce = foldl;

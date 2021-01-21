@@ -281,6 +281,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     raiseEvalError("[WARNING] unknown kind to gen js code: " & $xs.kind, xs)
 
 proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string =
+  let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   var spreading = false
   for x in body:
     if x.kind == crDataSymbol and x.symbolVal == "&":
@@ -289,7 +290,7 @@ proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSe
       if result != "":
         result = result & ", "
       if spreading:
-        result = result & "...listToArray(" & x.toJsCode(ns, localDefs) & ")"
+        result = result & fmt"...{varPrefix}listToArray(" & x.toJsCode(ns, localDefs) & ")"
       else:
         result = result & x.toJsCode(ns, localDefs)
 
@@ -316,6 +317,7 @@ proc usesRecur(xs: CirruData): bool =
     return false
 
 proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
+  let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   var localDefs = outerDefs
   var spreadingCode = "" # js list and calcit-js list are different, need to convert
   var argsCode = ""
@@ -330,7 +332,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
       let argName = x.symbolVal.escapeVar()
       argsCode = argsCode & "..." & argName
       # js list and calcit-js are different in spreading
-      spreadingCode = spreadingCode & fmt"{cLine}{argName} = arrayToList({argName})"
+      spreadingCode = spreadingCode & fmt"{cLine}{argName} = {varPrefix}arrayToList({argName})"
       spreading = false
     else:
       if x.symbolVal == "&":
