@@ -20,7 +20,7 @@ jobs:
     - name: "try js"
       run: >
         nimble genjs
-        && cd src/includes/ && npm install
+        && cd src/includes/ && yarn
         && ./node_modules/.bin/tsc
         && cd ../../
         && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
