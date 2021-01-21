@@ -1507,6 +1507,21 @@ export let compare_DASH_string = (x: string, y: string) => {
   return 0;
 };
 
+export let arrayToList = (xs: Array<CrDataValue>): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs || []));
+};
+
+export let listToArray = (xs: CrDataList): Array<CrDataValue> => {
+  if (xs == null) {
+    return null;
+  }
+  if (xs instanceof CrDataList) {
+    return xs.toArray();
+  } else {
+    throw new Error("Expected list");
+  }
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
