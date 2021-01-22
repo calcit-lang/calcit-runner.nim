@@ -1,3 +1,29 @@
+import {
+  TernaryTreeList,
+  TernaryTreeMap,
+  overwriteComparator,
+  initTernaryTreeList,
+  initTernaryTreeMap,
+  listLen,
+  mapLen,
+  loopGetList,
+  mapLoopGet,
+  assocMap,
+  assocList,
+  dissocMap,
+  isMapEmpty,
+  toPairsIterator,
+  contains,
+  listItems,
+  dissocList,
+  Hash,
+  overwriteHashGenerator,
+  valueHash,
+  mergeValueHash,
+} from "@calcit/ternary-tree";
+
+import * as ternaryTree from "@calcit/ternary-tree";
+
 let inNodeJs =
   typeof process !== "undefined" && process?.release?.name === "node";
 
@@ -47,14 +73,116 @@ class CrDataAtom {
 
 type CrDataFn = (...xs: CrDataValue[]) => CrDataValue;
 
+class CrDataList {
+  value: TernaryTreeList<CrDataValue>;
+  constructor(value: TernaryTreeList<CrDataValue>) {
+    this.value = value;
+  }
+  len() {
+    return listLen(this.value);
+  }
+  get(idx: number) {
+    return loopGetList(this.value, idx);
+  }
+  assoc(idx: number, v: CrDataValue) {
+    return new CrDataList(assocList(this.value, idx, v));
+  }
+  dissoc(idx: number) {
+    return new CrDataList(dissocList(this.value, idx));
+  }
+  slice(from: number, to: number) {
+    return new CrDataList(ternaryTree.slice(this.value, from, to));
+  }
+  toString() {
+    return "TODO list";
+  }
+  isEmpty() {
+    return listLen(this.value) == 0;
+  }
+  items() {
+    return listItems(this.value);
+  }
+  append(v: CrDataValue) {
+    return new CrDataList(ternaryTree.append(this.value, v));
+  }
+  prepend(v: CrDataValue) {
+    return new CrDataList(ternaryTree.prepend(this.value, v));
+  }
+  first() {
+    return ternaryTree.first(this.value);
+  }
+  rest() {
+    return new CrDataList(ternaryTree.rest(this.value));
+  }
+  concat(ys: CrDataList) {
+    if (!(ys instanceof CrDataList)) {
+      throw new Error("Expected list");
+    }
+    return new CrDataList(ternaryTree.concat(this.value, ys.value));
+  }
+  map(f: (v: CrDataValue) => CrDataValue) {
+    let result: Array<CrDataValue> = [];
+    for (let item of this.items()) {
+      result.push(f(item));
+    }
+    return new CrDataList(initTernaryTreeList(result));
+  }
+  toArray(): CrDataValue[] {
+    return ternaryTree.listToSeq(this.value);
+  }
+}
+
+class CrDataMap {
+  value: TernaryTreeMap<CrDataValue, CrDataValue>;
+  constructor(value: TernaryTreeMap<CrDataValue, CrDataValue>) {
+    this.value = value;
+  }
+  len() {
+    return mapLen(this.value);
+  }
+  get(k: CrDataValue) {
+    return mapLoopGet(this.value, k);
+  }
+  assoc(k: CrDataValue, v: CrDataValue) {
+    return new CrDataMap(assocMap(this.value, k, v));
+  }
+  dissoc(k: CrDataValue) {
+    return new CrDataMap(dissocMap(this.value, k));
+  }
+  toString() {
+    return "TODO map";
+  }
+  isEmpty() {
+    return isMapEmpty(this.value);
+  }
+  pairs() {
+    return toPairsIterator(this.value);
+  }
+  contains(k: CrDataValue) {
+    return contains(this.value, k);
+  }
+  merge(ys: CrDataMap) {
+    if (!(ys instanceof CrDataMap)) {
+      throw new Error("Expected map");
+    }
+    return ternaryTree.merge(this.value, ys.value);
+  }
+  mergeSkip(ys: CrDataMap, v: CrDataValue) {
+    if (!(ys instanceof CrDataMap)) {
+      throw new Error("Expected map");
+    }
+    return ternaryTree.mergeSkip(this.value, ys.value, v);
+  }
+}
+
 type CrDataValue =
   | string
   | number
   | boolean
-  | Map<CrDataValue, CrDataValue>
-  | Set<CrDataValue>
-  | Array<CrDataValue>
+  | CrDataMap
+  | CrDataList
   // TODO set
+  | Set<CrDataValue>
   | CrDataKeyword
   | CrDataSymbol
   | CrDataAtom
@@ -86,10 +214,10 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   if (x instanceof CrDataKeyword) {
     return kwd("keyword");
   }
-  if (x instanceof Array) {
+  if (x instanceof CrDataList) {
     return kwd("list");
   }
-  if (x instanceof Map) {
+  if (x instanceof CrDataMap) {
     return kwd("map");
   }
   if (x == null) {
@@ -120,7 +248,7 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   throw new Error(`Unknown data ${x}`);
 };
 
-export let print = (...xs: string[]): void => {
+export let print = (...xs: CrDataValue[]): void => {
   // TODO stringify each values
   console.log(xs.map((x) => toString(x, false)).join(" "));
 };
@@ -132,11 +260,11 @@ export let count = (x: CrDataValue): number => {
   if (typeof x === "string") {
     return x.length;
   }
-  if (x instanceof Array) {
-    return x.length;
+  if (x instanceof CrDataList) {
+    return listLen(x.value);
   }
-  if (x instanceof Map) {
-    return (x as Map<CrDataValue, CrDataValue>).size;
+  if (x instanceof CrDataMap) {
+    return mapLen(x.value);
   }
   if (x instanceof Set) {
     return (x as Set<CrDataValue>).size;
@@ -144,24 +272,25 @@ export let count = (x: CrDataValue): number => {
   throw new Error(`Unknown data ${x}`);
 };
 
-export let _LIST_ = (...xs: CrDataValue[]): CrDataValue[] => {
-  return xs;
+export let _LIST_ = (...xs: CrDataValue[]): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs));
 };
 
-export let _AND__MAP_ = (
-  ...xs: CrDataValue[]
-): Map<CrDataValue, CrDataValue> => {
-  var result = new Map();
+export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
+  var result = new CrDataMap(initTernaryTreeMap(new Map()));
   for (let idx in xs) {
-    let pair = xs[idx] as CrDataValue[];
-    if (!Array.isArray(pair)) {
-      throw new Error("Expected pairs");
+    let pair = xs[idx];
+    if (pair instanceof CrDataList) {
+      if (pair.len() === 2) {
+      } else {
+        throw new Error("Expected pairs of 2");
+      }
+      let k = pair.get(0);
+      let v = pair.get(1);
+      result = result.assoc(k, v);
+    } else {
+      throw new Error("Expected a pair in list");
     }
-    if (pair.length != 2) {
-      throw new Error("Expected a pair in length 2");
-    }
-    let [k, v] = pair;
-    result.set(k, v);
   }
   return result;
 };
@@ -197,10 +326,10 @@ export let foldl = function (
     debugger;
     throw new Error("Expected function for folding");
   }
-  if (xs instanceof Array) {
+  if (xs instanceof CrDataList) {
     var result = acc;
-    for (let idx in xs) {
-      let item = xs[idx];
+    for (let idx = 0; idx < xs.len(); idx++) {
+      let item = xs.get(idx);
       result = f(result, item);
     }
     return result;
@@ -259,16 +388,15 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
-  if (x instanceof Array) {
-    if (y instanceof Array) {
-      let x2 = x as CrDataValue[];
-      let y2 = y as CrDataValue[];
-      if (x2.length !== y2.length) {
+  if (x instanceof CrDataList) {
+    if (y instanceof CrDataList) {
+      if (x.len() !== y.len()) {
         return false;
       }
-      for (let idx in x2) {
-        let xItem = x2[idx];
-        let yItem = y2[idx];
+      let size = x.len();
+      for (let idx = 0; idx < size; idx++) {
+        let xItem = x.get(idx);
+        let yItem = y.get(idx);
         if (!_AND__EQ_(xItem, yItem)) {
           return false;
         }
@@ -277,18 +405,16 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
-  if (x instanceof Map) {
-    if (y instanceof Map) {
-      let x2 = x as Map<CrDataValue, CrDataValue>;
-      let y2 = y as Map<CrDataValue, CrDataValue>;
-      if (x2.size !== y2.size) {
+  if (x instanceof CrDataMap) {
+    if (y instanceof CrDataMap) {
+      if (x.len() !== y.len()) {
         return false;
       }
-      for (let [k, v] of x2) {
-        if (!y2.has(k)) {
+      for (let [k, v] of x.pairs()) {
+        if (!y.contains(k)) {
           return false;
         }
-        if (!_AND__EQ_(v, get(y2, k))) {
+        if (!_AND__EQ_(v, get(y, k))) {
           return false;
         }
       }
@@ -329,6 +455,9 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
   return false;
 };
 
+// overwrite internary comparator of ternary-tree
+overwriteComparator(_AND__EQ_);
+
 export let _AND_str = (x: CrDataValue): string => {
   return `${x}`;
 };
@@ -344,26 +473,17 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
     }
     return xs.includes(x as string);
   }
-  if (xs instanceof Array) {
-    for (let idx in xs) {
-      let v = xs[idx];
+  if (xs instanceof CrDataList) {
+    let size = xs.len();
+    for (let v of xs.items()) {
       if (_AND__EQ_(v, x)) {
         return true;
       }
     }
     return false;
   }
-  if (xs instanceof Map) {
-    if (
-      typeof x === "string" ||
-      typeof x === "number" ||
-      typeof x === "boolean" ||
-      x instanceof CrDataKeyword
-    ) {
-      return xs.has(x);
-    }
-
-    for (let [k, v] of xs) {
+  if (xs instanceof CrDataMap) {
+    for (let [k, v] of xs.pairs()) {
       if (_AND__EQ_(k, x)) {
         return true;
       }
@@ -391,25 +511,14 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
       throw new Error("Expected number index for a string");
     }
   }
-  if (xs instanceof Array) {
+  if (xs instanceof CrDataList) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for a list");
     }
-    return xs[k];
+    return xs.get(k);
   }
-  if (xs instanceof Map) {
-    if (
-      typeof k === "string" ||
-      typeof k === "number" ||
-      typeof k === "boolean" ||
-      k instanceof CrDataKeyword
-    ) {
-      if (xs.has(k)) {
-        return xs.get(k);
-      }
-    }
-
-    for (let [mk, v] of xs) {
+  if (xs instanceof CrDataMap) {
+    for (let [mk, v] of xs.pairs()) {
       if (_AND__EQ_(mk, k)) {
         return v;
       }
@@ -421,59 +530,19 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
   throw new Error("Does not support `get` on this type");
 };
 
-// shallow copy
-let cloneMap = (
-  xs: Map<CrDataValue, CrDataValue>
-): Map<CrDataValue, CrDataValue> => {
-  if (!(xs instanceof Map)) {
-    throw new Error("Expected a map");
-  }
-  var result: Map<CrDataValue, CrDataValue> = new Map();
-  for (let [k, v] of xs) {
-    result.set(k, v);
-  }
-  return result;
-};
-
 export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
   if (arguments.length !== 3) {
     throw new Error("assoc takes 3 arguments");
   }
-  if (xs instanceof Array) {
+  if (xs instanceof CrDataList) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
     }
-    var ys: CrDataValue[] = cloneArray(xs);
-    ys[k] = v;
-    return ys;
+    return xs.assoc(k, v);
   }
-  if (xs instanceof Map) {
-    var result = cloneMap(xs);
 
-    if (
-      typeof k === "string" ||
-      typeof k === "number" ||
-      typeof k === "boolean" ||
-      k instanceof CrDataKeyword
-    ) {
-      result.set(k, v);
-    } else {
-      var exisitedKey = false;
-
-      for (let [mk, mv] of result) {
-        if (_AND__EQ_(mk, k)) {
-          result.set(mk, v);
-          exisitedKey = true;
-          break;
-        }
-      }
-
-      if (!exisitedKey) {
-        result.set(k, v);
-      }
-    }
-
-    return result;
+  if (xs instanceof CrDataMap) {
+    return xs.assoc(k, v);
   }
 
   throw new Error("Does not support `get` on this type");
@@ -484,34 +553,14 @@ export let dissoc = function (xs: CrDataValue, k: CrDataValue) {
     throw new Error("dissoc takes 2 arguments");
   }
 
-  if (xs instanceof Array) {
+  if (xs instanceof CrDataList) {
     if (typeof k !== "number") {
       throw new Error("Expected number index for lists");
     }
-    var ys: CrDataValue[] = cloneArray(xs);
-    ys.splice(k, 1);
-    return ys;
+    return xs.dissoc(k);
   }
-  if (xs instanceof Map) {
-    var result = cloneMap(xs);
-
-    if (
-      typeof k === "string" ||
-      typeof k === "number" ||
-      typeof k === "boolean" ||
-      k instanceof CrDataKeyword
-    ) {
-      result.delete(k);
-    } else {
-      for (let [mk, mv] of result) {
-        if (_AND__EQ_(mk, k)) {
-          result.delete(mk);
-          break;
-        }
-      }
-    }
-
-    return result;
+  if (xs instanceof CrDataMap) {
+    return xs.dissoc(k);
   }
 
   throw new Error("Does not support `dissoc` on this type");
@@ -552,21 +601,21 @@ export let remove_DASH_watch = (a: CrDataAtom, k: CrDataKeyword): null => {
   return null;
 };
 
-export let range = (n: number, m: number, m2: number): number[] => {
-  var result: number[] = [];
+export let range = (n: number, m: number, m2: number): CrDataList => {
+  var result = new CrDataList(initTernaryTreeList([]));
   if (m2 != null) {
     console.warn("TODO range with 3 arguments"); // TODO
   }
   if (m != null) {
     var idx = n;
     while (idx < m) {
-      result.push(idx);
+      result = result.append(idx);
       idx = idx + 1;
     }
   } else {
     var idx = 0;
     while (idx < n) {
-      result.push(idx);
+      result = result.append(idx);
       idx = idx + 1;
     }
   }
@@ -577,11 +626,11 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
   if (typeof xs == "string") {
     return xs.length == 0;
   }
-  if (xs instanceof Array) {
-    return xs.length == 0;
+  if (xs instanceof CrDataList) {
+    return xs.isEmpty();
   }
-  if (xs instanceof Map) {
-    return xs.size === 0;
+  if (xs instanceof CrDataMap) {
+    return xs.isEmpty();
   }
   if (xs instanceof Set) {
     return xs.size === 0;
@@ -626,8 +675,11 @@ export let first = (xs: CrDataValue): CrDataValue => {
   if (xs == null) {
     return null;
   }
-  if (xs instanceof Array) {
-    return xs[0];
+  if (xs instanceof CrDataList) {
+    if (xs.isEmpty()) {
+      return null;
+    }
+    return xs.first();
   }
   if (typeof xs === "string") {
     return xs[0];
@@ -636,8 +688,9 @@ export let first = (xs: CrDataValue): CrDataValue => {
     if (xs.size === 0) {
       return null;
     }
-    let it = xs.values();
-    return it.next().value;
+    for (let x of xs) {
+      return x;
+    }
   }
   console.error(xs);
   throw new Error("Expects something sequential");
@@ -655,11 +708,11 @@ export let timeout_DASH_call = (duration: number, f: CrDataFn): null => {
 };
 
 export let rest = (xs: CrDataValue): CrDataValue => {
-  if (xs instanceof Array) {
-    if (xs.length === 0) {
+  if (xs instanceof CrDataList) {
+    if (xs.len() === 0) {
       return null;
     }
-    return xs.slice(1);
+    return xs.rest();
   }
   if (typeof xs === "string") {
     return xs.substr(1);
@@ -691,38 +744,26 @@ export let not = (x: boolean): boolean => {
   return !x;
 };
 
-let cloneArray = (xs: CrDataValue[]): CrDataValue[] => {
-  if (!(xs instanceof Array)) {
-    throw new Error("Expected an array");
-  }
-  let ys: CrDataValue[] = new Array(xs.length);
-  for (let idx in xs) {
-    ys[idx] = xs[idx];
-  }
-  return ys;
-};
-
-export let prepend = (xs: CrDataValue[], v: CrDataValue): CrDataValue[] => {
-  if (!(xs instanceof Array)) {
+export let prepend = (xs: CrDataValue, v: CrDataValue): CrDataList => {
+  if (!(xs instanceof CrDataList)) {
     throw new Error("Expected array");
   }
-  let ys = cloneArray(xs);
-  ys.unshift(v);
-  return ys;
+  return xs.prepend(v);
 };
 
-export let append = (xs: CrDataValue[], v: CrDataValue): CrDataValue[] => {
-  if (!(xs instanceof Array)) {
+export let append = (xs: CrDataValue, v: CrDataValue): CrDataList => {
+  if (!(xs instanceof CrDataList)) {
     throw new Error("Expected array");
   }
-  let ys = cloneArray(xs);
-  ys.push(v);
-  return ys;
+  return xs.append(v);
 };
 
 export let last = (xs: CrDataValue): CrDataValue => {
-  if (xs instanceof Array) {
-    return xs[xs.length - 1];
+  if (xs instanceof CrDataList) {
+    if (xs.isEmpty()) {
+      return null;
+    }
+    return xs.get(xs.len() - 1);
   }
   if (typeof xs === "string") {
     return xs[xs.length - 1];
@@ -732,11 +773,11 @@ export let last = (xs: CrDataValue): CrDataValue => {
 };
 
 export let butlast = (xs: CrDataValue): CrDataValue => {
-  if (xs instanceof Array) {
-    if (xs.length === 0) {
+  if (xs instanceof CrDataList) {
+    if (xs.len() === 0) {
       return null;
     }
-    return xs.slice(0, xs.length - 1);
+    return xs.slice(0, xs.len() - 1);
   }
   if (typeof xs === "string") {
     return xs.substr(0, xs.length - 1);
@@ -777,30 +818,34 @@ export let display_DASH_stack = (): null => {
   return null;
 };
 
-export let slice = (
-  xs: CrDataValue[],
-  from: number,
-  to: number
-): CrDataValue => {
-  return xs.slice(from, to);
+export let slice = (xs: CrDataList, from: number, to: number): CrDataList => {
+  return xs.slice(from, to || xs.len());
 };
 
-export let _AND_concat = (
-  xs: CrDataValue[],
-  ys: CrDataValue[]
-): CrDataValue[] => {
-  return xs.concat(ys);
+export let _AND_concat = (...lists: CrDataList[]): CrDataList => {
+  let result = initTernaryTreeList<CrDataValue>([]);
+  for (let item of lists) {
+    if (item == null) {
+      continue;
+    }
+    if (item instanceof CrDataList) {
+      result = ternaryTree.concat(result, item.value);
+    } else {
+      throw new Error("Expected list for concatenation");
+    }
+  }
+  return new CrDataList(result);
 };
 
-export let reverse = (xs: CrDataValue[]): CrDataValue[] => {
+export let reverse = (xs: CrDataList): CrDataList => {
   if (xs == null) {
     return null;
   }
-  var result = new Array(xs.length);
-  for (let idx = 0; idx < xs.length; idx++) {
-    result[xs.length - idx - 1] = xs[idx];
+  var result = initTernaryTreeList([]);
+  for (let x of xs.items()) {
+    result = ternaryTree.prepend(result, x);
   }
-  return result;
+  return new CrDataList(result);
 };
 
 export let format_DASH_ternary_DASH_tree = (): null => {
@@ -826,9 +871,15 @@ export let mod = (a: number, b: number): number => {
 export let _AND_str_DASH_concat = (a: string, b: string) => {
   return `${a}${b}`;
 };
-export let sort = (f: CrDataFn, xs: CrDataValue[]) => {
-  let ys = cloneArray(xs);
-  return ys.sort(f as any); // TODO need check tests
+export let sort = (f: CrDataFn, xs: CrDataList): CrDataList => {
+  if (xs == null) {
+    return null;
+  }
+  if (xs instanceof CrDataList) {
+    let ys = xs.toArray();
+    return new CrDataList(initTernaryTreeList(ys.sort(f as any)));
+  }
+  throw new Error("Expected list");
 };
 
 export let rand = (n: number, m: number): number => {
@@ -855,88 +906,51 @@ export let floor = (n: number): number => {
   return Math.floor(n);
 };
 
-export let _AND_merge = (
-  a: Map<CrDataValue, CrDataValue>,
-  b: Map<CrDataValue, CrDataValue>
-): Map<CrDataValue, CrDataValue> => {
+export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   if (a == null) {
     return b;
   }
   if (b == null) {
     return a;
   }
-  var result = cloneMap(a);
-  b.forEach((v, k) => {
-    if (
-      typeof k === "string" ||
-      typeof k === "number" ||
-      typeof k === "boolean" ||
-      k instanceof CrDataKeyword
-    ) {
-      result.set(k, v);
-    } else {
-      var exisitedKey = false;
+  if (!(a instanceof CrDataMap)) {
+    throw new Error("Expected map");
+  }
+  if (!(b instanceof CrDataMap)) {
+    throw new Error("Expected map");
+  }
 
-      for (let [mk, mv] of result) {
-        if (_AND__EQ_(mk, k)) {
-          result.set(mk, v);
-          exisitedKey = true;
-          break;
-        }
-      }
-
-      if (!exisitedKey) {
-        result.set(k, v);
-      }
-    }
-  });
-  return result;
+  return new CrDataMap(a.merge(b));
 };
 
 export let _AND_merge_DASH_non_DASH_nil = (
-  a: Map<CrDataValue, CrDataValue>,
-  b: Map<CrDataValue, CrDataValue>
-): Map<CrDataValue, CrDataValue> => {
-  var result = cloneMap(a);
-  b.forEach((v, k) => {
-    if (v != null) {
-      if (
-        typeof k === "string" ||
-        typeof k === "number" ||
-        typeof k === "boolean" ||
-        k instanceof CrDataKeyword
-      ) {
-        result.set(k, v);
-      } else {
-        var exisitedKey = false;
+  a: CrDataMap,
+  b: CrDataMap
+): CrDataMap => {
+  if (a == null) {
+    return b;
+  }
+  if (b == null) {
+    return a;
+  }
+  if (!(a instanceof CrDataMap)) {
+    throw new Error("Expected map");
+  }
+  if (!(b instanceof CrDataMap)) {
+    throw new Error("Expected map");
+  }
 
-        for (let [mk, mv] of result) {
-          if (_AND__EQ_(mk, k)) {
-            result.set(mk, v);
-            exisitedKey = true;
-            break;
-          }
-        }
-
-        if (!exisitedKey) {
-          result.set(k, v);
-        }
-      }
-    }
-  });
-  return result;
+  return new CrDataMap(a.mergeSkip(b, null));
 };
 
-export let to_DASH_pairs = (
-  xs: Map<CrDataValue, CrDataValue>
-): Set<[CrDataValue, CrDataValue]> => {
-  if (!(xs instanceof Map)) {
+export let to_DASH_pairs = (xs: CrDataMap): Set<CrDataList> => {
+  if (!(xs instanceof CrDataMap)) {
     throw new Error("Expected a map");
   }
-  var result: Set<[CrDataValue, CrDataValue]> = new Set();
-  xs.forEach((v, k) => {
-    result.add([k, v]);
-  });
+  var result: Set<CrDataList> = new Set();
+  for (let [k, v] of xs.pairs()) {
+    result.add(new CrDataList(initTernaryTreeList([k, v])));
+  }
   return result;
 };
 
@@ -1033,11 +1047,11 @@ export let replace = (x: string, y: string, z: string): string => {
   return result;
 };
 
-export let split = (xs: string, x: string): string[] => {
-  return xs.split(x);
+export let split = (xs: string, x: string): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs.split(x)));
 };
-export let split_DASH_lines = (xs: string): string[] => {
-  return xs.split("\n");
+export let split_DASH_lines = (xs: string): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs.split("\n")));
 };
 export let substr = (xs: string, m: number, n: number): string => {
   if (n <= m) {
@@ -1096,8 +1110,13 @@ export let re_DASH_find_DASH_index = (re: string, content: string): number => {
   return content.search(new RegExp(re));
 };
 
-export let re_DASH_find_DASH_all = (re: string, content: string): string[] => {
-  return content.match(new RegExp(re, "g"));
+export let re_DASH_find_DASH_all = (
+  re: string,
+  content: string
+): CrDataList => {
+  return new CrDataList(
+    initTernaryTreeList(content.match(new RegExp(re, "g")))
+  );
 };
 
 export let to_DASH_js_DASH_data = (
@@ -1119,28 +1138,19 @@ export let to_DASH_js_DASH_data = (
     }
     return x.value;
   }
-  if (Array.isArray(x)) {
+  if (x instanceof CrDataList) {
     var result: any[] = [];
-    for (let idx in x) {
-      result.push(to_DASH_js_DASH_data(x[idx]), addColon);
+    for (let item of x.items()) {
+      result.push(to_DASH_js_DASH_data(item), addColon);
     }
     return result;
   }
-  if (x instanceof Map) {
-    let result: any = {};
-    x.forEach((v, k) => {
+  if (x instanceof CrDataMap) {
+    let result: Record<string, CrDataValue> = {};
+    for (let [k, v] of x.pairs()) {
       var key = to_DASH_js_DASH_data(k, addColon);
-      if (typeof key === "string") {
-        // ok
-      } else if (key instanceof CrDataKeyword) {
-        key = key.value;
-      } else if (typeof key === "number") {
-        // ok
-      } else {
-        throw new Error("Does not support key");
-      }
       result[key] = to_DASH_js_DASH_data(v, addColon);
-    });
+    }
     return result;
   }
   if (x instanceof Set) {
@@ -1172,7 +1182,7 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
     x.forEach((v) => {
       result.push(to_DASH_calcit_DASH_data(v));
     });
-    return result;
+    return new CrDataList(initTernaryTreeList(result));
   }
   if (x instanceof Set) {
     let result: Set<CrDataValue> = new Set();
@@ -1187,7 +1197,7 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
     Object.keys(x).forEach((k) => {
       result.set(to_DASH_calcit_DASH_data(k), to_DASH_calcit_DASH_data(x[k]));
     });
-    return result;
+    return new CrDataMap(initTernaryTreeMap(result));
   }
 
   console.error(x);
@@ -1205,12 +1215,12 @@ export let stringify_DASH_json = (
   return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
 };
 
-export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataValue[] => {
+export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataList => {
   var result: CrDataValue[] = [];
   x.forEach((item) => {
     result.push(item);
   });
-  return result;
+  return new CrDataList(initTernaryTreeList(result));
 };
 
 export let aget = (x: any, name: string): any => {
@@ -1282,8 +1292,12 @@ let toString = (x: CrDataValue, escaped: boolean): string => {
   if (x instanceof CrDataKeyword) {
     return x.toString();
   }
-  if (x instanceof Array) {
-    return `[${x.map((x) => toString(x, true)).join(" ")}]`;
+  if (x instanceof CrDataList) {
+    // TODO
+    return `[${x
+      .map((x) => toString(x, true))
+      .toArray()
+      .join(" ")}]`;
   }
   if (x instanceof Set) {
     let itemsCode = "";
@@ -1295,14 +1309,14 @@ let toString = (x: CrDataValue, escaped: boolean): string => {
     });
     return `#{${itemsCode}}`;
   }
-  if (x instanceof Map) {
+  if (x instanceof CrDataMap) {
     let itemsCode = "";
-    x.forEach((v, k) => {
+    for (let [k, v] of x.pairs()) {
       if (itemsCode !== "") {
         itemsCode = `${itemsCode}, `;
       }
       itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
-    });
+    }
     return `{${itemsCode}}`;
   }
   if (typeof x === "function") {
@@ -1385,12 +1399,14 @@ export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
   if (x instanceof CrDataSymbol) {
     return x.toString();
   }
-  if (x instanceof Array) {
-    return (["[]"] as CirruEdnFormat[]).concat(x.map(to_DASH_cirru_DASH_edn));
+  if (x instanceof CrDataList) {
+    return (["[]"] as CirruEdnFormat[]).concat(
+      x.toArray().map(to_DASH_cirru_DASH_edn)
+    );
   }
-  if (x instanceof Map) {
+  if (x instanceof CrDataMap) {
     let buffer: CirruEdnFormat = ["{}"];
-    for (let [k, v] of x) {
+    for (let [k, v] of x.pairs()) {
       buffer.push([to_DASH_cirru_DASH_edn(k), to_DASH_cirru_DASH_edn(v)]);
     }
     return buffer;
@@ -1452,10 +1468,12 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
           throw new Error("Expected pairs for map");
         }
       });
-      return result;
+      return new CrDataMap(initTernaryTreeMap(result));
     }
     if (x[0] === "[]") {
-      return x.slice(1).map(extract_DASH_cirru_DASH_edn);
+      return new CrDataList(
+        initTernaryTreeList(x.slice(1).map(extract_DASH_cirru_DASH_edn))
+      );
     }
     if (x[0] === "#{}") {
       return new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn));
@@ -1467,7 +1485,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       if (x.length !== 2) {
         throw new Error("quote expects 1 argument");
       }
-      return x[1];
+      return to_DASH_calcit_DASH_data(x[1]);
     }
   }
   console.error(x);
@@ -1495,6 +1513,103 @@ export let compare_DASH_string = (x: string, y: string) => {
   return 0;
 };
 
+export let arrayToList = (xs: Array<CrDataValue>): CrDataList => {
+  return new CrDataList(initTernaryTreeList(xs || []));
+};
+
+export let listToArray = (xs: CrDataList): Array<CrDataValue> => {
+  if (xs == null) {
+    return null;
+  }
+  if (xs instanceof CrDataList) {
+    return xs.toArray();
+  } else {
+    throw new Error("Expected list");
+  }
+};
+
+let hashFunction = (x: CrDataValue): Hash => {
+  if (x == null) {
+    return valueHash("nil:");
+  }
+  if (typeof x === "number") {
+    let base = valueHash("number:");
+    return mergeValueHash(base, x);
+  }
+  if (typeof x === "string") {
+    let base = valueHash("string:");
+    return mergeValueHash(base, x);
+  }
+
+  if (x instanceof CrDataKeyword) {
+    let base = valueHash("keyword:");
+    return mergeValueHash(base, x.value);
+  }
+  if (x === true) {
+    return valueHash("true:");
+  }
+  if (x === false) {
+    return valueHash("false:");
+  }
+  if (x instanceof CrDataSymbol) {
+    let base = valueHash("symbol:");
+    return mergeValueHash(base, x.value);
+  }
+  if (x instanceof CrDataAtom) {
+    let base = valueHash("atom:");
+    return mergeValueHash(base, x.path);
+  }
+  if (x instanceof Set) {
+    let base = valueHash("set:");
+    for (let item of x) {
+      base = mergeValueHash(base, valueHash(item));
+    }
+    return base;
+  }
+  if (x instanceof CrDataList) {
+    let base = valueHash("list:");
+    for (let item of x.items()) {
+      base = mergeValueHash(base, valueHash(item));
+    }
+    return base;
+  }
+  if (x instanceof CrDataMap) {
+    let base = valueHash("map:");
+    for (let [k, v] of x.pairs()) {
+      base = mergeValueHash(base, valueHash(k));
+      base = mergeValueHash(base, valueHash(v));
+    }
+    return base;
+  }
+  throw new Error("Unknown data for hashing");
+};
+
+// Dirty code to change ternary-tree behavior
+overwriteHashGenerator(hashFunction);
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
+
+let placeholder = (...xs: []) => {
+  /* placeholder */
+};
+
+// TODO these functions are not used by calcit-js, but added to fix missing imports
+export let _AND_reset_DASH_gensym_DASH_index_BANG_ = placeholder;
+export let assoc_DASH_after = placeholder;
+export let assoc_DASH_before = placeholder;
+export let dbt_DASH__GT_point = placeholder;
+export let dbt_DASH_digits = placeholder;
+export let dual_DASH_balanced_DASH_ternary = placeholder;
+export let escape = placeholder;
+export let format_DASH_time = placeholder;
+export let gensym = placeholder;
+export let macroexpand = placeholder;
+export let macroexpand_DASH_all = placeholder;
+export let now_BANG_ = placeholder;
+export let parse_DASH_cirru = placeholder;
+export let parse_DASH_cirru_DASH_edn = placeholder;
+export let parse_DASH_time = placeholder;
+export let read_DASH_file = placeholder;
+export let write_DASH_file = placeholder;
