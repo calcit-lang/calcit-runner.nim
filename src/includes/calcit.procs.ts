@@ -6,8 +6,8 @@ import {
   initTernaryTreeMap,
   listLen,
   mapLen,
-  loopGetList,
-  mapLoopGet,
+  listGet,
+  mapGet,
   assocMap,
   assocList,
   dissocMap,
@@ -82,7 +82,7 @@ class CrDataList {
     return listLen(this.value);
   }
   get(idx: number) {
-    return loopGetList(this.value, idx);
+    return listGet(this.value, idx);
   }
   assoc(idx: number, v: CrDataValue) {
     return new CrDataList(assocList(this.value, idx, v));
@@ -141,7 +141,7 @@ class CrDataMap {
     return mapLen(this.value);
   }
   get(k: CrDataValue) {
-    return mapLoopGet(this.value, k);
+    return mapGet(this.value, k);
   }
   assoc(k: CrDataValue, v: CrDataValue) {
     return new CrDataMap(assocMap(this.value, k, v));
@@ -819,7 +819,11 @@ export let display_DASH_stack = (): null => {
 };
 
 export let slice = (xs: CrDataList, from: number, to: number): CrDataList => {
-  return xs.slice(from, to || xs.len());
+  if (xs == null) {
+    return null;
+  }
+  let size = xs.len();
+  return xs.slice(from, Math.min(to || size, size));
 };
 
 export let _AND_concat = (...lists: CrDataList[]): CrDataList => {
@@ -1555,6 +1559,10 @@ let hashFunction = (x: CrDataValue): Hash => {
     let base = valueHash("symbol:");
     return mergeValueHash(base, x.value);
   }
+  if (typeof x === "function") {
+    let base = valueHash("fn:");
+    return mergeValueHash(base, x.toString());
+  }
   if (x instanceof CrDataAtom) {
     let base = valueHash("atom:");
     return mergeValueHash(base, x.path);
@@ -1562,22 +1570,22 @@ let hashFunction = (x: CrDataValue): Hash => {
   if (x instanceof Set) {
     let base = valueHash("set:");
     for (let item of x) {
-      base = mergeValueHash(base, valueHash(item));
+      base = mergeValueHash(base, hashFunction(item));
     }
     return base;
   }
   if (x instanceof CrDataList) {
     let base = valueHash("list:");
     for (let item of x.items()) {
-      base = mergeValueHash(base, valueHash(item));
+      base = mergeValueHash(base, hashFunction(item));
     }
     return base;
   }
   if (x instanceof CrDataMap) {
     let base = valueHash("map:");
     for (let [k, v] of x.pairs()) {
-      base = mergeValueHash(base, valueHash(k));
-      base = mergeValueHash(base, valueHash(v));
+      base = mergeValueHash(base, hashFunction(k));
+      base = mergeValueHash(base, hashFunction(v));
     }
     return base;
   }

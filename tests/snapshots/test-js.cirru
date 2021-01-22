@@ -30,7 +30,7 @@
                 a js/{}
               aset a |name |demo
               js/console.log a
-            js/console.log $ os/arch
+            ; js/console.log $ os/arch
 
         |main! $ quote
           defn main! ()
