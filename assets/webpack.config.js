@@ -1,9 +1,13 @@
 
-const path = require("path");
+let path = require("path");
+
+let bundleTarget = process.env.target === "node" ? 'node': 'web';
+
+console.log("bundle mode:", bundleTarget);
 
 module.exports = {
   entry: "./main.mjs",
-  target: 'node',
+  target: bundleTarget,
   mode: "development",
   devtool: "hidden-source-map",
   output: {

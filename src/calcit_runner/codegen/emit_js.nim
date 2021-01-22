@@ -332,7 +332,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
       let argName = x.symbolVal.escapeVar()
       argsCode = argsCode & "..." & argName
       # js list and calcit-js are different in spreading
-      spreadingCode = spreadingCode & fmt"{cLine}{argName} = {varPrefix}arrayToList({argName})"
+      spreadingCode = spreadingCode & fmt"{cLine}{argName} = {varPrefix}arrayToList({argName});"
       spreading = false
     else:
       if x.symbolVal == "&":
