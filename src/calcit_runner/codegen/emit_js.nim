@@ -97,6 +97,16 @@ let builtInJsProc = toHashSet([
   "to-calcit-data",
 ])
 
+# code generated from calcit.core.cirru may not be faster enough,
+# possible way to use code from calcit.procs.ts
+let preferredJsProc = toHashSet([
+  "number?", "keyword?",
+  "map?", "nil?",
+  "list?", "set?",
+  "string?", "fn?",
+  "bool?", "atom?",
+])
+
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   case xs.kind
@@ -445,6 +455,12 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
     # echo "deps order: ", depsInOrder
 
     for def in depsInOrder:
+      if ns == "calcit.core":
+        # some defs from core can be replaced by calcit.procs
+        if preferredJsProc.contains(def):
+          defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
+          continue
+
       let f = file.defs[def]
 
       case f.kind

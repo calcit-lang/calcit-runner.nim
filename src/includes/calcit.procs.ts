@@ -1694,6 +1694,37 @@ let hashFunction = (x: CrDataValue): Hash => {
 // Dirty code to change ternary-tree behavior
 overwriteHashGenerator(hashFunction);
 
+export let number_QUES_ = (x: CrDataValue): boolean => {
+  return typeof x === "number";
+};
+export let string_QUES_ = (x: CrDataValue): boolean => {
+  return typeof x === "string";
+};
+export let bool_QUES_ = (x: CrDataValue): boolean => {
+  return typeof x === "boolean";
+};
+export let nil_QUES_ = (x: CrDataValue): boolean => {
+  return x == null;
+};
+export let keyword_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof CrDataKeyword;
+};
+export let map_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof CrDataMap;
+};
+export let list_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof CrDataList;
+};
+export let set_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof Set;
+};
+export let fn_QUES_ = (x: CrDataValue): boolean => {
+  return typeof x === "function";
+};
+export let atom_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof CrDataAtom;
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
