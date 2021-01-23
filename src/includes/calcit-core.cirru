@@ -59,19 +59,39 @@
               recur f (f acc (first xs)) (rest xs)
 
         |< $ quote
-          defn < (x & ys) $ foldl-compare &< x ys
+          defn < (x & ys)
+            if
+              &= 1 (count ys)
+              &< x (first ys)
+              foldl-compare &< x ys
 
         |> $ quote
-          defn > (x & ys) $ foldl-compare &> x ys
+          defn > (x & ys)
+            if
+              &= 1 (count ys)
+              &> x (first ys)
+              foldl-compare &> x ys
 
         |= $ quote
-          defn = (x & ys) $ foldl-compare &= x ys
+          defn = (x & ys)
+            if
+              &= 1 (count ys)
+              &= x (first ys)
+              foldl-compare &= x ys
 
         |>= $ quote
-          defn >= (x & ys) $ foldl-compare &>= x ys
+          defn >= (x & ys)
+            if
+              &= 1 (count ys)
+              &>= x (first ys)
+              foldl-compare &>= x ys
 
         |<= $ quote
-          defn <= (x & ys) $ foldl-compare &<= x ys
+          defn <= (x & ys)
+            if
+              &= 1 (count ys)
+              &<= x (first ys)
+              foldl-compare &<= x ys
 
         |apply $ quote
           defn apply (f args) $ f & args

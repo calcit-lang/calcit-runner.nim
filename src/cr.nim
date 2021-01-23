@@ -22,10 +22,11 @@ var evalOnce = false
 var evalOnceCode: string
 var initFn = none(string)
 
-registerCoreProc("init-canvas", nativeInitCanvas)
-registerCoreProc("draw-canvas", nativeDrawCanvas)
-registerCoreProc("draw-error-message", nativeDrawErrorMessage)
-registerCoreProc("timeout-call", nativeTimeoutCall)
+if not (jsMode or irMode):
+  registerCoreProc("init-canvas", nativeInitCanvas)
+  registerCoreProc("draw-canvas", nativeDrawCanvas)
+  registerCoreProc("draw-error-message", nativeDrawErrorMessage)
+  registerCoreProc("timeout-call", nativeTimeoutCall)
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =

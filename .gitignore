@@ -18,9 +18,8 @@ src/*.out
 
 profile_results.txt
 calcit_runner_*.nims
+node_modules
 
 src/includes/calcit.procs.js*
 src/includes/calcit.procs.mjs*
-src/includes/node_modules
 src/includes/package-lock.json
-

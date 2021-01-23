@@ -17,9 +17,8 @@ jobs:
 
     - name: "generate procs.js"
       run: >
-        cd src/includes/ && yarn
-        && ./node_modules/.bin/tsc
-        && cd ../../  && mkdir js-out/
+        mkdir js-out/
+        && yand && yarn tsc
         && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
 
     - name: Deploy to server
