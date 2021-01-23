@@ -7,5 +7,6 @@
     "webpack": "^5.16.0",
     "webpack-cli": "^4.4.0"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "version": "v0.2.32"
 }
