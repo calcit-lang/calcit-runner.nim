@@ -19,12 +19,9 @@ jobs:
 
     - name: "try js"
       run: >
-        nimble genjs
-        && cd src/includes/ && yarn
-        && ./node_modules/.bin/tsc
-        && cd ../../
+        yarn
+        && yarn tsc
+        && nimble genjs
         && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
         && cp -v example/main.mjs js-out/
-        && cp -v assets/webpack.config.js js-out/
-        && cd js-out/ && yarn add webpack webpack-cli @calcit/ternary-tree
-        && target=node yarn webpack && node bundle.js
+        && target=node yarn webpack && node js-out/bundle.js

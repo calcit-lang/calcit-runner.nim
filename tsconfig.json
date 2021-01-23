@@ -12,7 +12,8 @@
     "jsx": "react",
     "lib": ["es2016", "dom"],
     "types": ["node"],
-    "baseUrl": "./example/",
+    "baseUrl": "./src/includes/",
     "importsNotUsedAsValues": "preserve"
-  }
+  },
+    "include": ["./src/includes/*"]
 }
