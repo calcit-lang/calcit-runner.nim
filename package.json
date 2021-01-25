@@ -8,5 +8,5 @@
     "webpack-cli": "^4.4.0"
   },
   "dependencies": {},
-  "version": "v0.2.32"
+  "version": "0.2.33"
 }
