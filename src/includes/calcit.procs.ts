@@ -82,35 +82,45 @@ class CrDataList {
   // array mode store bare array for performance
   arrayValue: Array<CrDataValue>;
   arrayMode: boolean;
+  arrayStart: number;
+  arrayEnd: number;
   cachedHash: Hash;
   constructor(value: Array<CrDataValue> | TernaryTreeList<CrDataValue>) {
     if (Array.isArray(value)) {
       this.arrayMode = true;
       this.arrayValue = value;
+      this.arrayStart = 0;
+      this.arrayEnd = value.length;
       this.value = null;
     } else {
       this.arrayMode = false;
       this.value = value;
       this.arrayValue = [];
+      this.arrayStart = null;
+      this.arrayEnd = null;
     }
   }
   turnListMode() {
     if (this.arrayMode) {
-      this.value = initTernaryTreeList(this.arrayValue);
+      this.value = initTernaryTreeList(
+        this.arrayValue.slice(this.arrayStart, this.arrayEnd)
+      );
       this.arrayValue = null;
+      this.arrayStart = null;
+      this.arrayEnd = null;
       this.arrayMode = false;
     }
   }
   len() {
     if (this.arrayMode) {
-      return this.arrayValue.length;
+      return this.arrayEnd - this.arrayStart;
     } else {
       return listLen(this.value);
     }
   }
   get(idx: number) {
     if (this.arrayMode) {
-      return this.arrayValue[idx];
+      return this.arrayValue[this.arrayStart + idx];
     } else {
       return listGet(this.value, idx);
     }
@@ -128,14 +138,13 @@ class CrDataList {
       if (from < 0) {
         throw new Error(`from index too small: ${from}`);
       }
-      if (to > this.arrayValue.length) {
+      if (to > this.len()) {
         throw new Error(`end index too large: ${to}`);
       }
-      let ys: Array<CrDataValue> = [];
-      for (let idx = from; idx < to; idx++) {
-        ys.push(this.arrayValue[idx]);
-      }
-      return new CrDataList(ys);
+      let result = new CrDataList(this.arrayValue);
+      result.arrayStart = this.arrayStart + from;
+      result.arrayEnd = this.arrayStart + to;
+      return result;
     } else {
       return new CrDataList(ternaryTree.slice(this.value, from, to));
     }
@@ -147,9 +156,9 @@ class CrDataList {
     return this.len() === 0;
   }
   /** usage: `for of` */
-  items(): Array<CrDataValue> | Generator<CrDataValue> {
+  items(): Generator<CrDataValue> {
     if (this.arrayMode) {
-      return this.arrayValue;
+      return sliceGenerator(this.arrayValue, this.arrayStart, this.arrayEnd);
     } else {
       return listToItems(this.value);
     }
@@ -164,8 +173,8 @@ class CrDataList {
   }
   first() {
     if (this.arrayMode) {
-      if (this.arrayValue.length >= 1) {
-        return this.arrayValue[0];
+      if (this.arrayValue.length > this.arrayStart) {
+        return this.arrayValue[this.arrayStart];
       } else {
         return null;
       }
@@ -175,7 +184,7 @@ class CrDataList {
   }
   rest() {
     if (this.arrayMode) {
-      return new CrDataList(this.arrayValue.slice(1));
+      return this.slice(1, this.arrayEnd - this.arrayStart);
     } else {
       return new CrDataList(ternaryTree.rest(this.value));
     }
@@ -197,7 +206,7 @@ class CrDataList {
   }
   toArray(): CrDataValue[] {
     if (this.arrayMode) {
-      return this.arrayValue;
+      return this.arrayValue.slice(this.arrayStart, this.arrayEnd);
     } else {
       return [...ternaryTree.listToItems(this.value)];
     }
@@ -281,6 +290,16 @@ export let kwd = (content: string) => {
 };
 
 var atomsRegistry = new Map<string, CrDataAtom>();
+
+function* sliceGenerator(
+  xs: Array<CrDataValue>,
+  start: number,
+  end: number
+): Generator<CrDataValue> {
+  for (let idx = start; idx < end; idx++) {
+    yield xs[idx];
+  }
+}
 
 export let type_DASH_of = (x: any): CrDataKeyword => {
   if (typeof x === "string") {
