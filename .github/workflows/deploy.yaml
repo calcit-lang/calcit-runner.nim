@@ -19,7 +19,7 @@ jobs:
       run: >
         mkdir js-out/
         && yarn && yarn tsc
-        && cp -v src/includes/calcit.procs.js js-out/calcit.procs.mjs
+        && cp -v src/includes/calcit.procs.js js-out/calcit.procs.js
 
     - name: Deploy to server
       id: deploy
@@ -45,7 +45,7 @@ jobs:
         flags: '-avzr --progress'
         options: ''
         ssh_options: ''
-        src: 'js-out/calcit.procs.mjs'
+        src: 'js-out/calcit.procs.js'
         dest: 'rsync-user@calcit-lang.org:/web-assets/repo/calcit-lang/js/'
 
     - name: Display status from deploy
