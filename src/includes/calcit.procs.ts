@@ -12,14 +12,15 @@ import {
   assocList,
   dissocMap,
   isMapEmpty,
-  toPairsIterator,
+  toPairs,
   contains,
-  listItems,
+  listToItems,
   dissocList,
   Hash,
   overwriteHashGenerator,
   valueHash,
   mergeValueHash,
+  toPairsArray,
 } from "@calcit/ternary-tree";
 
 import * as ternaryTree from "@calcit/ternary-tree";
@@ -146,11 +147,11 @@ class CrDataList {
     return this.len() === 0;
   }
   /** usage: `for of` */
-  items() {
+  items(): Array<CrDataValue> | Generator<CrDataValue> {
     if (this.arrayMode) {
       return this.arrayValue;
     } else {
-      return listItems(this.value);
+      return listToItems(this.value);
     }
   }
   append(v: CrDataValue) {
@@ -198,7 +199,7 @@ class CrDataList {
     if (this.arrayMode) {
       return this.arrayValue;
     } else {
-      return ternaryTree.listToSeq(this.value);
+      return [...ternaryTree.listToItems(this.value)];
     }
   }
   reverse() {
@@ -231,8 +232,8 @@ class CrDataMap {
   isEmpty() {
     return isMapEmpty(this.value);
   }
-  pairs() {
-    return toPairsIterator(this.value);
+  pairs(): Array<[CrDataValue, CrDataValue]> {
+    return toPairsArray(this.value);
   }
   contains(k: CrDataValue) {
     return ternaryTree.contains(this.value, k);
@@ -590,12 +591,7 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
     return xs.get(k);
   }
   if (xs instanceof CrDataMap) {
-    let v = xs.get(k);
-    if (v.existed) {
-      return v.value;
-    } else {
-      return null;
-    }
+    return xs.get(k);
   }
 
   throw new Error("Does not support `get` on this type");
@@ -715,7 +711,7 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
 };
 
 export let wrapTailCall = (f: CrDataFn): CrDataFn => {
-  return (...args: CrDataFn[]): CrDataValue => {
+  return (...args: CrDataValue[]): CrDataValue => {
     if (typeof f !== "function") {
       debugger;
       throw new Error("Expected function to be called");
