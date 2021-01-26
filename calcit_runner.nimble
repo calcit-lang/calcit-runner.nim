@@ -13,10 +13,11 @@ binDir        = "out/"
 
 requires "nim >= 1.2.8"
 requires "libfswatch"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.4.2"
-requires "ternary_tree >= 0.1.29"
-requires "https://github.com/calcit-lang/edn-paint#v0.2.6"
 requires "nanoid"
+requires "cirru_parser >= 0.3.0"
+requires "ternary_tree >= 0.1.29"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.4.3"
+requires "https://github.com/calcit-lang/edn-paint#v0.2.7"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.4"
 
 task watch, "run and watch":
