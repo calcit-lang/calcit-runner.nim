@@ -217,47 +217,128 @@ class CrDataList {
   }
 }
 
-class CrDataMap {
+type MapChain = {
   value: TernaryTreeMap<CrDataValue, CrDataValue>;
+  next: MapChain | null;
+};
+
+// just create a reference that equals to no other value
+let fakeUniqueSymbol = [] as any;
+
+class CrDataMap {
   cachedHash: Hash;
+  chain: MapChain;
+  depth: number;
+  skipValue: CrDataValue;
   constructor(value: TernaryTreeMap<CrDataValue, CrDataValue>) {
-    this.value = value;
+    this.chain = { value: value, next: null };
+    this.depth = 1;
+    this.skipValue = fakeUniqueSymbol;
+  }
+  turnSingleMap() {
+    if (this.depth === 1) {
+      return;
+    }
+    // squash down to a single level of map
+    let ret = this.chain.value;
+    let cursor = this.chain.next;
+    while (cursor != null) {
+      if (!isMapEmpty(cursor.value)) {
+        ret = ternaryTree.mergeSkip(cursor.value, ret, this.skipValue);
+      }
+      cursor = cursor.next;
+    }
+    this.chain = {
+      value: ret,
+      next: null,
+    };
+    this.depth = 1;
   }
   len() {
-    return mapLen(this.value);
+    this.turnSingleMap();
+    return mapLen(this.chain.value);
   }
   get(k: CrDataValue) {
-    return mapGet(this.value, k);
+    let cursor = this.chain;
+    while (cursor != null) {
+      let v = mapGet(cursor.value, k);
+      if (v != null && v !== this.skipValue) {
+        return v;
+      } else {
+        cursor = cursor.next;
+      }
+    }
+    return null;
   }
   assoc(k: CrDataValue, v: CrDataValue) {
-    return new CrDataMap(assocMap(this.value, k, v));
+    let cursor = this.chain;
+    // mutable way of creating another map value
+    let result = new CrDataMap(null);
+    result.chain = {
+      value: assocMap(cursor.value, k, v),
+      next: cursor.next,
+    };
+    return result;
   }
   dissoc(k: CrDataValue) {
-    return new CrDataMap(dissocMap(this.value, k));
+    this.turnSingleMap();
+    return new CrDataMap(dissocMap(this.chain.value, k));
   }
   toString() {
-    return "TODO map";
+    let result = "{";
+    for (let [k, v] of this.pairs()) {
+      if (result.length > 1) {
+        result = result + ", ";
+      }
+      result = result + toString(k, false) + " " + toString(v, false);
+    }
+    return result + "}";
   }
   isEmpty() {
-    return isMapEmpty(this.value);
+    let cursor = this.chain;
+    while (cursor != null) {
+      if (!isMapEmpty(cursor.value)) {
+        return false;
+      }
+      cursor = cursor.next;
+    }
+    return true;
   }
   pairs(): Array<[CrDataValue, CrDataValue]> {
-    return toPairsArray(this.value);
+    this.turnSingleMap();
+    return toPairsArray(this.chain.value);
   }
   contains(k: CrDataValue) {
-    return ternaryTree.contains(this.value, k);
+    let cursor = this.chain;
+    while (cursor != null) {
+      if (ternaryTree.contains(cursor.value, k)) {
+        return true;
+      }
+      cursor = cursor.next;
+    }
+    return false;
   }
   merge(ys: CrDataMap) {
-    if (!(ys instanceof CrDataMap)) {
-      throw new Error("Expected map");
-    }
-    return ternaryTree.merge(this.value, ys.value);
+    return this.mergeSkip(ys, fakeUniqueSymbol);
   }
   mergeSkip(ys: CrDataMap, v: CrDataValue) {
     if (!(ys instanceof CrDataMap)) {
       throw new Error("Expected map");
     }
-    return ternaryTree.mergeSkip(this.value, ys.value, v);
+
+    let result = new CrDataMap(null);
+    result.skipValue = v;
+    ys.turnSingleMap();
+    result.chain = {
+      value: ys.chain.value,
+      next: this.chain,
+    };
+    result.depth = this.depth + 1;
+    if (result.depth > 5) {
+      // 5 by experience, limit to suqash linked list to value
+      result.turnSingleMap();
+    }
+    return result;
   }
 }
 
@@ -361,7 +442,7 @@ export let count = (x: CrDataValue): number => {
     return x.len();
   }
   if (x instanceof CrDataMap) {
-    return mapLen(x.value);
+    return x.len();
   }
   if (x instanceof Set) {
     return (x as Set<CrDataValue>).size;
@@ -374,7 +455,7 @@ export let _LIST_ = (...xs: CrDataValue[]): CrDataList => {
 };
 
 export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
-  var result = new CrDataMap(initTernaryTreeMap(new Map()));
+  var dict = new Map();
   for (let idx in xs) {
     let pair = xs[idx];
     if (pair instanceof CrDataList) {
@@ -384,12 +465,12 @@ export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
       }
       let k = pair.get(0);
       let v = pair.get(1);
-      result = result.assoc(k, v);
+      dict = dict.set(k, v);
     } else {
       throw new Error("Expected a pair in list");
     }
   }
-  return result;
+  return new CrDataMap(initTernaryTreeMap(dict));
 };
 
 export let defatom = (path: string, x: CrDataValue): CrDataValue => {
@@ -1017,7 +1098,7 @@ export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
     throw new Error("Expected map");
   }
 
-  return new CrDataMap(a.merge(b));
+  return a.merge(b);
 };
 
 export let _AND_merge_DASH_non_DASH_nil = (
@@ -1037,7 +1118,7 @@ export let _AND_merge_DASH_non_DASH_nil = (
     throw new Error("Expected map");
   }
 
-  return new CrDataMap(a.mergeSkip(b, null));
+  return a.mergeSkip(b, null);
 };
 
 export let to_DASH_pairs = (xs: CrDataMap): Set<CrDataList> => {
