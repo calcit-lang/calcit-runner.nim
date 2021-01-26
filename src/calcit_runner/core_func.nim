@@ -500,24 +500,15 @@ proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     raiseEvalError("slice requires a list", (args))
 
 proc nativeConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2:
-    raiseEvalError("&concat requires 2 args", args)
-  let base = args[0]
-  let another = args[1]
-
-  if base.isNil and base.isNil:
-    return base
-
-  if base.isNil:
-    return another
-
-  if another.isNil:
-    return base
-
-  if not base.isList or not another.isList:
-    raiseEvalError("&concat requires two lists, got: " & $base.kind & " : " & $another.kind, args)
-
-  return CirruData(kind: crDataList, listVal: base.listVal.concat(another.listVal))
+  var xs: seq[TernaryTreeList[CirruData]]
+  for item in args:
+    if item.isNil:
+      continue
+    elif item.isList.not:
+      raiseEvalError("&concat requires list, got: " & $item.kind, args)
+    else:
+      xs.add item.listVal
+  return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs.len, 0, xs))
 
 proc nativeFormatTernaryTree(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
