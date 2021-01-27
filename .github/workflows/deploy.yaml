@@ -36,6 +36,7 @@ jobs:
     - name: Display status from deploy
       run: echo "${{ steps.deploy.outputs.status }}"
 
+    - run: rm node_modules/@calcit/procs
     - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{secrets.npm_token}}
