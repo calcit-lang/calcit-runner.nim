@@ -82,6 +82,14 @@
             assert= |1.23 $ format-number 1.23456789 2
             assert= |1.2 $ format-number 1.23456789 1
 
+            echo
+              pr-str $ {}
+                :a 1
+                :b |2
+                :c $ [] 3
+                :d $ {}
+                  ([] 1 2) 3
+
         |test-char $ quote
           fn ()
             log-title "|Test char"
