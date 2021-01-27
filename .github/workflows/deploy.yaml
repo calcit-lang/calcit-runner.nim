@@ -15,12 +15,6 @@ jobs:
     - name: Build binary
       run: nimble build --threads:on --verbose -y
 
-    - name: "generate procs.js"
-      run: >
-        mkdir js-out/
-        && yarn && yarn tsc
-        && ln -s ../../ node_modules/@calcit/procs
-
     - name: Deploy to server
       id: deploy
       uses: Pendect/action-rsyncer@v1.1.0
@@ -36,7 +30,9 @@ jobs:
     - name: Display status from deploy
       run: echo "${{ steps.deploy.outputs.status }}"
 
-    - run: rm node_modules/@calcit/procs
+    - name: "generate procs.js"
+      run: yarn && yarn tsc
+
     - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{secrets.npm_token}}
