@@ -150,7 +150,14 @@ class CrDataList {
     }
   }
   toString() {
-    return "TODO list";
+    let result = "";
+    for (let item of this.items()) {
+      if (result !== "") {
+        result = `${result}, `;
+      }
+      result = `${result}${toString(item, true)}`;
+    }
+    return `(${result})`;
   }
   isEmpty() {
     return this.len() === 0;
@@ -285,14 +292,14 @@ class CrDataMap {
     return new CrDataMap(dissocMap(this.chain.value, k));
   }
   toString() {
-    let result = "{";
+    let itemsCode = "";
     for (let [k, v] of this.pairs()) {
-      if (result.length > 1) {
-        result = result + ", ";
+      if (itemsCode !== "") {
+        itemsCode = `${itemsCode}, `;
       }
-      result = result + toString(k, false) + " " + toString(v, false);
+      itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
     }
-    return result + "}";
+    return `{${itemsCode}}`;
   }
   isEmpty() {
     let cursor = this.chain;
@@ -455,20 +462,12 @@ export let _LIST_ = (...xs: CrDataValue[]): CrDataList => {
 };
 
 export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
+  if (xs.length % 2 !== 0) {
+    throw new Error("&map expects even number of arguments");
+  }
   var dict = new Map();
-  for (let idx in xs) {
-    let pair = xs[idx];
-    if (pair instanceof CrDataList) {
-      if (pair.len() === 2) {
-      } else {
-        throw new Error("Expected pairs of 2");
-      }
-      let k = pair.get(0);
-      let v = pair.get(1);
-      dict = dict.set(k, v);
-    } else {
-      throw new Error("Expected a pair in list");
-    }
+  for (let idx = 0; idx < xs.length >> 1; idx++) {
+    dict = dict.set(xs[idx << 1], xs[(idx << 1) + 1]);
   }
   return new CrDataMap(initTernaryTreeMap(dict));
 };
@@ -1462,6 +1461,9 @@ let toString = (x: CrDataValue, escaped: boolean): string => {
   if (typeof x === "boolean") {
     return x.toString();
   }
+  if (typeof x === "function") {
+    return `(&fn ...)`;
+  }
   if (x instanceof CrDataSymbol) {
     return x.toString();
   }
@@ -1469,11 +1471,10 @@ let toString = (x: CrDataValue, escaped: boolean): string => {
     return x.toString();
   }
   if (x instanceof CrDataList) {
-    // TODO
-    return `[${x
-      .map((x) => toString(x, true))
-      .toArray()
-      .join(" ")}]`;
+    return x.toString();
+  }
+  if (x instanceof CrDataMap) {
+    return x.toString();
   }
   if (x instanceof Set) {
     let itemsCode = "";
@@ -1484,19 +1485,6 @@ let toString = (x: CrDataValue, escaped: boolean): string => {
       itemsCode = `${itemsCode}${toString(child, true)}`;
     });
     return `#{${itemsCode}}`;
-  }
-  if (x instanceof CrDataMap) {
-    let itemsCode = "";
-    for (let [k, v] of x.pairs()) {
-      if (itemsCode !== "") {
-        itemsCode = `${itemsCode}, `;
-      }
-      itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
-    }
-    return `{${itemsCode}}`;
-  }
-  if (typeof x === "function") {
-    return `(&fn ...)`;
   }
 
   console.error(x);
