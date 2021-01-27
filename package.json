@@ -1,4 +1,7 @@
 {
+  "name": "@calcit/procs",
+  "version": "0.2.33-a1",
+  "main": "./lib/calcit.procs.js",
   "devDependencies": {
     "@types/node": "^14.14.21",
     "@calcit/ternary-tree": "^0.0.5",
@@ -8,9 +11,7 @@
     "webpack-cli": "^4.4.0"
   },
   "scripts": {
-    "cp-js": "cp src/includes/calcit.procs.js js-out/calcit.procs.js",
-    "test-js": "yarn tsc && yarn cp-js && target=node yarn webpack && node js-out/bundle.js"
+    "test-js": "nimble genjs && yarn tsc && target=node yarn webpack && node js-out/bundle.js"
   },
-  "dependencies": {},
-  "version": "0.2.33"
+  "dependencies": {}
 }
