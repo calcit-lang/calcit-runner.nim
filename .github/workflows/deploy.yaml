@@ -37,6 +37,10 @@ jobs:
       run: echo "${{ steps.deploy.outputs.status }}"
 
     - run: rm node_modules/@calcit/procs
+    - run: npm whoami
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+
     - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{secrets.npm_token}}
