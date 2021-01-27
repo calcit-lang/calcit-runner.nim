@@ -20,5 +20,4 @@ profile_results.txt
 calcit_runner_*.nims
 node_modules
 
-src/includes/calcit.procs.js*
-src/includes/package-lock.json
+lib/calcit.procs.js*

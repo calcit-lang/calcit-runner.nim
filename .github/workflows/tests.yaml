@@ -22,6 +22,6 @@ jobs:
         yarn
         && yarn tsc
         && nimble genjs
-        && cp -v src/includes/calcit.procs.js js-out/calcit.procs.js
+        && ln -s ../../ node_modules/@calcit/procs
         && cp -v example/main.js js-out/
         && target=node yarn webpack && node js-out/bundle.js
