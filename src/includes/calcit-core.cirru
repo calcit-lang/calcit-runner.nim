@@ -518,10 +518,7 @@
         |{} $ quote
           defmacro {} (& xs)
             &let
-              ys $ map
-                fn (zs)
-                  quote-replace ([] ~@zs)
-                , xs
+              ys $ concat & xs
               quote-replace $ &{} ~@ys
 
         |fn $ quote

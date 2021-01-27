@@ -462,20 +462,12 @@ export let _LIST_ = (...xs: CrDataValue[]): CrDataList => {
 };
 
 export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
+  if (xs.length % 2 !== 0) {
+    throw new Error("&map expects even number of arguments");
+  }
   var dict = new Map();
-  for (let idx in xs) {
-    let pair = xs[idx];
-    if (pair instanceof CrDataList) {
-      if (pair.len() === 2) {
-      } else {
-        throw new Error("Expected pairs of 2");
-      }
-      let k = pair.get(0);
-      let v = pair.get(1);
-      dict = dict.set(k, v);
-    } else {
-      throw new Error("Expected a pair in list");
-    }
+  for (let idx = 0; idx < xs.length >> 1; idx++) {
+    dict = dict.set(xs[idx << 1], xs[(idx << 1) + 1]);
   }
   return new CrDataMap(initTernaryTreeMap(dict));
 };

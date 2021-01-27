@@ -95,7 +95,7 @@
               = :nim $ &get-calcit-backend
               assert=
                 macroexpand $ quote $ {} (:a 1)
-                quote $ &{} ([] :a 1)
+                quote $ &{} :a 1
 
         |log-title $ quote
           defn log-title (title)

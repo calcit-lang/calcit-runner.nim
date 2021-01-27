@@ -975,13 +975,11 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   return CirruData(kind: crDataSet, setVal: acc)
 
 proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if (exprList.len mod 2) != 0:
+    raiseEvalError("&{} expects even number of arguments", exprList)
   var value = initTable[CirruData, CirruData]()
-  for pair in exprList:
-    if pair.kind != crDataList:
-      raiseEvalError("Map requires nested children pairs", pair)
-    if pair.len() != 2:
-      raiseEvalError("Each pair of table contains 2 elements", pair)
-    value[pair[0]] = pair[1]
+  for i in 0..<(exprList.len shr 1):
+    value[exprList[i shl 1]] = exprList[i shl 1 + 1]
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
 proc nativeDeref(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
