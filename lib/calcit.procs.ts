@@ -65,13 +65,10 @@ class CrDataAtom {
   path: string;
   listeners: Map<CrDataValue, CrDataFn>;
   cachedHash: Hash;
-  /** it's changed, will trigger listener */
-  triggering: boolean;
   constructor(x: CrDataValue, path: string) {
     this.value = x;
     this.path = path;
     this.listeners = new Map();
-    this.triggering = false;
   }
   toString(): string {
     return `(&atom ${this.value.toString()})`;
@@ -739,18 +736,12 @@ export let reset_BANG_ = (a: CrDataAtom, v: CrDataValue): null => {
   if (!(a instanceof CrDataAtom)) {
     throw new Error("Expected atom for reset!");
   }
-  if (a.triggering) {
-    return; // already set trigger, skip
+  let prev = a.value;
+  a.value = v;
+  for (let [k, f] of a.listeners) {
+    f(v, prev);
   }
-  a.triggering = true;
-  setTimeout(() => {
-    let prev = a.value;
-    a.value = v;
-    for (let [k, f] of a.listeners) {
-      f(v, prev);
-    }
-    a.triggering = false;
-  });
+  return null;
 };
 
 export let add_DASH_watch = (
