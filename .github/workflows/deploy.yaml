@@ -8,31 +8,38 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - uses: jiro4989/setup-nim-action@v1
-      with:
-        nim-version: "1.4.0"
-    - name: Build binary
-      run: nimble build --threads:on --verbose -y
+      - uses: actions/checkout@v2
 
-    - name: Deploy to server
-      id: deploy
-      uses: Pendect/action-rsyncer@v1.1.0
-      env:
-        DEPLOY_KEY: ${{secrets.rsync_private_key}}
-      with:
-        flags: '-avzr --progress'
-        options: ''
-        ssh_options: ''
-        src: 'out/*'
-        dest: 'rsync-user@calcit-lang.org:/web-assets/repo/calcit-lang/binaries/linux/'
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org/
 
-    - name: Display status from deploy
-      run: echo "${{ steps.deploy.outputs.status }}"
+      - name: "generate procs.js"
+        run: yarn && yarn tsc
 
-    - name: "generate procs.js"
-      run: yarn && yarn tsc
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
-    - run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: "1.4.0"
+
+      - name: Build binary
+        run: nimble build --threads:on --verbose -y
+
+      - name: Deploy to server
+        id: deploy
+        uses: Pendect/action-rsyncer@v1.1.0
+        env:
+          DEPLOY_KEY: ${{secrets.rsync_private_key}}
+        with:
+          flags: '-avzr --progress'
+          options: ''
+          ssh_options: ''
+          src: 'out/*'
+          dest: 'rsync-user@calcit-lang.org:/web-assets/repo/calcit-lang/binaries/linux/'
+
+      - name: Display status from deploy
+        run: echo "${{ steps.deploy.outputs.status }}"
