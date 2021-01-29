@@ -134,6 +134,8 @@ proc loadModules(modulePath: string, baseDir: string) =
     fullpath = modulePath
   else:
     fullpath = getEnv("HOME").joinPath(".config/calcit/modules/", modulePath)
+  if fullpath.endsWith("/"):
+    fullpath = fullpath & "compact.cirru"
   echo "Loading module: ", fullpath
   let snapshotInfo = loadSnapshot(fullpath)
 
