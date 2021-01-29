@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@calcit/ternary-tree@0.0.5":
-  version "0.0.5"
-  resolved "https://registry.npm.taobao.org/@calcit/ternary-tree/download/@calcit/ternary-tree-0.0.5.tgz#206f636c95d22a3de4482ce5710c5a4dda0b4f60"
-  integrity sha1-IG9jbJXSKj3kSCzlcQxaTdoLT2A=
+"@calcit/ternary-tree@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@calcit/ternary-tree/-/ternary-tree-0.0.7.tgz#ae41e3b02cc51f6ff08aa11c7db4cbd4c55440d5"
+  integrity sha512-7MCgpJ36yVvObQYE+budozGLtvHzZU50bh3PyCa2j/B9fcpdRaDESyrZu7DEPaaE+FDAS/ivAzNIXKLBPImqug==
 
 "@discoveryjs/json-ext@^0.5.0":
   version "0.5.2"

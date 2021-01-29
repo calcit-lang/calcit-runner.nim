@@ -1339,12 +1339,12 @@ export let to_DASH_js_DASH_data = (
   throw new Error("Unknown data to js");
 };
 
-export let to_DASH_calcit_DASH_data = (x: any) => {
+export let to_DASH_calcit_DASH_data = (x: any, noKeyword: boolean = false) => {
   if (typeof x === "number") {
     return x;
   }
   if (typeof x === "string") {
-    if (x[0] === ":" && x.slice(1).match(/^[\w\d_\?\!\-]+$/)) {
+    if (!noKeyword && x[0] === ":" && x.slice(1).match(/^[\w\d_\?\!\-]+$/)) {
       return kwd(x.slice(1));
     }
     return x;
@@ -1355,14 +1355,14 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
   if (Array.isArray(x)) {
     var result: any[] = [];
     x.forEach((v) => {
-      result.push(to_DASH_calcit_DASH_data(v));
+      result.push(to_DASH_calcit_DASH_data(v, noKeyword));
     });
     return new CrDataList(result);
   }
   if (x instanceof Set) {
     let result: Set<CrDataValue> = new Set();
     x.forEach((v) => {
-      result.add(to_DASH_calcit_DASH_data(v));
+      result.add(to_DASH_calcit_DASH_data(v, noKeyword));
     });
     return result;
   }
@@ -1370,7 +1370,10 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
   if (x === Object(x)) {
     let result: Map<CrDataValue, CrDataValue> = new Map();
     Object.keys(x).forEach((k) => {
-      result.set(to_DASH_calcit_DASH_data(k), to_DASH_calcit_DASH_data(x[k]));
+      result.set(
+        to_DASH_calcit_DASH_data(k, noKeyword),
+        to_DASH_calcit_DASH_data(x[k], noKeyword)
+      );
     });
     return new CrDataMap(initTernaryTreeMap(result));
   }
@@ -1380,7 +1383,7 @@ export let to_DASH_calcit_DASH_data = (x: any) => {
 };
 
 export let parse_DASH_json = (x: string): CrDataValue => {
-  return to_DASH_calcit_DASH_data(JSON.parse(x));
+  return to_DASH_calcit_DASH_data(JSON.parse(x), false);
 };
 
 export let stringify_DASH_json = (
@@ -1648,7 +1651,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       if (x.length !== 2) {
         throw new Error("quote expects 1 argument");
       }
-      return to_DASH_calcit_DASH_data(x[1]);
+      return to_DASH_calcit_DASH_data(x[1], true);
     }
   }
   console.error(x);
