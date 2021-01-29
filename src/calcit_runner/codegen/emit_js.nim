@@ -39,21 +39,9 @@ proc hasNsPart(x: string): bool =
   let trySlashPos = x.find('/')
   return trySlashPos >= 1 and trySlashPos < x.len - 1
 
-# handle mutual recursion
-proc escapeNs(name: string): string
-
-proc escapeVar(name: string): string =
+proc escapeVarName(name: string): string =
   if name.hasNsPart():
-    let pieces = name.split("/")
-    if pieces.len != 2:
-      raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
-    let nsPart = pieces[0]
-    let defPart = pieces[1]
-    if nsPart == "js":
-      return defPart
-    else:
-      return nsPart.escapeNs() & "." & defPart.escapeVar()
-
+    raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
   result = name
   .replace("-", "_DASH_")
   .replace("?", "_QUES_")
@@ -83,8 +71,24 @@ proc escapeVar(name: string): string =
   if result == "else": result = "_ELSE_"
   if result == "let": result = "_LET_"
   if result == "case": result = "_CASE_"
-
 # use `$` to tell namespace from normal variables, thus able to use same token like clj
+
+# handle mutual recursion
+proc escapeNs(name: string): string
+
+proc escapeVar(name: string): string =
+  if name.hasNsPart():
+    let pieces = name.split("/")
+    if pieces.len != 2:
+      raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+    let nsPart = pieces[0]
+    let defPart = pieces[1]
+    if nsPart == "js":
+      return defPart
+    else:
+      return nsPart.escapeNs() & "." & defPart.escapeVar()
+  return escapeVarName(name)
+
 proc escapeNs(name: string): string =
   "$" & name.escapeVar()
 
@@ -189,7 +193,6 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         let falseBranch = if body.len >= 3: body[2].toJsCode(ns, localDefs) else: "null"
         return "(" & body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch & ")"
       of "&let":
-        result = result & "(()=>{"
         if body.len <= 1:
           raiseEvalError("Unpexpected empty content in let", xs)
         let pair = body.first()
@@ -202,7 +205,9 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if defName.kind != crDataSymbol:
           raiseEvalError("Expected symbol behind let", pair)
         # TODO `let` inside expressions makes syntax error
-        result = result & fmt"{cLine}let {defName.symbolVal.escapeVar} = {pair.listVal[1].toJsCode(ns, localDefs)};{cLine}"
+        let left = escapeVarName(defName.symbolVal)
+        let right = pair.listVal[1].toJsCode(ns, localDefs)
+        result = result & fmt"(({left})=>{cCurlyL}"
         # defined new local variable
         var scopedDefs = localDefs
         scopedDefs.incl(defName.symbolVal)
@@ -211,7 +216,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
             result = result & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
           else:
             result = result & x.toJsCode(ns, scopedDefs) & ";\n"
-        return result & "})()"
+        return result & fmt"{cCurlyR})({right})"
       of ";":
         return "(/* " & $CirruData(kind: crDataList, listVal: body) & " */ null)"
       of "do":

@@ -12,6 +12,9 @@
             ; try-fibo
             echo $ sieve-primes ([] 2 3 5 7 11 13) 17 400
 
+        |reload! $ quote
+          defn reload! () nil
+
         |try-fibo $ quote
           defn try-fibo ()
             let
