@@ -37,6 +37,10 @@
             log-title "|Testing json"
             test-js
 
+            when (> 1 2)
+              raise (str "|error of math" 2 1)
+              raise "|base error"
+
             do true
 
       :proc $ quote ()

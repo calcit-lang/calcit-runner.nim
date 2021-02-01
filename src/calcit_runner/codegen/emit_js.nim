@@ -266,8 +266,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         # not core syntax, but treat as macro for better debugging experience
         if body.len != 1:
           raiseEvalError("expected a single argument", body.toSeq())
-        let message: string = $body[0]
-        return fmt"(()=> {cCurlyL} throw new Error({message.escape}) {cCurlyR})() "
+        let message: string = body[0].toJsCode(ns, localDefs)
+        return fmt"(()=> {cCurlyL} throw new Error({message}) {cCurlyR})() "
       of "exists?":
         if body.len != 1: raiseEvalError("expected 1 argument", xs)
         let item = body[0]
