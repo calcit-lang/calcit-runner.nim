@@ -477,6 +477,19 @@
           defn keys (x)
             map first (to-pairs x)
 
+        |keys-non-nil $ quote
+          defn keys (x)
+            apply-args
+              [] (#{}) (to-pairs x)
+              fn (acc pairs)
+                if (empty? pairs) acc
+                  &let
+                    pair $ first pairs
+                    if (nil? (last pair))
+                      recur acc (rest pairs)
+                      recur (include acc (first pair))
+                        rest pairs
+
         |vals $ quote
           defn vals (x)
             map last (to-pairs x)

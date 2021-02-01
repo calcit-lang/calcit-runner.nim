@@ -266,8 +266,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         # not core syntax, but treat as macro for better debugging experience
         if body.len != 1:
           raiseEvalError("expected a single argument", body.toSeq())
-        let message: string = $body[0]
-        return fmt"(()=> {cCurlyL} throw new Error({message.escape}) {cCurlyR})() "
+        let message: string = body[0].toJsCode(ns, localDefs)
+        return fmt"(()=> {cCurlyL} throw new Error({message}) {cCurlyR})() "
       of "exists?":
         if body.len != 1: raiseEvalError("expected 1 argument", xs)
         let item = body[0]
@@ -340,6 +340,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
   var spreadingCode = "" # js list and calcit-js list are different, need to convert
   var argsCode = ""
   var spreading = false
+  var argsCount = 0
   for x in args:
     if x.kind != crDataSymbol:
       raiseEvalError("Expected symbol for arg", x)
@@ -351,7 +352,7 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
       argsCode = argsCode & "..." & argName
       # js list and calcit-js are different in spreading
       spreadingCode = spreadingCode & fmt"{cLine}{argName} = {varPrefix}arrayToList({argName});"
-      spreading = false
+      break # no more args after spreading argument
     else:
       if x.symbolVal == "&":
         spreading = true
@@ -360,8 +361,13 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
         argsCode = argsCode & ", "
       localDefs.incl(x.symbolVal)
       argsCode = argsCode & x.symbolVal.escapeVar
+      argsCount = argsCount + 1
 
-  var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{spreadingCode}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
+  let checkArgs = if spreading:
+    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') };"
+  else:
+    cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') };"
+  var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{checkArgs}{spreadingCode}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
   if body.len > 0 and body[^1].usesRecur():
     let varPrefix = if ns == "calcit.core": "" else: "$calcit."
     let exportMark = if exported: fmt"export let {name.escapeVar} = " else: ""

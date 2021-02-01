@@ -115,6 +115,23 @@
               {,} :a 1 , :b 2 , :c 3
               {} (:a 1) (:b 2) (:c 3)
 
+        |test-keys $ quote
+          fn ()
+            log-title "|Testing keys"
+
+            assert=
+              keys-non-nil $ {}
+                :a 1
+                :b 2
+              #{} :a :b
+
+            assert=
+              keys-non-nil $ {}
+                :a 1
+                :b 2
+                :c nil
+              #{} :a :b
+
         |main! $ quote
           defn main! ()
 
@@ -128,6 +145,8 @@
             test-native-map-syntax
 
             test-map-comma
+
+            test-keys
 
             do true
 

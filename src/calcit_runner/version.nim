@@ -1,2 +1,2 @@
 
-let commandLineVersion* = "0.2.41"
+let commandLineVersion* = "0.2.42"
