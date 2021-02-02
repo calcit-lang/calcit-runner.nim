@@ -1046,7 +1046,7 @@ export let mod = (a: number, b: number): number => {
   return a % b;
 };
 export let _AND_str_DASH_concat = (a: string, b: string) => {
-  return `${a}${b}`;
+  return `${toString(a, false)}${toString(b, false)}`;
 };
 export let sort = (f: CrDataFn, xs: CrDataList): CrDataList => {
   if (xs == null) {
@@ -1298,6 +1298,9 @@ export let to_DASH_js_DASH_data = (
   x: CrDataValue,
   addColon: boolean = false
 ): any => {
+  if (x == null) {
+    return null;
+  }
   if (x === true || x === false) {
     return x;
   }
@@ -1340,6 +1343,9 @@ export let to_DASH_js_DASH_data = (
 };
 
 export let to_DASH_calcit_DASH_data = (x: any, noKeyword: boolean = false) => {
+  if (x == null) {
+    return null;
+  }
   if (typeof x === "number") {
     return x;
   }
