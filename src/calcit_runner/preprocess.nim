@@ -82,7 +82,7 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   ]))
 
   if defName.kind != crDataSymbol:
-    raiseEvalError("Expects a symbol in let:", xs)
+    raiseEvalError("Expects a symbol in &let:", xs)
 
   if defName.symbolVal != "&":
     newDefs.incl(defName.symbolVal)

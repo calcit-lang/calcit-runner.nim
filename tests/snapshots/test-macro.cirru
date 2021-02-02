@@ -247,10 +247,10 @@
             &reset-gensym-index!
 
             assert=
-              macroexpand $ quote $ let{}
-                (a b) o
+              macroexpand $ quote $ let{} (a b) o
                 + a b
               quote $ &let (result__1 o)
+                assert (str "|expected map for destructing: " result__1) (map? result__1)
                 let
                     a $ :a result__1
                     b $ :b result__1
@@ -260,9 +260,28 @@
               base $ {}
                 :a 5
                 :b 6
-              assert= 11 $ let{}
-                (a b) base
+              assert= 11 $ let{} (a b) base
                 + a b
+
+            assert=
+              macroexpand $ quote
+                let-destruct ([] a b) ([] 3 4)
+                  + a b
+              quote $ let[] (a b) ([] 3 4) (+ a b)
+
+            assert=
+              macroexpand $ quote
+                let-destruct ({} a b) ({,} :a 3 :b 4)
+                  + a b
+              quote $ let{} (a b) ({,} :a 3 :b 4)
+                + a b
+
+            assert=
+              [] 3 4 5 6
+              let-sugar
+                  ([] a b) ([] 3 4)
+                  ({} c d) ({,} :c 5 :d 6)
+                [] a b c d
 
         |test-detector $ quote
           fn ()

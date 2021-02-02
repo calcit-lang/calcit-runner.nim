@@ -57,7 +57,7 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var letScope = scope
   if exprList.len < 1:
-    raiseEvalError("No enough code for let, too short", exprList)
+    raiseEvalError("No enough code for &let, too short", exprList)
   let pair = exprList[0]
   let body = exprList[1..^1]
   if pair.kind != crDataList:
