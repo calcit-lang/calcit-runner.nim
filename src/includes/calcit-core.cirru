@@ -748,7 +748,7 @@
                     do
                       echo "|Failed assertion:" (quote ~xs)
                       raise
-                        ~ $ &str-concat message (quote ~xs)
+                        ~ $ str message "| " xs
 
         |println $ quote
           defn println (& xs)
@@ -937,8 +937,7 @@
         |let[] $ quote
           defmacro let[] (vars data & body)
             assert "|expects a list of definitions"
-              and (list? vars)
-                &> (count vars) 0
+              &and (list? vars)
                 every? symbol? vars
             let
                 v $ gensym |v
