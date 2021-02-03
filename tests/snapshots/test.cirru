@@ -92,6 +92,16 @@
             assert-detect identity
               not= 1 2
 
+            assert= true $ some-in? ({,} :a 1) ([] :a)
+            assert= false $ some-in? ({,} :a 1) ([] :b)
+            assert= false $ some-in? nil ([] :b)
+            assert= false $ some-in? nil ([])
+
+            assert= true $ some-in? ({,} :a ([] 1)) ([] :a 0)
+            assert= false $ some-in? ({,} :a ([] 1)) ([] :a 1)
+
+            assert= false $ some-in? ([] 1 2 3) ([] :a)
+
         |test-time $ quote
           fn ()
             assert= 1605024000 $ parse-time |2020-11-11

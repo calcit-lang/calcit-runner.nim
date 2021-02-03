@@ -398,6 +398,20 @@
         |some? $ quote
           defn some? (x) $ not $ nil? x
 
+        |some-in? $ quote
+          defn some-in? (x path)
+            if (nil? x) false
+              if (empty? path) true
+                &let (k $ first path)
+                  if (map? x)
+                    recur (get x k) (rest path)
+                    if (list? x)
+                      if (number? k)
+                        recur (get x k) (rest path)
+                        , false
+                      raise $ str "|Unknown structure for some-in? detection" x
+
+
         |zipmap $ quote
           defn zipmap (xs0 ys0)
             apply-args
