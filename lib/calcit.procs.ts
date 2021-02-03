@@ -12,6 +12,8 @@ import {
   kwd,
   atomsRegistry,
   toString,
+  CrDataSet,
+  cloneSet,
 } from "./calcit-data";
 
 export * from "./calcit-data";
@@ -44,7 +46,7 @@ export let type_DASH_of = (x: any): CrDataKeyword => {
   if (x instanceof CrDataSymbol) {
     return kwd("symbol");
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     return kwd("set");
   }
   if (x === true || x === false) {
@@ -81,8 +83,8 @@ export let count = (x: CrDataValue): number => {
   if (x instanceof CrDataMap) {
     return x.len();
   }
-  if (x instanceof Set) {
-    return (x as Set<CrDataValue>).size;
+  if (x instanceof CrDataSet) {
+    return x.len();
   }
   throw new Error(`Unknown data ${x}`);
 };
@@ -141,9 +143,9 @@ export let foldl = function (
     }
     return result;
   }
-  if (xs instanceof Set) {
+  if (xs instanceof CrDataSet) {
     let result = acc;
-    xs.forEach((item) => {
+    xs.value.forEach((item) => {
       result = f(result, item);
     });
     return result;
@@ -235,15 +237,13 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
-  if (x instanceof Set) {
-    if (y instanceof Set) {
-      let x2 = x as Set<CrDataValue>;
-      let y2 = y as Set<CrDataValue>;
-      if (x2.size !== y2.size) {
+  if (x instanceof CrDataSet) {
+    if (y instanceof CrDataSet) {
+      if (x.len() !== y.len()) {
         return false;
       }
-      for (let v in x2.values()) {
-        if (!y2.has(v)) {
+      for (let v in x.value.values()) {
+        if (!y.contains(v)) {
           return false;
         }
       }
@@ -292,12 +292,10 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   if (xs instanceof CrDataMap) {
     return xs.contains(x);
   }
-  if (xs instanceof Set) {
-    // TODO structure inside set
-    return xs.has(x);
+  if (xs instanceof CrDataSet) {
+    return xs.contains(x);
   }
 
-  // TODO set not handled
   throw new Error("Does not support contains? on this type");
 };
 
@@ -428,8 +426,8 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
   if (xs instanceof CrDataMap) {
     return xs.isEmpty();
   }
-  if (xs instanceof Set) {
-    return xs.size === 0;
+  if (xs instanceof CrDataSet) {
+    return xs.len() === 0;
   }
   if (xs == null) {
     return true;
@@ -480,13 +478,8 @@ export let first = (xs: CrDataValue): CrDataValue => {
   if (typeof xs === "string") {
     return xs[0];
   }
-  if (xs instanceof Set) {
-    if (xs.size === 0) {
-      return null;
-    }
-    for (let x of xs) {
-      return x;
-    }
+  if (xs instanceof CrDataSet) {
+    return xs.first();
   }
   console.error(xs);
   throw new Error("Expects something sequential");
@@ -513,15 +506,8 @@ export let rest = (xs: CrDataValue): CrDataValue => {
   if (typeof xs === "string") {
     return xs.substr(1);
   }
-  if (xs instanceof Set) {
-    if (xs.size == 0) {
-      return null;
-    }
-    let it = xs.values();
-    let x0 = it.next().value;
-    let ys = cloneSet(xs);
-    ys.delete(x0);
-    return ys;
+  if (xs instanceof CrDataSet) {
+    return xs.rest();
   }
   console.error(xs);
 
@@ -599,7 +585,7 @@ export let _SHA__MAP_ = (...xs: CrDataValue[]): CrDataValue => {
   for (let idx in xs) {
     result.add(xs[idx]);
   }
-  return result;
+  return new CrDataSet(result);
 };
 
 let idCounter = 0;
@@ -750,7 +736,7 @@ export let _AND_merge_DASH_non_DASH_nil = (
   return a.mergeSkip(b, null);
 };
 
-export let to_DASH_pairs = (xs: CrDataMap): Set<CrDataList> => {
+export let to_DASH_pairs = (xs: CrDataMap): CrDataSet => {
   if (!(xs instanceof CrDataMap)) {
     throw new Error("Expected a map");
   }
@@ -758,8 +744,10 @@ export let to_DASH_pairs = (xs: CrDataMap): Set<CrDataList> => {
   for (let [k, v] of xs.pairs()) {
     result.add(new CrDataList([k, v]));
   }
-  return result;
+  return new CrDataSet(result);
 };
+
+// Math functions
 
 export let sin = (n: number) => {
   return Math.sin(n);
@@ -780,70 +768,56 @@ export let sqrt = (n: number) => {
   return Math.sqrt(n);
 };
 
-export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
-  if (!(xs instanceof Set)) {
+// Set functions
+
+export let _AND_include = (xs: CrDataSet, y: CrDataValue): CrDataSet => {
+  if (!(xs instanceof CrDataSet)) {
     throw new Error("Expected a set");
   }
-  var result: Set<CrDataValue> = new Set();
-  for (let v of xs) {
-    result.add(v);
+  if (y == null) {
+    return xs;
   }
-  return result;
+  return xs.include(y);
 };
 
-export let _AND_include = (
-  xs: Set<CrDataValue>,
-  y: CrDataValue
-): Set<CrDataValue> => {
-  var result = cloneSet(xs);
-  result.add(y);
-  return result;
+export let _AND_exclude = (xs: CrDataSet, y: CrDataValue): CrDataSet => {
+  if (!(xs instanceof CrDataSet)) {
+    throw new Error("Expected a set");
+  }
+  if (y == null) {
+    return xs;
+  }
+  return xs.exclude(y);
 };
 
-export let _AND_exclude = (
-  xs: Set<CrDataValue>,
-  y: CrDataValue
-): Set<CrDataValue> => {
-  var result = cloneSet(xs);
-  result.delete(y);
-  return result;
+export let _AND_difference = (xs: CrDataSet, ys: CrDataSet): CrDataSet => {
+  if (!(xs instanceof CrDataSet)) {
+    throw new Error("Expected a set");
+  }
+  if (!(ys instanceof CrDataSet)) {
+    throw new Error("Expected a set for ys");
+  }
+  return xs.difference(ys);
 };
 
-export let _AND_difference = (
-  xs: Set<CrDataValue>,
-  ys: Set<CrDataValue>
-): Set<CrDataValue> => {
-  var result = cloneSet(xs);
-  ys.forEach((y) => {
-    if (result.has(y)) {
-      result.delete(y);
-    }
-  });
-  return result;
+export let _AND_union = (xs: CrDataSet, ys: CrDataSet): CrDataSet => {
+  if (!(xs instanceof CrDataSet)) {
+    throw new Error("Expected a set");
+  }
+  if (!(ys instanceof CrDataSet)) {
+    throw new Error("Expected a set for ys");
+  }
+  return xs.union(ys);
 };
-export let _AND_union = (
-  xs: Set<CrDataValue>,
-  ys: Set<CrDataValue>
-): Set<CrDataValue> => {
-  var result = cloneSet(xs);
-  ys.forEach((y) => {
-    if (!result.has(y)) {
-      result.add(y);
-    }
-  });
-  return result;
-};
-export let _AND_intersection = (
-  xs: Set<CrDataValue>,
-  ys: Set<CrDataValue>
-): Set<CrDataValue> => {
-  var result: Set<CrDataValue> = new Set();
-  ys.forEach((y) => {
-    if (xs.has(y)) {
-      result.add(y);
-    }
-  });
-  return result;
+
+export let _AND_intersection = (xs: CrDataSet, ys: CrDataSet): CrDataSet => {
+  if (!(xs instanceof CrDataSet)) {
+    throw new Error("Expected a set");
+  }
+  if (!(ys instanceof CrDataSet)) {
+    throw new Error("Expected a set for ys");
+  }
+  return xs.intersection(ys);
 };
 
 export let replace = (x: string, y: string, z: string): string => {
@@ -972,7 +946,10 @@ export let to_DASH_js_DASH_data = (
   throw new Error("Unknown data to js");
 };
 
-export let to_DASH_calcit_DASH_data = (x: any, noKeyword: boolean = false) => {
+export let to_DASH_calcit_DASH_data = (
+  x: any,
+  noKeyword: boolean = false
+): CrDataValue => {
   if (x == null) {
     return null;
   }
@@ -1000,7 +977,7 @@ export let to_DASH_calcit_DASH_data = (x: any, noKeyword: boolean = false) => {
     x.forEach((v) => {
       result.add(to_DASH_calcit_DASH_data(v, noKeyword));
     });
-    return result;
+    return new CrDataSet(result);
   }
   // detects object
   if (x === Object(x)) {
@@ -1029,9 +1006,9 @@ export let stringify_DASH_json = (
   return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
 };
 
-export let set_DASH__GT_list = (x: Set<CrDataValue>): CrDataList => {
+export let set_DASH__GT_list = (x: CrDataSet): CrDataList => {
   var result: CrDataValue[] = [];
-  x.forEach((item) => {
+  x.value.forEach((item) => {
     result.push(item);
   });
   return new CrDataList(result);
@@ -1231,7 +1208,9 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       return new CrDataList(x.slice(1).map(extract_DASH_cirru_DASH_edn));
     }
     if (x[0] === "#{}") {
-      return new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn));
+      return new CrDataSet(
+        new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn))
+      );
     }
     if (x[0] === "do" && x.length === 2) {
       return extract_DASH_cirru_DASH_edn(x[1]);
@@ -1305,7 +1284,7 @@ export let list_QUES_ = (x: CrDataValue): boolean => {
   return x instanceof CrDataList;
 };
 export let set_QUES_ = (x: CrDataValue): boolean => {
-  return x instanceof Set;
+  return x instanceof CrDataSet;
 };
 export let fn_QUES_ = (x: CrDataValue): boolean => {
   return typeof x === "function";
