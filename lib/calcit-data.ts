@@ -23,6 +23,8 @@ import {
   valueHash,
   mergeValueHash,
   toPairsArray,
+  assocBefore,
+  assocAfter,
 } from "@calcit/ternary-tree";
 
 export class CrDataKeyword {
@@ -126,6 +128,14 @@ export class CrDataList {
   assoc(idx: number, v: CrDataValue) {
     this.turnListMode();
     return new CrDataList(assocList(this.value, idx, v));
+  }
+  assocBefore(idx: number, v: CrDataValue) {
+    this.turnListMode();
+    return new CrDataList(assocBefore(this.value, idx, v));
+  }
+  assocAfter(idx: number, v: CrDataValue) {
+    this.turnListMode();
+    return new CrDataList(assocAfter(this.value, idx, v));
   }
   dissoc(idx: number) {
     this.turnListMode();

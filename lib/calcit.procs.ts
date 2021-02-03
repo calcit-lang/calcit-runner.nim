@@ -339,7 +339,43 @@ export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
     return xs.assoc(k, v);
   }
 
-  throw new Error("Does not support `get` on this type");
+  throw new Error("Does not support `assoc` on this type");
+};
+
+export let assoc_DASH_before = function (
+  xs: CrDataList,
+  k: number,
+  v: CrDataValue
+): CrDataList {
+  if (arguments.length !== 3) {
+    throw new Error("assoc takes 3 arguments");
+  }
+  if (xs instanceof CrDataList) {
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
+    }
+    return xs.assocBefore(k, v);
+  }
+
+  throw new Error("Does not support `assoc-before` on this type");
+};
+
+export let assoc_DASH_after = function (
+  xs: CrDataList,
+  k: number,
+  v: CrDataValue
+): CrDataList {
+  if (arguments.length !== 3) {
+    throw new Error("assoc takes 3 arguments");
+  }
+  if (xs instanceof CrDataList) {
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
+    }
+    return xs.assocAfter(k, v);
+  }
+
+  throw new Error("Does not support `assoc-after` on this type");
 };
 
 export let dissoc = function (xs: CrDataValue, k: CrDataValue) {
@@ -1293,30 +1329,47 @@ export let atom_QUES_ = (x: CrDataValue): boolean => {
   return x instanceof CrDataAtom;
 };
 
+export let escape = (x: string) => JSON.stringify(x);
+
+export let read_DASH_file = (path: string): string => {
+  if (inNodeJs) {
+    // TODO
+    (globalThis as any)["__calcit_injections__"].read_DASH_file(path);
+  } else {
+    // no actual File API in browser
+    return localStorage.get(path) ?? "";
+  }
+};
+export let write_DASH_file = (path: string, content: string): void => {
+  if (inNodeJs) {
+    // TODO
+    (globalThis as any)["__calcit_injections__"].write_DASH_file(path, content);
+  } else {
+    // no actual File API in browser
+    localStorage.setItem(path, content);
+  }
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
 
-let placeholder = (...xs: []) => {
-  /* placeholder */
+let unavailableProc = (...xs: []) => {
+  console.warn("NOT available for calcit-js");
 };
 
-export let escape = placeholder; // TODO
-export let format_DASH_time = placeholder; // TODO
-export let now_BANG_ = placeholder; // TODO
-export let parse_DASH_cirru = placeholder; // TODO
-export let parse_DASH_cirru_DASH_edn = placeholder; // TODO
-export let parse_DASH_time = placeholder; // TODO
-export let read_DASH_file = placeholder; // TODO Node.js
-export let write_DASH_file = placeholder; // TODO Node.js
-export let assoc_DASH_after = placeholder; // TODO
-export let assoc_DASH_before = placeholder; // TODO
+export let format_DASH_time = unavailableProc; // TODO
+export let now_BANG_ = unavailableProc; // TODO
+export let parse_DASH_time = unavailableProc; // TODO
 
-// these functions are available for by calcit-js
-export let _AND_reset_DASH_gensym_DASH_index_BANG_ = placeholder;
-export let dbt_DASH__GT_point = placeholder;
-export let dbt_DASH_digits = placeholder;
-export let dual_DASH_balanced_DASH_ternary = placeholder;
-export let gensym = placeholder;
-export let macroexpand = placeholder;
-export let macroexpand_DASH_all = placeholder;
+export let parse_DASH_cirru = unavailableProc; // TODO
+export let parse_DASH_cirru_DASH_edn = unavailableProc; // TODO
+
+// not available for calcit-js
+export let _AND_reset_DASH_gensym_DASH_index_BANG_ = unavailableProc;
+export let dbt_DASH__GT_point = unavailableProc;
+export let dbt_DASH_digits = unavailableProc;
+export let dual_DASH_balanced_DASH_ternary = unavailableProc;
+export let gensym = unavailableProc;
+export let macroexpand = unavailableProc;
+export let macroexpand_DASH_all = unavailableProc;
