@@ -398,6 +398,20 @@
         |some? $ quote
           defn some? (x) $ not $ nil? x
 
+        |some-in? $ quote
+          defn some-in? (x path)
+            if (nil? x) false
+              if (empty? path) true
+                &let (k $ first path)
+                  if (map? x)
+                    recur (get x k) (rest path)
+                    if (list? x)
+                      if (number? k)
+                        recur (get x k) (rest path)
+                        , false
+                      raise $ str "|Unknown structure for some-in? detection" x
+
+
         |zipmap $ quote
           defn zipmap (xs0 ys0)
             apply-args
@@ -657,6 +671,41 @@
                       ~ $ rest pairs
                       ~@ body
 
+        |let-sugar $ quote
+          defmacro let-sugar (pairs & body)
+            assert "|expects pairs in list for let" (list? pairs)
+            if (empty? pairs)
+              quote-replace $ do ~@body
+              &let
+                pair $ first pairs
+                assert "|expected pair length of 2" (&= 2 (count pair))
+                if (&= 1 (count pairs))
+                  quote-replace
+                    let-destruct ~@pair
+                      ~@ body
+                  quote-replace
+                    let-destruct ~@pair
+                      let-sugar
+                        ~ $ rest pairs
+                        ~@ body
+
+        |let-destruct $ quote
+          defmacro let-destruct (pattern v & body)
+            if (symbol? pattern)
+              quote-replace
+                &let (~pattern ~v) ~@body
+              if (list? pattern)
+                if (&= '[] (first pattern))
+                  quote-replace
+                    let[] (~ (rest pattern)) ~v ~@body
+                  if (&= '{} (first pattern))
+                    quote-replace
+                      let{} (~ (rest pattern)) ~v ~@body
+                    do
+                      echo pattern
+                      raise "|Unknown pattern to destruct"
+                raise "|Unknown structure to destruct"
+
         |let-> $ quote
           defmacro let-> (& body)
             if (empty? body) (quote nil)
@@ -869,18 +918,15 @@
                   call-with-log ~f-name ~@args
 
         |let{} $ quote
-          defmacro let{} (binding & body)
-            assert "|expects 2 items in list of binding"
-              &and (list? binding) (&= 2 (count binding))
+          defmacro let{} (items base & body)
+            assert (str "|expects symbol names in binding names: " items)
+              &and (list? items) (every? symbol? items)
             let
-                items $ first binding
-                base $ last binding
                 var-result $ gensym |result
-              assert (str "|expects symbol names in binding names: " items)
-                every? symbol? items
               quote-replace
                 &let
                   ~var-result ~base
+                  assert (str "|expected map for destructing: " ~var-result) (map? ~var-result)
                   let
                     ~ $ map
                       defn gen-items% (x)

@@ -22,12 +22,6 @@ var evalOnce = false
 var evalOnceCode: string
 var initFn = none(string)
 
-if not (jsMode or irMode):
-  registerCoreProc("init-canvas", nativeInitCanvas)
-  registerCoreProc("draw-canvas", nativeDrawCanvas)
-  registerCoreProc("draw-error-message", nativeDrawErrorMessage)
-  registerCoreProc("timeout-call", nativeTimeoutCall)
-
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
   echo "\nKilled with Control c."
@@ -99,6 +93,12 @@ while true:
     snapshotFile = cliArgs.key
     incrementFile = cliArgs.key.replace("compact", ".compact-inc")
     dimEcho "Runner: specifying files", snapshotFile, incrementFile
+
+if not (jsMode or irMode):
+  registerCoreProc("init-canvas", nativeInitCanvas)
+  registerCoreProc("draw-canvas", nativeDrawCanvas)
+  registerCoreProc("draw-error-message", nativeDrawErrorMessage)
+  registerCoreProc("timeout-call", nativeTimeoutCall)
 
 if evalOnce:
   discard evalSnippet(evalOnceCode)

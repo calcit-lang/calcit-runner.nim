@@ -20,4 +20,4 @@ profile_results.txt
 calcit_runner_*.nims
 node_modules
 
-lib/calcit.procs.js*
+lib/*.js

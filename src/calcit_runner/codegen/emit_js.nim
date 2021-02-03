@@ -112,6 +112,17 @@ let preferredJsProc = toHashSet([
   "list?", "set?",
   "string?", "fn?",
   "bool?", "atom?",
+  "starts-with?",
+])
+
+let unavailableProcs = toHashSet([
+  "&reset-gensym-index!",
+  "dbt->point",
+  "dbt-digits",
+  "dbt-balanced-ternary",
+  "gensym",
+  "macroexpand",
+  "macroexpand-all",
 ])
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
@@ -470,8 +481,10 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
     for def in depsInOrder:
       if ns == "calcit.core":
         # some defs from core can be replaced by calcit.procs
+        if unavailableProcs.contains(def):
+          continue
         if preferredJsProc.contains(def):
-          defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
+          defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
           continue
 
       let f = file.defs[def]

@@ -160,7 +160,7 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
       raiseEvalError("Required number index for list", b)
     if b.numberVal.round.float != b.numberVal:
       raiseEvalError("Required round number index for list", b)
-    if b.numberVal > a.len.float or b.numberVal < 0.float:
+    if b.numberVal >= a.len.float or b.numberVal < 0.float:
       return CirruData(kind: crDataNil)
     else:
       return a[b.numberVal.int]
