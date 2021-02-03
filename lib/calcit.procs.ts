@@ -18,8 +18,7 @@ import {
 
 export * from "./calcit-data";
 
-let inNodeJs =
-  typeof process !== "undefined" && process?.release?.name === "node";
+let inNodeJs = typeof process !== "undefined" && process?.release?.name === "node";
 
 export let type_DASH_of = (x: any): CrDataKeyword => {
   if (typeof x === "string") {
@@ -122,11 +121,7 @@ export let deref = (x: CrDataAtom): CrDataValue => {
   return a.value;
 };
 
-export let foldl = function (
-  f: CrDataFn,
-  acc: CrDataValue,
-  xs: CrDataValue
-): CrDataValue {
+export let foldl = function (f: CrDataFn, acc: CrDataValue, xs: CrDataValue): CrDataValue {
   if (arguments.length !== 3) {
     throw new Error("foldl takes 3 arguments");
   }
@@ -342,11 +337,7 @@ export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
   throw new Error("Does not support `assoc` on this type");
 };
 
-export let assoc_DASH_before = function (
-  xs: CrDataList,
-  k: number,
-  v: CrDataValue
-): CrDataList {
+export let assoc_DASH_before = function (xs: CrDataList, k: number, v: CrDataValue): CrDataList {
   if (arguments.length !== 3) {
     throw new Error("assoc takes 3 arguments");
   }
@@ -360,11 +351,7 @@ export let assoc_DASH_before = function (
   throw new Error("Does not support `assoc-before` on this type");
 };
 
-export let assoc_DASH_after = function (
-  xs: CrDataList,
-  k: number,
-  v: CrDataValue
-): CrDataList {
+export let assoc_DASH_after = function (xs: CrDataList, k: number, v: CrDataValue): CrDataList {
   if (arguments.length !== 3) {
     throw new Error("assoc takes 3 arguments");
   }
@@ -408,11 +395,7 @@ export let reset_BANG_ = (a: CrDataAtom, v: CrDataValue): null => {
   return null;
 };
 
-export let add_DASH_watch = (
-  a: CrDataAtom,
-  k: CrDataKeyword,
-  f: CrDataFn
-): null => {
+export let add_DASH_watch = (a: CrDataAtom, k: CrDataKeyword, f: CrDataFn): null => {
   if (!(a instanceof CrDataAtom)) {
     throw new Error("Expected atom for add-watch!");
   }
@@ -752,10 +735,7 @@ export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   return a.merge(b);
 };
 
-export let _AND_merge_DASH_non_DASH_nil = (
-  a: CrDataMap,
-  b: CrDataMap
-): CrDataMap => {
+export let _AND_merge_DASH_non_DASH_nil = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   if (a == null) {
     return b;
   }
@@ -927,17 +907,11 @@ export let re_DASH_find_DASH_index = (re: string, content: string): number => {
   return content.search(new RegExp(re));
 };
 
-export let re_DASH_find_DASH_all = (
-  re: string,
-  content: string
-): CrDataList => {
+export let re_DASH_find_DASH_all = (re: string, content: string): CrDataList => {
   return new CrDataList(content.match(new RegExp(re, "g")));
 };
 
-export let to_DASH_js_DASH_data = (
-  x: CrDataValue,
-  addColon: boolean = false
-): any => {
+export let to_DASH_js_DASH_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (x == null) {
     return null;
   }
@@ -982,10 +956,7 @@ export let to_DASH_js_DASH_data = (
   throw new Error("Unknown data to js");
 };
 
-export let to_DASH_calcit_DASH_data = (
-  x: any,
-  noKeyword: boolean = false
-): CrDataValue => {
+export let to_DASH_calcit_DASH_data = (x: any, noKeyword: boolean = false): CrDataValue => {
   if (x == null) {
     return null;
   }
@@ -1019,10 +990,7 @@ export let to_DASH_calcit_DASH_data = (
   if (x === Object(x)) {
     let result: Map<CrDataValue, CrDataValue> = new Map();
     Object.keys(x).forEach((k) => {
-      result.set(
-        to_DASH_calcit_DASH_data(k, noKeyword),
-        to_DASH_calcit_DASH_data(x[k], noKeyword)
-      );
+      result.set(to_DASH_calcit_DASH_data(k, noKeyword), to_DASH_calcit_DASH_data(x[k], noKeyword));
     });
     return new CrDataMap(initTernaryTreeMap(result));
   }
@@ -1035,10 +1003,7 @@ export let parse_DASH_json = (x: string): CrDataValue => {
   return to_DASH_calcit_DASH_data(JSON.parse(x), false);
 };
 
-export let stringify_DASH_json = (
-  x: CrDataValue,
-  addColon: boolean = false
-): string => {
+export let stringify_DASH_json = (x: CrDataValue, addColon: boolean = false): string => {
   return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
 };
 
@@ -1170,9 +1135,7 @@ export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
   }
   if (x instanceof CrDataList) {
     // TODO can be faster
-    return (["[]"] as CirruEdnFormat[]).concat(
-      x.toArray().map(to_DASH_cirru_DASH_edn)
-    );
+    return (["[]"] as CirruEdnFormat[]).concat(x.toArray().map(to_DASH_cirru_DASH_edn));
   }
   if (x instanceof CrDataMap) {
     let buffer: CirruEdnFormat = ["{}"];
@@ -1230,10 +1193,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       let result = new Map<CrDataValue, CrDataValue>();
       x.slice(1).forEach((pair) => {
         if (pair instanceof Array && pair.length == 2) {
-          result.set(
-            extract_DASH_cirru_DASH_edn(pair[0]),
-            extract_DASH_cirru_DASH_edn(pair[1])
-          );
+          result.set(extract_DASH_cirru_DASH_edn(pair[0]), extract_DASH_cirru_DASH_edn(pair[1]));
         } else {
           throw new Error("Expected pairs for map");
         }
@@ -1244,9 +1204,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       return new CrDataList(x.slice(1).map(extract_DASH_cirru_DASH_edn));
     }
     if (x[0] === "#{}") {
-      return new CrDataSet(
-        new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn))
-      );
+      return new CrDataSet(new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn)));
     }
     if (x[0] === "do" && x.length === 2) {
       return extract_DASH_cirru_DASH_edn(x[1]);

@@ -102,9 +102,7 @@ export class CrDataList {
   }
   turnListMode() {
     if (this.arrayMode) {
-      this.value = initTernaryTreeList(
-        this.arrayValue.slice(this.arrayStart, this.arrayEnd)
-      );
+      this.value = initTernaryTreeList(this.arrayValue.slice(this.arrayStart, this.arrayEnd));
       this.arrayValue = null;
       this.arrayStart = null;
       this.arrayEnd = null;
@@ -473,11 +471,7 @@ let hashFunction = (x: CrDataValue): Hash => {
 // Dirty code to change ternary-tree behavior
 overwriteHashGenerator(hashFunction);
 
-function* sliceGenerator(
-  xs: Array<CrDataValue>,
-  start: number,
-  end: number
-): Generator<CrDataValue> {
+function* sliceGenerator(xs: Array<CrDataValue>, start: number, end: number): Generator<CrDataValue> {
   for (let idx = start; idx < end; idx++) {
     yield xs[idx];
   }
