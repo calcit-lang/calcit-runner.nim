@@ -1330,11 +1330,11 @@ export let parse_DASH_cirru_DASH_edn = placeholder; // TODO
 export let parse_DASH_time = placeholder; // TODO
 export let read_DASH_file = placeholder; // TODO Node.js
 export let write_DASH_file = placeholder; // TODO Node.js
+export let assoc_DASH_after = placeholder; // TODO
+export let assoc_DASH_before = placeholder; // TODO
 
 // these functions are available for by calcit-js
 export let _AND_reset_DASH_gensym_DASH_index_BANG_ = placeholder;
-export let assoc_DASH_after = placeholder;
-export let assoc_DASH_before = placeholder;
 export let dbt_DASH__GT_point = placeholder;
 export let dbt_DASH_digits = placeholder;
 export let dual_DASH_balanced_DASH_ternary = placeholder;
