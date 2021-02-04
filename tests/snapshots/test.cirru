@@ -129,6 +129,10 @@
               parse-cirru "|def f (a b) $ + a b"
               [] $ [] |def |f ([] |a |b)
                 [] |+ |a |b
+            
+            assert=
+              parse-cirru "|{,} :a 1 :b false"
+              [] $ [] |{,} |:a |1 |:b |false
 
             assert=
               parse-cirru-edn "|{} (:a 1) (:b ([] 3 |4 nil))"

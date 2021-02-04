@@ -1310,7 +1310,7 @@ export let write_file = (path: string, content: string): void => {
 };
 
 export let parse_cirru = (code: string): CrDataList => {
-  return to_calcit_data(parse(code)) as CrDataList;
+  return to_calcit_data(parse(code), true) as CrDataList;
 };
 
 export let parse_cirru_edn = (code: string) => {
