@@ -122,6 +122,20 @@
             log-title "|Testing display stack"
             display-stack "|show stack here"
 
+        |test-cirru-parser $ quote
+          fn ()
+            log-title "|Testing Cirru parser"
+            assert=
+              parse-cirru "|def f (a b) $ + a b"
+              [] $ [] |def |f ([] |a |b)
+                [] |+ |a |b
+
+            assert=
+              parse-cirru-edn "|{} (:a 1) (:b ([] 3 |4 nil))"
+              {}
+                :a 1
+                :b $ [] 3 |4 nil
+
         |reload! $ quote
           defn reload! () nil
 
@@ -145,6 +159,8 @@
             test-if
 
             test-display-stack
+
+            test-cirru-parser
 
             when
               = :nim $ &get-calcit-backend

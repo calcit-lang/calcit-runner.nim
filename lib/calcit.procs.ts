@@ -1,4 +1,5 @@
 import { overwriteComparator, initTernaryTreeMap } from "@calcit/ternary-tree";
+import { parse } from "@cirru/parser.ts";
 
 import {
   CrDataSymbol,
@@ -1308,6 +1309,34 @@ export let write_file = (path: string, content: string): void => {
   }
 };
 
+export let parse_cirru = (code: string): CrDataList => {
+  return to_calcit_data(parse(code)) as CrDataList;
+};
+
+export let parse_cirru_edn = (code: string) => {
+  return extract_cirru_edn(parse(code)[0]);
+};
+
+/** return in seconds, like from Nim */
+export let now_BANG_ = () => {
+  return Date.now() / 1000;
+};
+
+/** return in seconds, like from Nim,
+ * notice Nim version is slightly different
+ */
+export let parse_time = (text: string) => {
+  return new Date(text).valueOf() / 1000;
+};
+
+/** notice, Nim version of format-time takes format */
+export let format_time = (timeSecNumber: number, format?: string) => {
+  if (format != null) {
+    console.error("format of calcit-js not implemented");
+  }
+  return new Date(timeSecNumber * 1000).toISOString();
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
@@ -1315,13 +1344,6 @@ export let conj = append;
 let unavailableProc = (...xs: []) => {
   console.warn("NOT available for calcit-js");
 };
-
-export let format_time = unavailableProc; // TODO
-export let now_BANG_ = unavailableProc; // TODO
-export let parse_time = unavailableProc; // TODO
-
-export let parse_cirru = unavailableProc; // TODO
-export let parse_cirru_edn = unavailableProc; // TODO
 
 // not available for calcit-js
 export let _AND_reset_gensym_index_BANG_ = unavailableProc;
