@@ -934,7 +934,7 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (x instanceof CrDataList) {
     var result: any[] = [];
     for (let item of x.items()) {
-      result.push(to_js_data(item), addColon);
+      result.push(to_js_data(item, addColon));
     }
     return result;
   }
@@ -946,9 +946,9 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
     }
     return result;
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     let result = new Set();
-    x.forEach((v) => {
+    x.value.forEach((v) => {
       result.add(to_js_data(v, addColon));
     });
     return result;
@@ -1145,9 +1145,9 @@ export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
     }
     return buffer;
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     let buffer: CirruEdnFormat = ["#{}"];
-    for (let y of x) {
+    for (let y of x.value) {
       buffer.push(to_cirru_edn(y));
     }
     return buffer;
