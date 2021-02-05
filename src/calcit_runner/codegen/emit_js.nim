@@ -54,7 +54,7 @@ proc escapeVarName(name: string): string =
   .replace("-", "_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
-  # .replace(">", "_SHR_")
+  .replace("^", "_CRT_")
   .replace("*", "_STAR_")
   .replace("&", "_AND_")
   .replace("{}", "_MAP_")
@@ -73,7 +73,6 @@ proc escapeVarName(name: string): string =
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")
-  .replace(".", "_DOT_")
 
 # handle mutual recursion
 proc escapeNs(name: string): string
@@ -288,7 +287,17 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
         # not core syntax, but treat as macro for better debugging experience
         return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
-
+      of "new":
+        if xs.listVal.len < 2:
+          raiseEvalError("new takes at least a object constructor", xs)
+        let ctor = xs.listVal[1]
+        let args = xs.listVal.slice(2, xs.listVal.len)
+        let argsCode = genArgsCode(args, ns, localDefs)
+        return "new " & ctor.toJsCode(ns, localDefs) & "(" & argsCode & ")"
+      of "set!":
+        if xs.listVal.len != 3:
+          raiseEvalError("set! takes a operand and a value", xs)
+        return xs.listVal[1].toJsCode(ns, localDefs) & " = " & xs.listVal[2].toJsCode(ns, localDefs)
       else:
         let token = head.symbolVal
         if token.len > 2 and token[0..1] == ".-" and token[2..^1].matchesJsVar():
@@ -521,7 +530,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
           if importsInfo.contains(item.ns).not:
             raiseEvalError("Unknown import: " & item.ns, CirruData(kind: crDataNil))
           let importRule = importsInfo[item.ns]
-          let importTarget = if importRule.nsInStr: importRule.ns else: importRule.ns.toJsImportName()
+          let importTarget = if importRule.nsInStr: importRule.ns.escape() else: importRule.ns.toJsImportName()
           importCode = importCode & fmt"{cLine}import * as {item.ns.escapeNs} from {importTarget};{cLine}"
         else:
           let importTarget = item.ns.toJsImportName()

@@ -471,7 +471,7 @@ export let wrapTailCall = (f: CrDataFn): CrDataFn => {
         // do not recur on itself
         break;
       }
-      if (times > 1000) {
+      if (times > 10000) {
         debugger;
         throw new Error("Expected tail recursion to exist quickly");
       }
