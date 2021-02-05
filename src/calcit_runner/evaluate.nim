@@ -283,8 +283,11 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
             let importTarget = importDict[sym.symbolVal]
             case importTarget.kind:
             of importDef:
-              preprocessSymbolByPath(importTarget.ns, importTarget.def)
-              sym.resolved = some((importTarget.ns, importTarget.def, false))
+              if importTarget.nsInStr:
+                sym.resolved = some((importTarget.ns, importTarget.def, true))
+              else:
+                preprocessSymbolByPath(importTarget.ns, importTarget.def)
+                sym.resolved = some((importTarget.ns, importTarget.def, false))
               return sym
             of importNs:
               raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
