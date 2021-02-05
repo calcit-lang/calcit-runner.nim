@@ -42,8 +42,16 @@ proc hasNsPart(x: string): bool =
 proc escapeVarName(name: string): string =
   if name.hasNsPart():
     raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+
+  if name == "if": return "_IF_"
+  if name == "do": return "_DO_"
+  if name == "else": return "_ELSE_"
+  if name == "let": return "_LET_"
+  if name == "case": return "_CASE_"
+  if name == "-": return "_SUB_"
+
   result = name
-  .replace("-", "_DASH_")
+  .replace("-", "_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
   # .replace(">", "_SHR_")
@@ -66,12 +74,6 @@ proc escapeVarName(name: string): string =
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")
   .replace(".", "_DOT_")
-  if result == "if": result = "_IF_"
-  if result == "do": result = "_DO_"
-  if result == "else": result = "_ELSE_"
-  if result == "let": result = "_LET_"
-  if result == "case": result = "_CASE_"
-# use `$` to tell namespace from normal variables, thus able to use same token like clj
 
 # handle mutual recursion
 proc escapeNs(name: string): string
@@ -90,6 +92,7 @@ proc escapeVar(name: string): string =
   return escapeVarName(name)
 
 proc escapeNs(name: string): string =
+  # use `$` to tell namespace from normal variables, thus able to use same token like clj
   "$" & name.escapeVar()
 
 # handle recursion

@@ -1,4 +1,5 @@
 import { overwriteComparator, initTernaryTreeMap } from "@calcit/ternary-tree";
+import { parse } from "@cirru/parser.ts";
 
 import {
   CrDataSymbol,
@@ -18,10 +19,9 @@ import {
 
 export * from "./calcit-data";
 
-let inNodeJs =
-  typeof process !== "undefined" && process?.release?.name === "node";
+let inNodeJs = typeof process !== "undefined" && process?.release?.name === "node";
 
-export let type_DASH_of = (x: any): CrDataKeyword => {
+export let type_of = (x: any): CrDataKeyword => {
   if (typeof x === "string") {
     return kwd("string");
   }
@@ -122,11 +122,7 @@ export let deref = (x: CrDataAtom): CrDataValue => {
   return a.value;
 };
 
-export let foldl = function (
-  f: CrDataFn,
-  acc: CrDataValue,
-  xs: CrDataValue
-): CrDataValue {
+export let foldl = function (f: CrDataFn, acc: CrDataValue, xs: CrDataValue): CrDataValue {
   if (arguments.length !== 3) {
     throw new Error("foldl takes 3 arguments");
   }
@@ -339,7 +335,35 @@ export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
     return xs.assoc(k, v);
   }
 
-  throw new Error("Does not support `get` on this type");
+  throw new Error("Does not support `assoc` on this type");
+};
+
+export let assoc_before = function (xs: CrDataList, k: number, v: CrDataValue): CrDataList {
+  if (arguments.length !== 3) {
+    throw new Error("assoc takes 3 arguments");
+  }
+  if (xs instanceof CrDataList) {
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
+    }
+    return xs.assocBefore(k, v);
+  }
+
+  throw new Error("Does not support `assoc-before` on this type");
+};
+
+export let assoc_after = function (xs: CrDataList, k: number, v: CrDataValue): CrDataList {
+  if (arguments.length !== 3) {
+    throw new Error("assoc takes 3 arguments");
+  }
+  if (xs instanceof CrDataList) {
+    if (typeof k !== "number") {
+      throw new Error("Expected number index for lists");
+    }
+    return xs.assocAfter(k, v);
+  }
+
+  throw new Error("Does not support `assoc-after` on this type");
 };
 
 export let dissoc = function (xs: CrDataValue, k: CrDataValue) {
@@ -372,11 +396,7 @@ export let reset_BANG_ = (a: CrDataAtom, v: CrDataValue): null => {
   return null;
 };
 
-export let add_DASH_watch = (
-  a: CrDataAtom,
-  k: CrDataKeyword,
-  f: CrDataFn
-): null => {
+export let add_watch = (a: CrDataAtom, k: CrDataKeyword, f: CrDataFn): null => {
   if (!(a instanceof CrDataAtom)) {
     throw new Error("Expected atom for add-watch!");
   }
@@ -390,7 +410,7 @@ export let add_DASH_watch = (
   return null;
 };
 
-export let remove_DASH_watch = (a: CrDataAtom, k: CrDataKeyword): null => {
+export let remove_watch = (a: CrDataAtom, k: CrDataKeyword): null => {
   a.listeners.delete(k);
   return null;
 };
@@ -485,7 +505,7 @@ export let first = (xs: CrDataValue): CrDataValue => {
   throw new Error("Expects something sequential");
 };
 
-export let timeout_DASH_call = (duration: number, f: CrDataFn): null => {
+export let timeout_call = (duration: number, f: CrDataFn): null => {
   if (typeof duration !== "number") {
     throw new Error("Expected duration in number");
   }
@@ -518,7 +538,7 @@ export let recur = (...xs: CrDataValue[]): CrDataRecur => {
   return new CrDataRecur(xs);
 };
 
-export let _AND_get_DASH_calcit_DASH_backend = () => {
+export let _AND_get_calcit_backend = () => {
   return kwd("js");
 };
 
@@ -590,12 +610,12 @@ export let _SHA__MAP_ = (...xs: CrDataValue[]): CrDataValue => {
 
 let idCounter = 0;
 
-export let generate_DASH_id_BANG_ = (): string => {
+export let generate_id_BANG_ = (): string => {
   idCounter = idCounter + 1;
   return `gen_id_${idCounter}`;
 };
 
-export let display_DASH_stack = (): null => {
+export let display_stack = (): null => {
   console.trace();
   return null;
 };
@@ -641,7 +661,7 @@ export let reverse = (xs: CrDataList): CrDataList => {
   return xs.reverse();
 };
 
-export let format_DASH_ternary_DASH_tree = (): null => {
+export let format_ternary_tree = (): null => {
   console.warn("No such function for js");
   return null;
 };
@@ -652,7 +672,7 @@ export let _AND__GT_ = (a: number, b: number): boolean => {
 export let _AND__LT_ = (a: number, b: number): boolean => {
   return a < b;
 };
-export let _AND__DASH_ = (a: number, b: number): number => {
+export let _AND__ = (a: number, b: number): number => {
   return a - b;
 };
 export let _AND__SLSH_ = (a: number, b: number): number => {
@@ -661,7 +681,7 @@ export let _AND__SLSH_ = (a: number, b: number): number => {
 export let mod = (a: number, b: number): number => {
   return a % b;
 };
-export let _AND_str_DASH_concat = (a: string, b: string) => {
+export let _AND_str_concat = (a: string, b: string) => {
   return `${toString(a, false)}${toString(b, false)}`;
 };
 export let sort = (f: CrDataFn, xs: CrDataList): CrDataList => {
@@ -685,7 +705,7 @@ export let rand = (n: number, m: number): number => {
   return Math.random() * 100;
 };
 
-export let rand_DASH_int = (n: number, m: number): number => {
+export let rand_int = (n: number, m: number): number => {
   if (m != null) {
     return Math.round(n + Math.random() * (m - n));
   }
@@ -716,10 +736,7 @@ export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   return a.merge(b);
 };
 
-export let _AND_merge_DASH_non_DASH_nil = (
-  a: CrDataMap,
-  b: CrDataMap
-): CrDataMap => {
+export let _AND_merge_non_nil = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   if (a == null) {
     return b;
   }
@@ -736,7 +753,7 @@ export let _AND_merge_DASH_non_DASH_nil = (
   return a.mergeSkip(b, null);
 };
 
-export let to_DASH_pairs = (xs: CrDataMap): CrDataSet => {
+export let to_pairs = (xs: CrDataMap): CrDataSet => {
   if (!(xs instanceof CrDataMap)) {
     throw new Error("Expected a map");
   }
@@ -831,7 +848,7 @@ export let replace = (x: string, y: string, z: string): string => {
 export let split = (xs: string, x: string): CrDataList => {
   return new CrDataList(xs.split(x));
 };
-export let split_DASH_lines = (xs: string): CrDataList => {
+export let split_lines = (xs: string): CrDataList => {
   return new CrDataList(xs.split("\n"));
 };
 export let substr = (xs: string, m: number, n: number): string => {
@@ -842,11 +859,11 @@ export let substr = (xs: string, m: number, n: number): string => {
   return xs.substring(m, n);
 };
 
-export let str_DASH_find = (x: string, y: string): number => {
+export let str_find = (x: string, y: string): number => {
   return x.indexOf(y);
 };
 
-export let parse_DASH_float = (x: string): number => {
+export let parse_float = (x: string): number => {
   return parseFloat(x);
 };
 export let trim = (x: string, c: string): string => {
@@ -872,36 +889,30 @@ export let trim = (x: string, c: string): string => {
   return x.trim();
 };
 
-export let format_DASH_number = (x: number, n: number): string => {
+export let format_number = (x: number, n: number): string => {
   return x.toFixed(n);
 };
 
-export let get_DASH_char_DASH_code = (c: string): number => {
+export let get_char_code = (c: string): number => {
   if (typeof c !== "string" || c.length !== 1) {
     throw new Error("Expected a character");
   }
   return c.charCodeAt(0);
 };
 
-export let re_DASH_matches = (re: string, content: string): boolean => {
+export let re_matches = (re: string, content: string): boolean => {
   return new RegExp(re).test(content);
 };
 
-export let re_DASH_find_DASH_index = (re: string, content: string): number => {
+export let re_find_index = (re: string, content: string): number => {
   return content.search(new RegExp(re));
 };
 
-export let re_DASH_find_DASH_all = (
-  re: string,
-  content: string
-): CrDataList => {
+export let re_find_all = (re: string, content: string): CrDataList => {
   return new CrDataList(content.match(new RegExp(re, "g")));
 };
 
-export let to_DASH_js_DASH_data = (
-  x: CrDataValue,
-  addColon: boolean = false
-): any => {
+export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (x == null) {
     return null;
   }
@@ -923,22 +934,22 @@ export let to_DASH_js_DASH_data = (
   if (x instanceof CrDataList) {
     var result: any[] = [];
     for (let item of x.items()) {
-      result.push(to_DASH_js_DASH_data(item), addColon);
+      result.push(to_js_data(item), addColon);
     }
     return result;
   }
   if (x instanceof CrDataMap) {
     let result: Record<string, CrDataValue> = {};
     for (let [k, v] of x.pairs()) {
-      var key = to_DASH_js_DASH_data(k, addColon);
-      result[key] = to_DASH_js_DASH_data(v, addColon);
+      var key = to_js_data(k, addColon);
+      result[key] = to_js_data(v, addColon);
     }
     return result;
   }
   if (x instanceof Set) {
     let result = new Set();
     x.forEach((v) => {
-      result.add(to_DASH_js_DASH_data(v, addColon));
+      result.add(to_js_data(v, addColon));
     });
     return result;
   }
@@ -946,10 +957,7 @@ export let to_DASH_js_DASH_data = (
   throw new Error("Unknown data to js");
 };
 
-export let to_DASH_calcit_DASH_data = (
-  x: any,
-  noKeyword: boolean = false
-): CrDataValue => {
+export let to_calcit_data = (x: any, noKeyword: boolean = false): CrDataValue => {
   if (x == null) {
     return null;
   }
@@ -968,14 +976,14 @@ export let to_DASH_calcit_DASH_data = (
   if (Array.isArray(x)) {
     var result: any[] = [];
     x.forEach((v) => {
-      result.push(to_DASH_calcit_DASH_data(v, noKeyword));
+      result.push(to_calcit_data(v, noKeyword));
     });
     return new CrDataList(result);
   }
   if (x instanceof Set) {
     let result: Set<CrDataValue> = new Set();
     x.forEach((v) => {
-      result.add(to_DASH_calcit_DASH_data(v, noKeyword));
+      result.add(to_calcit_data(v, noKeyword));
     });
     return new CrDataSet(result);
   }
@@ -983,10 +991,7 @@ export let to_DASH_calcit_DASH_data = (
   if (x === Object(x)) {
     let result: Map<CrDataValue, CrDataValue> = new Map();
     Object.keys(x).forEach((k) => {
-      result.set(
-        to_DASH_calcit_DASH_data(k, noKeyword),
-        to_DASH_calcit_DASH_data(x[k], noKeyword)
-      );
+      result.set(to_calcit_data(k, noKeyword), to_calcit_data(x[k], noKeyword));
     });
     return new CrDataMap(initTernaryTreeMap(result));
   }
@@ -995,18 +1000,15 @@ export let to_DASH_calcit_DASH_data = (
   throw new Error("Unexpected data for converting");
 };
 
-export let parse_DASH_json = (x: string): CrDataValue => {
-  return to_DASH_calcit_DASH_data(JSON.parse(x), false);
+export let parse_json = (x: string): CrDataValue => {
+  return to_calcit_data(JSON.parse(x), false);
 };
 
-export let stringify_DASH_json = (
-  x: CrDataValue,
-  addColon: boolean = false
-): string => {
-  return JSON.stringify(to_DASH_js_DASH_data(x, addColon));
+export let stringify_json = (x: CrDataValue, addColon: boolean = false): string => {
+  return JSON.stringify(to_js_data(x, addColon));
 };
 
-export let set_DASH__GT_list = (x: CrDataSet): CrDataList => {
+export let set__GT_list = (x: CrDataSet): CrDataList => {
   var result: CrDataValue[] = [];
   x.value.forEach((item) => {
     result.push(item);
@@ -1021,7 +1023,7 @@ export let aset = (x: any, name: string, v: any): any => {
   return (x[name] = v);
 };
 
-export let get_DASH_env = (name: string): string => {
+export let get_env = (name: string): string => {
   if (inNodeJs) {
     // only available for Node.js
     return process.env[name];
@@ -1032,7 +1034,7 @@ export let get_DASH_env = (name: string): string => {
   return null;
 };
 
-export let turn_DASH_keyword = (x: CrDataValue): CrDataKeyword => {
+export let turn_keyword = (x: CrDataValue): CrDataKeyword => {
   if (typeof x === "string") {
     return kwd(x);
   }
@@ -1046,7 +1048,7 @@ export let turn_DASH_keyword = (x: CrDataValue): CrDataKeyword => {
   throw new Error("Unexpected data for keyword");
 };
 
-export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
+export let turn_symbol = (x: CrDataValue): CrDataKeyword => {
   if (typeof x === "string") {
     return new CrDataSymbol(x);
   }
@@ -1060,12 +1062,12 @@ export let turn_DASH_symbol = (x: CrDataValue): CrDataKeyword => {
   throw new Error("Unexpected data for symbol");
 };
 
-export let pr_DASH_str = (...args: CrDataValue[]): string => {
+export let pr_str = (...args: CrDataValue[]): string => {
   return args.map((x) => toString(x, true)).join(" ");
 };
 
 // time from app start
-export let cpu_DASH_time = (): number => {
+export let cpu_time = (): number => {
   if (inNodeJs) {
     return process.uptime();
   }
@@ -1080,7 +1082,7 @@ export let quit = (): void => {
   }
 };
 
-export let turn_DASH_string = (x: CrDataValue): string => {
+export let turn_string = (x: CrDataValue): string => {
   if (x == null) {
     return "";
   }
@@ -1107,13 +1109,13 @@ export let identical_QUES_ = (x: CrDataValue, y: CrDataValue): boolean => {
   return x === y;
 };
 
-export let starts_DASH_with_QUES_ = (xs: string, y: string): boolean => {
+export let starts_with_QUES_ = (xs: string, y: string): boolean => {
   return xs.startsWith(y);
 };
 
 type CirruEdnFormat = string | CirruEdnFormat[];
 
-export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
+export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
   if (x == null) {
     return "nil";
   }
@@ -1134,21 +1136,19 @@ export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
   }
   if (x instanceof CrDataList) {
     // TODO can be faster
-    return (["[]"] as CirruEdnFormat[]).concat(
-      x.toArray().map(to_DASH_cirru_DASH_edn)
-    );
+    return (["[]"] as CirruEdnFormat[]).concat(x.toArray().map(to_cirru_edn));
   }
   if (x instanceof CrDataMap) {
     let buffer: CirruEdnFormat = ["{}"];
     for (let [k, v] of x.pairs()) {
-      buffer.push([to_DASH_cirru_DASH_edn(k), to_DASH_cirru_DASH_edn(v)]);
+      buffer.push([to_cirru_edn(k), to_cirru_edn(v)]);
     }
     return buffer;
   }
   if (x instanceof Set) {
     let buffer: CirruEdnFormat = ["#{}"];
     for (let y of x) {
-      buffer.push(to_DASH_cirru_DASH_edn(y));
+      buffer.push(to_cirru_edn(y));
     }
     return buffer;
   }
@@ -1156,7 +1156,7 @@ export let to_DASH_cirru_DASH_edn = (x: CrDataValue): CirruEdnFormat => {
   throw new Error("Unexpected data to to-cirru-edn");
 };
 
-export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
+export let extract_cirru_edn = (x: CirruEdnFormat): CrDataValue => {
   if (typeof x === "string") {
     if (x === "nil") {
       return null;
@@ -1194,10 +1194,7 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       let result = new Map<CrDataValue, CrDataValue>();
       x.slice(1).forEach((pair) => {
         if (pair instanceof Array && pair.length == 2) {
-          result.set(
-            extract_DASH_cirru_DASH_edn(pair[0]),
-            extract_DASH_cirru_DASH_edn(pair[1])
-          );
+          result.set(extract_cirru_edn(pair[0]), extract_cirru_edn(pair[1]));
         } else {
           throw new Error("Expected pairs for map");
         }
@@ -1205,21 +1202,19 @@ export let extract_DASH_cirru_DASH_edn = (x: CirruEdnFormat): CrDataValue => {
       return new CrDataMap(initTernaryTreeMap(result));
     }
     if (x[0] === "[]") {
-      return new CrDataList(x.slice(1).map(extract_DASH_cirru_DASH_edn));
+      return new CrDataList(x.slice(1).map(extract_cirru_edn));
     }
     if (x[0] === "#{}") {
-      return new CrDataSet(
-        new Set(x.slice(1).map(extract_DASH_cirru_DASH_edn))
-      );
+      return new CrDataSet(new Set(x.slice(1).map(extract_cirru_edn)));
     }
     if (x[0] === "do" && x.length === 2) {
-      return extract_DASH_cirru_DASH_edn(x[1]);
+      return extract_cirru_edn(x[1]);
     }
     if (x[0] === "quote") {
       if (x.length !== 2) {
         throw new Error("quote expects 1 argument");
       }
-      return to_DASH_calcit_DASH_data(x[1], true);
+      return to_calcit_data(x[1], true);
     }
   }
   console.error(x);
@@ -1237,7 +1232,7 @@ export let blank_QUES_ = (x: string): boolean => {
   }
 };
 
-export let compare_DASH_string = (x: string, y: string) => {
+export let compare_string = (x: string, y: string) => {
   if (x < y) {
     return -1;
   }
@@ -1293,30 +1288,68 @@ export let atom_QUES_ = (x: CrDataValue): boolean => {
   return x instanceof CrDataAtom;
 };
 
+export let escape = (x: string) => JSON.stringify(x);
+
+export let read_file = (path: string): string => {
+  if (inNodeJs) {
+    // TODO
+    (globalThis as any)["__calcit_injections__"].read_file(path);
+  } else {
+    // no actual File API in browser
+    return localStorage.get(path) ?? "";
+  }
+};
+export let write_file = (path: string, content: string): void => {
+  if (inNodeJs) {
+    // TODO
+    (globalThis as any)["__calcit_injections__"].write_file(path, content);
+  } else {
+    // no actual File API in browser
+    localStorage.setItem(path, content);
+  }
+};
+
+export let parse_cirru = (code: string): CrDataList => {
+  return to_calcit_data(parse(code), true) as CrDataList;
+};
+
+export let parse_cirru_edn = (code: string) => {
+  return extract_cirru_edn(parse(code)[0]);
+};
+
+/** return in seconds, like from Nim */
+export let now_BANG_ = () => {
+  return Date.now() / 1000;
+};
+
+/** return in seconds, like from Nim,
+ * notice Nim version is slightly different
+ */
+export let parse_time = (text: string) => {
+  return new Date(text).valueOf() / 1000;
+};
+
+/** notice, Nim version of format-time takes format */
+export let format_time = (timeSecNumber: number, format?: string) => {
+  if (format != null) {
+    console.error("format of calcit-js not implemented");
+  }
+  return new Date(timeSecNumber * 1000).toISOString();
+};
+
 // special procs have to be defined manually
 export let reduce = foldl;
 export let conj = append;
 
-let placeholder = (...xs: []) => {
-  /* placeholder */
+let unavailableProc = (...xs: []) => {
+  console.warn("NOT available for calcit-js");
 };
 
-export let escape = placeholder; // TODO
-export let format_DASH_time = placeholder; // TODO
-export let now_BANG_ = placeholder; // TODO
-export let parse_DASH_cirru = placeholder; // TODO
-export let parse_DASH_cirru_DASH_edn = placeholder; // TODO
-export let parse_DASH_time = placeholder; // TODO
-export let read_DASH_file = placeholder; // TODO Node.js
-export let write_DASH_file = placeholder; // TODO Node.js
-export let assoc_DASH_after = placeholder; // TODO
-export let assoc_DASH_before = placeholder; // TODO
-
-// these functions are available for by calcit-js
-export let _AND_reset_DASH_gensym_DASH_index_BANG_ = placeholder;
-export let dbt_DASH__GT_point = placeholder;
-export let dbt_DASH_digits = placeholder;
-export let dual_DASH_balanced_DASH_ternary = placeholder;
-export let gensym = placeholder;
-export let macroexpand = placeholder;
-export let macroexpand_DASH_all = placeholder;
+// not available for calcit-js
+export let _AND_reset_gensym_index_BANG_ = unavailableProc;
+export let dbt__GT_point = unavailableProc;
+export let dbt_digits = unavailableProc;
+export let dual_balanced_ternary = unavailableProc;
+export let gensym = unavailableProc;
+export let macroexpand = unavailableProc;
+export let macroexpand_all = unavailableProc;

@@ -1,6 +1,6 @@
 {
   "name": "@calcit/procs",
-  "version": "v0.2.44",
+  "version": "0.2.49",
   "main": "./lib/calcit.procs.js",
   "devDependencies": {
     "@types/node": "^14.14.21",
@@ -13,6 +13,7 @@
     "test-js": "nimble genjs && yarn tsc && target=node yarn webpack && node js-out/bundle.js"
   },
   "dependencies": {
-    "@calcit/ternary-tree": "0.0.7"
+    "@calcit/ternary-tree": "0.0.7",
+    "@cirru/parser.ts": "^0.0.1"
   }
 }
