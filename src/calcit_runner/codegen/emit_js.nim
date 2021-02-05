@@ -86,6 +86,9 @@ proc escapeVar(name: string): string =
     let defPart = pieces[1]
     if nsPart == "js":
       return defPart
+    elif defPart == "@":
+      # TODO special syntax for js, using module directly, need a better solution
+      return nsPart.escapeNs()
     else:
       return nsPart.escapeNs() & "." & defPart.escapeVar()
   return escapeVarName(name)

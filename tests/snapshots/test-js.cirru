@@ -31,6 +31,7 @@
               aset a |name |demo
               js/console.log a
             js/console.log $ os/arch
+            ; js/console.log os/@
 
             assert= 0 $ .-length $ new js/Array
             assert= 7 $ .-length $ new js/Array (+ 3 4)
