@@ -932,6 +932,9 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (typeof x === "number") {
     return x;
   }
+  if (typeof x === "function") {
+    return x;
+  }
   if (x instanceof CrDataKeyword) {
     if (addColon) {
       return `:${x.value}`;
@@ -978,6 +981,9 @@ export let to_calcit_data = (x: any, noKeyword: boolean = false): CrDataValue =>
     return x;
   }
   if (x === true || x === false) {
+    return x;
+  }
+  if (typeof x === "function") {
     return x;
   }
   if (Array.isArray(x)) {

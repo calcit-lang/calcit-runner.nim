@@ -158,16 +158,6 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       return varPrefix & xs.symbolVal.escapeVar()
     elif xs.ns == "":
       raiseEvalError("Unpexpected ns at symbol", xs)
-    elif xs.ns != ns: # probably via macro
-      # TODO ditry code
-      if implicitImports.contains(xs.symbolVal):
-        let prev = implicitImports[xs.symbolVal]
-        if prev.ns != xs.ns:
-          echo implicitImports, " ", xs
-          raiseEvalError("Conflicted implicit imports, probably via macro", xs)
-      else:
-        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
-      return xs.symbolVal.escapeVar()
     elif xs.resolved.isSome():
       # TODO ditry code
       let resolved = xs.resolved.get()
@@ -178,6 +168,16 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Conflicted implicit imports", xs)
       else:
         implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false)
+      return xs.symbolVal.escapeVar()
+    elif xs.ns != ns: # probably via macro
+      # TODO ditry code
+      if implicitImports.contains(xs.symbolVal):
+        let prev = implicitImports[xs.symbolVal]
+        if prev.ns != xs.ns:
+          echo implicitImports, " ", xs
+          raiseEvalError("Conflicted implicit imports, probably via macro", xs)
+      else:
+        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
       return xs.symbolVal.escapeVar()
