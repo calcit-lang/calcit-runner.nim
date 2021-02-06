@@ -396,9 +396,9 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
       argsCount = argsCount + 1
 
   let checkArgs = if spreading:
-    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') };"
+    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') }"
   else:
-    cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') };"
+    cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') }"
   var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{checkArgs}{spreadingCode}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
   if body.len > 0 and body[^1].usesRecur():
     let varPrefix = if ns == "calcit.core": "" else: "$calcit."
@@ -521,7 +521,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
         valsCode = valsCode & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
       of crDataMacro:
         # macro should be handled during compilation, psuedo code
-        defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR};{cLine}"
+        defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR}{cLine}"
         defsCode = defsCode & fmt"{cLine}{def.escapeVar}.isMacro = true;{cLine}"
       of crDataSyntax:
         # should he handled inside compiler
