@@ -41,6 +41,8 @@
               set! (.-a a) 2
               assert= (.-a a) 2
 
+            assert= 2 $ get (to-js-data $ [] 1 2 3) 1
+
         |main! $ quote
           defn main! ()
             log-title "|Testing json"

@@ -316,6 +316,13 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
   if (xs instanceof CrDataMap) {
     return xs.get(k);
   }
+  if (Array.isArray(xs)) {
+    if (typeof k === "number") {
+      return xs[k];
+    } else {
+      throw new Error("Expected number index for an array");
+    }
+  }
 
   throw new Error("Does not support `get` on this type");
 };
@@ -1064,6 +1071,11 @@ export let turn_symbol = (x: CrDataValue): CrDataKeyword => {
 
 export let pr_str = (...args: CrDataValue[]): string => {
   return args.map((x) => toString(x, true)).join(" ");
+};
+
+/** helper function for println */
+export let printable = (...args: CrDataValue[]): string => {
+  return args.map((x) => toString(x, false)).join(" ");
 };
 
 // time from app start

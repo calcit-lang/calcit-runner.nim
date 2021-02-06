@@ -107,6 +107,7 @@ let builtInJsProc = toHashSet([
   "to-cirru-edn",
   "to-js-data",
   "to-calcit-data",
+  "printable",
 ])
 
 # code generated from calcit.core.cirru may not be faster enough,
@@ -284,11 +285,16 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = body[0].toJsCode(ns, localDefs)
         return fmt"(()=> {cCurlyL} throw new Error({message}) {cCurlyR})() "
+      of "echo", "println":
+        # not core syntax, but treat as macro for better debugging experience
+        let args = xs.listVal.slice(1, xs.listVal.len)
+        let argsCode = genArgsCode(args, ns, localDefs)
+        return fmt"console.log({varPrefix}printable({argsCode}))"
       of "exists?":
+        # not core syntax, but treat as macro for availability
         if body.len != 1: raiseEvalError("expected 1 argument", xs)
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
-        # not core syntax, but treat as macro for better debugging experience
         return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
       of "new":
         if xs.listVal.len < 2:
