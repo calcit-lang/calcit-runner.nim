@@ -247,6 +247,19 @@
                   recur (append x0 base) & (rest xs)
                   recur ([] x0 base) & (rest xs)
 
+        |->% $ quote
+          defmacro ->% (base & xs)
+            if (empty? xs) base
+              let
+                  tail $ last xs
+                  pairs $ concat
+                    [] $ [] '% base
+                    map
+                      fn (x) ([] '% x)
+                      butlast xs
+                quote-replace
+                  let ~pairs ~tail
+
         |cond $ quote
           defmacro cond (pair & else)
             assert "|expects a pair"

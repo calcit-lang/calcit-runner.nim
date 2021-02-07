@@ -28,6 +28,8 @@
 
         |test-case $ quote
           defn test-case ()
+            log-title "|Testing case"
+
             let
                 detect-x $ fn (x)
                   case x
@@ -37,84 +39,6 @@
               assert= (detect-x 1) "|one"
               assert= (detect-x 2) "|two"
               assert= (detect-x 3) "|else"
-
-        |test-expr-in-case $ quote
-          defn test-expr-in-case ()
-            assert= |5
-              case (+ 1 4)
-                (+ 2 0) |2
-                (+ 2 1) |3
-                (+ 2 2) |4
-                (+ 2 3) |5
-                (+ 2 4) |6
-
-        |test-thread-macros $ quote
-          defn test-thread-macros ()
-            assert=
-              macroexpand $ quote $ -> a b c
-              quote (c (b a))
-
-            assert=
-              macroexpand $ quote $ -> a (b) c
-              quote (c (b a))
-
-            assert=
-              macroexpand $ quote $ -> a (b c)
-              quote (b a c)
-
-            assert=
-              macroexpand $ quote $ -> a (b c) (d e f)
-              quote (d (b a c) e f)
-
-            assert=
-              macroexpand $ quote $ ->> a b c
-              quote (c (b a))
-
-            assert=
-              macroexpand $ quote $ ->> a (b) c
-              quote (c (b a))
-
-            assert=
-              macroexpand $ quote $ ->> a (b c)
-              quote (b c a)
-
-            assert=
-              macroexpand $ quote $ ->> a (b c) (d e f)
-              quote (d e f (b c a))
-
-            assert-detect identity $ contains-symbol?
-              quote $ add $ + 1 %
-              , '%
-
-            assert-detect not $ contains-symbol?
-              quote $ add $ + 1 2
-              , '%
-
-            assert=
-              map (\ + 1 %) (range 3)
-              range 1 4
-            assert=
-              map-indexed (\ [] % (&str %2)) (range 3)
-              []
-                [] 0 |0
-                [] 1 |1
-                [] 2 |2
-
-            assert=
-              macroexpand-all $ quote (\ + 2 %)
-              quote $ defn f% (%) (+ 2 %)
-
-            assert=
-              macroexpand-all $ quote $ \ x
-              quote $ defn f% (%) (x)
-
-            assert=
-              macroexpand-all $ quote $ \ + x %
-              quote $ defn f% (%) (+ x %)
-
-            assert=
-              macroexpand-all $ quote $ \ + x % %2
-              quote $ defn f% (% %2) (+ x % %2)
 
             &reset-gensym-index!
 
@@ -152,6 +76,108 @@
                   &case v__2
                     2 |two
                     3 |three
+
+
+        |test-expr-in-case $ quote
+          defn test-expr-in-case ()
+            assert= |5
+              case (+ 1 4)
+                (+ 2 0) |2
+                (+ 2 1) |3
+                (+ 2 2) |4
+                (+ 2 3) |5
+                (+ 2 4) |6
+
+        |test-thread-macros $ quote
+          defn test-thread-macros ()
+            log-title "|Testing thread macros"
+
+            assert=
+              macroexpand $ quote $ -> a b c
+              quote (c (b a))
+
+            assert=
+              macroexpand $ quote $ -> a (b) c
+              quote (c (b a))
+
+            assert=
+              macroexpand $ quote $ -> a (b c)
+              quote (b a c)
+
+            assert=
+              macroexpand $ quote $ -> a (b c) (d e f)
+              quote (d (b a c) e f)
+
+            assert=
+              macroexpand $ quote $ ->> a b c
+              quote (c (b a))
+
+            assert=
+              macroexpand $ quote $ ->> a (b) c
+              quote (c (b a))
+
+            assert=
+              macroexpand $ quote $ ->> a (b c)
+              quote (b c a)
+
+            assert=
+              macroexpand $ quote $ ->> a (b c) (d e f)
+              quote (d e f (b c a))
+
+            assert=
+              macroexpand $ quote $ ->% a
+              quote a
+
+            assert=
+              macroexpand $ quote $ ->% a (+ % 1) (* % 2)
+              quote $ let
+                  % a
+                  % (+ % 1)
+                * % 2
+
+            assert= 35
+              ->% 3 (+ % 4) (* % 5)
+
+            assert= 36
+              ->% 3 (+ % %) (* % %)
+
+        |test-labmda $ quote
+          fn ()
+            log-title "|Testing lambda macro"
+
+            assert-detect identity $ contains-symbol?
+              quote $ add $ + 1 %
+              , '%
+
+            assert-detect not $ contains-symbol?
+              quote $ add $ + 1 2
+              , '%
+
+            assert=
+              map (\ + 1 %) (range 3)
+              range 1 4
+            assert=
+              map-indexed (\ [] % (&str %2)) (range 3)
+              []
+                [] 0 |0
+                [] 1 |1
+                [] 2 |2
+
+            assert=
+              macroexpand-all $ quote (\ + 2 %)
+              quote $ defn f% (%) (+ 2 %)
+
+            assert=
+              macroexpand-all $ quote $ \ x
+              quote $ defn f% (%) (x)
+
+            assert=
+              macroexpand-all $ quote $ \ + x %
+              quote $ defn f% (%) (+ x %)
+
+            assert=
+              macroexpand-all $ quote $ \ + x % %2
+              quote $ defn f% (% %2) (+ x % %2)
 
         |test-gensym $ quote
           fn ()
@@ -297,14 +323,14 @@
             log-title "|Testing cond"
             test-cond
 
-            log-title "|Testing case"
             test-case
 
             log-title "|Testing expr in case"
             test-expr-in-case
 
-            log-title "|Testing thread macros"
             test-thread-macros
+
+            test-labmda
 
             log-title "|Testing gensym"
             test-gensym
