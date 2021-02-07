@@ -30,7 +30,18 @@
                 a js/{}
               aset a |name |demo
               js/console.log a
-            ; js/console.log $ os/arch
+            js/console.log $ os/arch
+            ; js/console.log os/@
+
+            assert= 0 $ .-length $ new js/Array
+            assert= 7 $ .-length $ new js/Array (+ 3 4)
+
+            let
+                a $ new js/Object
+              set! (.-a a) 2
+              assert= (.-a a) 2
+
+            assert= 2 $ get (to-js-data $ [] 1 2 3) 1
 
         |main! $ quote
           defn main! ()

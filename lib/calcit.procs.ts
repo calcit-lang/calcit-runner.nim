@@ -316,6 +316,13 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
   if (xs instanceof CrDataMap) {
     return xs.get(k);
   }
+  if (Array.isArray(xs)) {
+    if (typeof k === "number") {
+      return xs[k];
+    } else {
+      throw new Error("Expected number index for an array");
+    }
+  }
 
   throw new Error("Does not support `get` on this type");
 };
@@ -471,7 +478,7 @@ export let wrapTailCall = (f: CrDataFn): CrDataFn => {
         // do not recur on itself
         break;
       }
-      if (times > 1000) {
+      if (times > 10000) {
         debugger;
         throw new Error("Expected tail recursion to exist quickly");
       }
@@ -925,6 +932,9 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (typeof x === "number") {
     return x;
   }
+  if (typeof x === "function") {
+    return x;
+  }
   if (x instanceof CrDataKeyword) {
     if (addColon) {
       return `:${x.value}`;
@@ -934,7 +944,7 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
   if (x instanceof CrDataList) {
     var result: any[] = [];
     for (let item of x.items()) {
-      result.push(to_js_data(item), addColon);
+      result.push(to_js_data(item, addColon));
     }
     return result;
   }
@@ -946,9 +956,9 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
     }
     return result;
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     let result = new Set();
-    x.forEach((v) => {
+    x.value.forEach((v) => {
       result.add(to_js_data(v, addColon));
     });
     return result;
@@ -971,6 +981,9 @@ export let to_calcit_data = (x: any, noKeyword: boolean = false): CrDataValue =>
     return x;
   }
   if (x === true || x === false) {
+    return x;
+  }
+  if (typeof x === "function") {
     return x;
   }
   if (Array.isArray(x)) {
@@ -1066,6 +1079,11 @@ export let pr_str = (...args: CrDataValue[]): string => {
   return args.map((x) => toString(x, true)).join(" ");
 };
 
+/** helper function for println */
+export let printable = (...args: CrDataValue[]): string => {
+  return args.map((x) => toString(x, false)).join(" ");
+};
+
 // time from app start
 export let cpu_time = (): number => {
   if (inNodeJs) {
@@ -1145,9 +1163,9 @@ export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
     }
     return buffer;
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     let buffer: CirruEdnFormat = ["#{}"];
-    for (let y of x) {
+    for (let y of x.value) {
       buffer.push(to_cirru_edn(y));
     }
     return buffer;

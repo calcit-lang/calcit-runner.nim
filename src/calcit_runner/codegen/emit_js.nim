@@ -54,7 +54,7 @@ proc escapeVarName(name: string): string =
   .replace("-", "_")
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
-  # .replace(">", "_SHR_")
+  .replace("^", "_CRT_")
   .replace("*", "_STAR_")
   .replace("&", "_AND_")
   .replace("{}", "_MAP_")
@@ -73,7 +73,6 @@ proc escapeVarName(name: string): string =
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")
-  .replace(".", "_DOT_")
 
 # handle mutual recursion
 proc escapeNs(name: string): string
@@ -87,6 +86,9 @@ proc escapeVar(name: string): string =
     let defPart = pieces[1]
     if nsPart == "js":
       return defPart
+    elif defPart == "@":
+      # TODO special syntax for js, using module directly, need a better solution
+      return nsPart.escapeNs()
     else:
       return nsPart.escapeNs() & "." & defPart.escapeVar()
   return escapeVarName(name)
@@ -105,6 +107,7 @@ let builtInJsProc = toHashSet([
   "to-cirru-edn",
   "to-js-data",
   "to-calcit-data",
+  "printable",
 ])
 
 # code generated from calcit.core.cirru may not be faster enough,
@@ -155,16 +158,6 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       return varPrefix & xs.symbolVal.escapeVar()
     elif xs.ns == "":
       raiseEvalError("Unpexpected ns at symbol", xs)
-    elif xs.ns != ns: # probably via macro
-      # TODO ditry code
-      if implicitImports.contains(xs.symbolVal):
-        let prev = implicitImports[xs.symbolVal]
-        if prev.ns != xs.ns:
-          echo implicitImports, " ", xs
-          raiseEvalError("Conflicted implicit imports, probably via macro", xs)
-      else:
-        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
-      return xs.symbolVal.escapeVar()
     elif xs.resolved.isSome():
       # TODO ditry code
       let resolved = xs.resolved.get()
@@ -175,6 +168,16 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Conflicted implicit imports", xs)
       else:
         implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false)
+      return xs.symbolVal.escapeVar()
+    elif xs.ns != ns: # probably via macro
+      # TODO ditry code
+      if implicitImports.contains(xs.symbolVal):
+        let prev = implicitImports[xs.symbolVal]
+        if prev.ns != xs.ns:
+          echo implicitImports, " ", xs
+          raiseEvalError("Conflicted implicit imports, probably via macro", xs)
+      else:
+        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
       return xs.symbolVal.escapeVar()
@@ -282,13 +285,28 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = body[0].toJsCode(ns, localDefs)
         return fmt"(()=> {cCurlyL} throw new Error({message}) {cCurlyR})() "
+      of "echo", "println":
+        # not core syntax, but treat as macro for better debugging experience
+        let args = xs.listVal.slice(1, xs.listVal.len)
+        let argsCode = genArgsCode(args, ns, localDefs)
+        return fmt"console.log({varPrefix}printable({argsCode}))"
       of "exists?":
+        # not core syntax, but treat as macro for availability
         if body.len != 1: raiseEvalError("expected 1 argument", xs)
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
-        # not core syntax, but treat as macro for better debugging experience
         return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
-
+      of "new":
+        if xs.listVal.len < 2:
+          raiseEvalError("new takes at least a object constructor", xs)
+        let ctor = xs.listVal[1]
+        let args = xs.listVal.slice(2, xs.listVal.len)
+        let argsCode = genArgsCode(args, ns, localDefs)
+        return "new " & ctor.toJsCode(ns, localDefs) & "(" & argsCode & ")"
+      of "set!":
+        if xs.listVal.len != 3:
+          raiseEvalError("set! takes a operand and a value", xs)
+        return xs.listVal[1].toJsCode(ns, localDefs) & " = " & xs.listVal[2].toJsCode(ns, localDefs)
       else:
         let token = head.symbolVal
         if token.len > 2 and token[0..1] == ".-" and token[2..^1].matchesJsVar():
@@ -378,9 +396,9 @@ proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruDa
       argsCount = argsCount + 1
 
   let checkArgs = if spreading:
-    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') };"
+    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') }"
   else:
-    cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') };"
+    cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') }"
   var fnDefinition = fmt"function {name.escapeVar}({argsCode}) {cCurlyL}{checkArgs}{spreadingCode}{cLine}{body.toJsCode(ns, localDefs)}{cCurlyR}"
   if body.len > 0 and body[^1].usesRecur():
     let varPrefix = if ns == "calcit.core": "" else: "$calcit."
@@ -503,7 +521,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
         valsCode = valsCode & fmt"{cLine}export var {def.escapeVar} = {f.thunkCode[].toJsCode(ns, defNames)};{cLine}"
       of crDataMacro:
         # macro should be handled during compilation, psuedo code
-        defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR};{cLine}"
+        defsCode = defsCode & fmt"{cLine}export var {def.escapeVar} = () => {cCurlyL}/* Macro */{cCurlyR}{cLine}"
         defsCode = defsCode & fmt"{cLine}{def.escapeVar}.isMacro = true;{cLine}"
       of crDataSyntax:
         # should he handled inside compiler
@@ -521,7 +539,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
           if importsInfo.contains(item.ns).not:
             raiseEvalError("Unknown import: " & item.ns, CirruData(kind: crDataNil))
           let importRule = importsInfo[item.ns]
-          let importTarget = if importRule.nsInStr: importRule.ns else: importRule.ns.toJsImportName()
+          let importTarget = if importRule.nsInStr: importRule.ns.escape() else: importRule.ns.toJsImportName()
           importCode = importCode & fmt"{cLine}import * as {item.ns.escapeNs} from {importTarget};{cLine}"
         else:
           let importTarget = item.ns.toJsImportName()

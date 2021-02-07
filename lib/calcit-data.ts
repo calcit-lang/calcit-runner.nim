@@ -440,10 +440,10 @@ let hashFunction = (x: CrDataValue): Hash => {
     x.cachedHash = h;
     return h;
   }
-  if (x instanceof Set) {
+  if (x instanceof CrDataSet) {
     // TODO not using dirty solution for code
     let base = defaultHash_set;
-    for (let item of x) {
+    for (let item of x.value) {
       base = mergeValueHash(base, hashFunction(item));
     }
     return base;
