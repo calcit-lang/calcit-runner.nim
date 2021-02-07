@@ -1,17 +1,13 @@
 
 {} (:package |test-macro)
   :configs $ {} (:init-fn |test-macro.main/main!) (:reload-fn |test-macro.main/reload!)
+    :modules $ [] |./util.cirru
   :files $ {}
     |test-macro.main $ {}
       :ns $ quote
         ns test-macro.main $ :require
+          [] util.core :refer $ [] log-title inside-nim:
       :defs $ {}
-
-        |log-title $ quote
-          defn log-title (title)
-            echo
-            echo title
-            echo
 
         |test-cond $ quote
           defn test-cond ()
@@ -40,42 +36,44 @@
               assert= (detect-x 2) "|two"
               assert= (detect-x 3) "|else"
 
-            &reset-gensym-index!
+            inside-nim:
 
-            assert=
-              macroexpand-all $ quote
-                case (+ 1 2)
-                  1 |one
-                  2 |two
-                  3 |three
-              quote
-                &let (v__1 (+ 1 2))
-                  if (&= v__1 1) |one
-                    if (&= v__1 2) |two
-                      if (&= v__1 3) |three nil
-            assert=
-              macroexpand $ quote
-                case (+ 1 2)
-                  1 |one
-                  2 |two
-                  3 |three
-              quote
-                &let (v__2 (+ 1 2))
+              &reset-gensym-index!
+
+              assert=
+                macroexpand-all $ quote
+                  case (+ 1 2)
+                    1 |one
+                    2 |two
+                    3 |three
+                quote
+                  &let (v__1 (+ 1 2))
+                    if (&= v__1 1) |one
+                      if (&= v__1 2) |two
+                        if (&= v__1 3) |three nil
+              assert=
+                macroexpand $ quote
+                  case (+ 1 2)
+                    1 |one
+                    2 |two
+                    3 |three
+                quote
+                  &let (v__2 (+ 1 2))
+                    &case v__2
+                      1 |one
+                      2 |two
+                      3 |three
+              assert=
+                macroexpand $ quote
                   &case v__2
                     1 |one
                     2 |two
                     3 |three
-            assert=
-              macroexpand $ quote
-                &case v__2
-                  1 |one
-                  2 |two
-                  3 |three
-              quote
-                if (&= v__2 1) |one
-                  &case v__2
-                    2 |two
-                    3 |three
+                quote
+                  if (&= v__2 1) |one
+                    &case v__2
+                      2 |two
+                      3 |three
 
 
         |test-expr-in-case $ quote
@@ -92,48 +90,49 @@
           defn test-thread-macros ()
             log-title "|Testing thread macros"
 
-            assert=
-              macroexpand $ quote $ -> a b c
-              quote (c (b a))
+            inside-nim:
+              assert=
+                macroexpand $ quote $ -> a b c
+                quote (c (b a))
 
-            assert=
-              macroexpand $ quote $ -> a (b) c
-              quote (c (b a))
+              assert=
+                macroexpand $ quote $ -> a (b) c
+                quote (c (b a))
 
-            assert=
-              macroexpand $ quote $ -> a (b c)
-              quote (b a c)
+              assert=
+                macroexpand $ quote $ -> a (b c)
+                quote (b a c)
 
-            assert=
-              macroexpand $ quote $ -> a (b c) (d e f)
-              quote (d (b a c) e f)
+              assert=
+                macroexpand $ quote $ -> a (b c) (d e f)
+                quote (d (b a c) e f)
 
-            assert=
-              macroexpand $ quote $ ->> a b c
-              quote (c (b a))
+              assert=
+                macroexpand $ quote $ ->> a b c
+                quote (c (b a))
 
-            assert=
-              macroexpand $ quote $ ->> a (b) c
-              quote (c (b a))
+              assert=
+                macroexpand $ quote $ ->> a (b) c
+                quote (c (b a))
 
-            assert=
-              macroexpand $ quote $ ->> a (b c)
-              quote (b c a)
+              assert=
+                macroexpand $ quote $ ->> a (b c)
+                quote (b c a)
 
-            assert=
-              macroexpand $ quote $ ->> a (b c) (d e f)
-              quote (d e f (b c a))
+              assert=
+                macroexpand $ quote $ ->> a (b c) (d e f)
+                quote (d e f (b c a))
 
-            assert=
-              macroexpand $ quote $ ->% a
-              quote a
+              assert=
+                macroexpand $ quote $ ->% a
+                quote a
 
-            assert=
-              macroexpand $ quote $ ->% a (+ % 1) (* % 2)
-              quote $ let
-                  % a
-                  % (+ % 1)
-                * % 2
+              assert=
+                macroexpand $ quote $ ->% a (+ % 1) (* % 2)
+                quote $ let
+                    % a
+                    % (+ % 1)
+                  * % 2
 
             assert= 35
               ->% 3 (+ % 4) (* % 5)
@@ -145,17 +144,19 @@
           fn ()
             log-title "|Testing lambda macro"
 
-            assert-detect identity $ contains-symbol?
-              quote $ add $ + 1 %
-              , '%
+            inside-nim:
+              assert-detect identity $ contains-symbol?
+                quote $ add $ + 1 %
+                , '%
 
-            assert-detect not $ contains-symbol?
-              quote $ add $ + 1 2
-              , '%
+              assert-detect not $ contains-symbol?
+                quote $ add $ + 1 2
+                , '%
 
             assert=
               map (\ + 1 %) (range 3)
               range 1 4
+
             assert=
               map-indexed (\ [] % (&str %2)) (range 3)
               []
@@ -163,32 +164,34 @@
                 [] 1 |1
                 [] 2 |2
 
-            assert=
-              macroexpand-all $ quote (\ + 2 %)
-              quote $ defn f% (%) (+ 2 %)
+            inside-nim:
+              assert=
+                macroexpand-all $ quote (\ + 2 %)
+                quote $ defn f% (%) (+ 2 %)
 
-            assert=
-              macroexpand-all $ quote $ \ x
-              quote $ defn f% (%) (x)
+              assert=
+                macroexpand-all $ quote $ \ x
+                quote $ defn f% (%) (x)
 
-            assert=
-              macroexpand-all $ quote $ \ + x %
-              quote $ defn f% (%) (+ x %)
+              assert=
+                macroexpand-all $ quote $ \ + x %
+                quote $ defn f% (%) (+ x %)
 
-            assert=
-              macroexpand-all $ quote $ \ + x % %2
-              quote $ defn f% (% %2) (+ x % %2)
+              assert=
+                macroexpand-all $ quote $ \ + x % %2
+                quote $ defn f% (% %2) (+ x % %2)
 
         |test-gensym $ quote
           fn ()
-            &reset-gensym-index!
-            assert= (gensym) 'G__1
-            assert=
-              gensym 'a
-              , 'a__2
-            assert=
-              gensym |a
-              , 'a__3
+            inside-nim:
+              &reset-gensym-index!
+              assert= (gensym) 'G__1
+              assert=
+                gensym 'a
+                , 'a__2
+              assert=
+                gensym |a
+                , 'a__3
 
         |test-with-log $ quote
           fn ()
@@ -196,12 +199,14 @@
 
             &reset-gensym-index!
 
-            assert=
-              macroexpand $ quote $ with-log $ + 1 2
-              quote $ &let
-                v__1 $ + 1 2
-                echo (quote $ + 1 2) |=> v__1
-                , v__1
+            inside-nim:
+              assert=
+                macroexpand $ quote $ with-log $ + 1 2
+                quote $ &let
+                  v__1 $ + 1 2
+                  echo (quote $ + 1 2) |=> v__1
+                  , v__1
+
             assert=
               with-log $ + 1 2
               , 3
@@ -209,19 +214,22 @@
             ; echo $ macroexpand $ quote $ call-with-log + 1 2 3 4
             assert= 10 $ call-with-log + 1 2 3 4
 
-            &reset-gensym-index!
 
-            assert=
-              macroexpand $ quote
+            inside-nim:
+              &reset-gensym-index!
+
+              assert=
+                macroexpand $ quote
+                  defn-with-log f1 (a b) (+ a b)
+                quote
+                  defn f1 (a b)
+                    &let
+                      f1 (defn f1 (a b) (+ a b))
+                      call-with-log f1 a b
+
+              ; echo $ macroexpand $ quote
                 defn-with-log f1 (a b) (+ a b)
-              quote
-                defn f1 (a b)
-                  &let
-                    f1 (defn f1 (a b) (+ a b))
-                    call-with-log f1 a b
 
-            ; echo $ macroexpand $ quote
-              defn-with-log f1 (a b) (+ a b)
             let
                 f2 $ defn-with-log f1 (a b) (+ a b)
               assert= 7 $ f2 3 4
@@ -231,20 +239,22 @@
           fn ()
             log-title "|Testing with-cpu-time"
 
-            &reset-gensym-index!
+            inside-nim:
+              &reset-gensym-index!
 
-            assert=
-              macroexpand $ quote $ with-cpu-time $ + 1 2
-              quote
-                let
-                    started__1 $ cpu-time
-                    v__2 $ + 1 2
-                  echo |[cpu-time]
-                    quote $ + 1 2
-                    , |=>
-                    format-number (&* 1000 (&- (cpu-time) started__1)) 3
-                    , |ms
-                  , v__2
+              assert=
+                macroexpand $ quote $ with-cpu-time $ + 1 2
+                quote
+                  let
+                      started__1 $ cpu-time
+                      v__2 $ + 1 2
+                    echo |[cpu-time]
+                      quote $ + 1 2
+                      , |=>
+                      format-number (&* 1000 (&- (cpu-time) started__1)) 3
+                      , |ms
+                    , v__2
+
             assert=
               with-cpu-time $ + 1 2
               , 3
@@ -262,17 +272,18 @@
           fn ()
             log-title "|Extract map via keywords"
 
-            &reset-gensym-index!
+            inside-nim:
+              &reset-gensym-index!
 
-            assert=
-              macroexpand $ quote $ let{} (a b) o
-                + a b
-              quote $ &let (result__1 o)
-                assert (str "|expected map for destructing: " result__1) (map? result__1)
-                let
-                    a $ :a result__1
-                    b $ :b result__1
+              assert=
+                macroexpand $ quote $ let{} (a b) o
                   + a b
+                quote $ &let (result__1 o)
+                  assert (str "|expected map for destructing: " result__1) (map? result__1)
+                  let
+                      a $ :a result__1
+                      b $ :b result__1
+                    + a b
 
             &let
               base $ {}
@@ -281,18 +292,19 @@
               assert= 11 $ let{} (a b) base
                 + a b
 
-            assert=
-              macroexpand $ quote
-                let-destruct ([] a b) ([] 3 4)
-                  + a b
-              quote $ let[] (a b) ([] 3 4) (+ a b)
+            inside-nim:
+              assert=
+                macroexpand $ quote
+                  let-destruct ([] a b) ([] 3 4)
+                    + a b
+                quote $ let[] (a b) ([] 3 4) (+ a b)
 
-            assert=
-              macroexpand $ quote
-                let-destruct ({} a b) ({,} :a 3 :b 4)
+              assert=
+                macroexpand $ quote
+                  let-destruct ({} a b) ({,} :a 3 :b 4)
+                    + a b
+                quote $ let{} (a b) ({,} :a 3 :b 4)
                   + a b
-              quote $ let{} (a b) ({,} :a 3 :b 4)
-                + a b
 
             assert=
               [] 3 4 5 6
@@ -305,18 +317,19 @@
           fn ()
             log-title "|Detector function"
 
-            &reset-gensym-index!
+            inside-nim:
+              &reset-gensym-index!
 
-            assert=
-              macroexpand $ quote $ assert-detect fn? $ fn () 1
-              quote
-                &let
-                  v__1 (fn () 1)
-                  if (fn? v__1) nil
-                    do (echo)
-                      echo (quote (fn () 1)) "|does not satisfy:" (quote fn?) "| <--------"
-                      echo "|  value is:" v__1
-                      raise "|Not satisfied in assertion!"
+              assert=
+                macroexpand $ quote $ assert-detect fn? $ fn () 1
+                quote
+                  &let
+                    v__1 (fn () 1)
+                    if (fn? v__1) nil
+                      do (echo)
+                        echo (quote (fn () 1)) "|does not satisfy:" (quote fn?) "| <--------"
+                        echo "|  value is:" v__1
+                        raise "|Not satisfied in assertion!"
 
         |main! $ quote
           defn main! ()

@@ -70,6 +70,7 @@ proc escapeVarName(name: string): string =
   .replace("=", "_EQ_")
   .replace(">", "_GT_")
   .replace("<", "_LT_")
+  .replace(":", "_COL_")
   .replace(";", "_SCOL_")
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")

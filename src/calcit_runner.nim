@@ -25,6 +25,7 @@ import calcit_runner/codegen/emit_js
 import calcit_runner/codegen/emit_ir
 import calcit_runner/util/color_echo
 import calcit_runner/data/to_edn
+import calcit_runner/injection/environment
 
 export CirruData, CirruDataKind, `==`
 
@@ -143,6 +144,7 @@ proc loadModules(modulePath: string, baseDir: string) =
     programCode[fileNs] = file
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
+  registerCoreProc("&get-calcit-running-mode", nativeGetCalcitRunningMode)
   let snapshotInfo = loadSnapshot(snapshotFile)
 
   for modulePath in snapshotInfo.configs.modules:
