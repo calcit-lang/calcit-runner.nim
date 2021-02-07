@@ -153,14 +153,6 @@
                     2 |two
                     3 |three
 
-        |test-let $ quote
-          fn ()
-            assert= 3
-              let->
-                let a 1
-                let b 2
-                + b a
-
         |test-gensym $ quote
           fn ()
             &reset-gensym-index!
@@ -313,9 +305,6 @@
 
             log-title "|Testing thread macros"
             test-thread-macros
-
-            log-title "|Testing let thread"
-            test-let
 
             log-title "|Testing gensym"
             test-gensym

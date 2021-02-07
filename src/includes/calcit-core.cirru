@@ -706,27 +706,6 @@
                       raise "|Unknown pattern to destruct"
                 raise "|Unknown structure to destruct"
 
-        |let-> $ quote
-          defmacro let-> (& body)
-            if (empty? body) (quote nil)
-              if (&= 1 (count body))
-                do
-                  assert  "|unexpected let in last item of body" (/= 'let (first body))
-                  first body
-                &let
-                  target $ first body
-                  if (&= 'let (first target))
-                    quote-replace
-                      &let
-                        ~ $ rest $ first body
-                        let->
-                          ~@ $ rest body
-                    quote-replace
-                      do
-                        ~ $ first body
-                        let->
-                          ~@ $ rest body
-
         |[,] $ quote
           defmacro [,] (& body)
             &let
