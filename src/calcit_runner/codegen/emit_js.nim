@@ -15,6 +15,7 @@ import ../types
 import ../compiler_configs
 import ../util/errors
 import ../util/str_util
+import ../codegen/special_calls
 
 const cLine = "\n"
 const cCurlyL = "{"
@@ -112,7 +113,7 @@ let builtInJsProc = toHashSet([
   "to-cirru-edn",
   "to-js-data",
   "to-calcit-data",
-  "printable",
+  "printable", "instance?",
 ])
 
 # code generated from calcit.core.cirru may not be faster enough,
@@ -124,16 +125,6 @@ let preferredJsProc = toHashSet([
   "string?", "fn?",
   "bool?", "atom?",
   "starts-with?",
-])
-
-let unavailableProcs = toHashSet([
-  "&reset-gensym-index!",
-  "dbt->point",
-  "dbt-digits",
-  "dbt-balanced-ternary",
-  "gensym",
-  "macroexpand",
-  "macroexpand-all",
 ])
 
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
@@ -310,11 +301,17 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
       of "new":
         if xs.listVal.len < 2:
-          raiseEvalError("new takes at least a object constructor", xs)
+          raiseEvalError("`new` takes at least an object constructor", xs)
         let ctor = xs.listVal[1]
         let args = xs.listVal.slice(2, xs.listVal.len)
         let argsCode = genArgsCode(args, ns, localDefs)
         return "new " & ctor.toJsCode(ns, localDefs) & "(" & argsCode & ")"
+      of "instance?":
+        if xs.listVal.len != 3:
+          raiseEvalError("`instance?` takes a constructor and a value", xs)
+        let ctor = xs.listVal[1]
+        let v = xs.listVal[2]
+        return "(" & v.toJsCode(ns, localDefs) & " instanceof " & ctor.toJsCode(ns, localDefs) & ")"
       of "set!":
         if xs.listVal.len != 3:
           raiseEvalError("set! takes a operand and a value", xs)
@@ -514,7 +511,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
     for def in depsInOrder:
       if ns == "calcit.core":
         # some defs from core can be replaced by calcit.procs
-        if unavailableProcs.contains(def):
+        if jsUnavailableProcs.contains(def):
           continue
         if preferredJsProc.contains(def):
           defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
