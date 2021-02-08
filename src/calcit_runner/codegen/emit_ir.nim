@@ -7,9 +7,7 @@ import json
 import ternary_tree
 
 import ../types
-
-var irMode* = false
-var emitPath = "js-out"
+import ../compiler_configs
 
 # mutual recursion
 proc dumpCode(xs: CirruData): JsonNode
@@ -112,8 +110,8 @@ proc emitIR*(programData: Table[string, ProgramFile], initFn, reloadFn: string):
   }
 
   let content = data.pretty()
-  if dirExists(emitPath).not:
-    createDir(emitPath)
+  if dirExists(irEmitPath).not:
+    createDir(irEmitPath)
 
-  writeFile (emitPath & "/program-ir.json"), content
-  echo "emitted to ", (emitPath & "/program-ir.json")
+  writeFile (irEmitPath & "/program-ir.json"), content
+  echo "emitted to ", (irEmitPath & "/program-ir.json")

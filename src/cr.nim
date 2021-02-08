@@ -10,11 +10,9 @@ import cirru_edn
 import edn_paint
 
 import ./calcit_runner/watcher
-import ./calcit_runner/version
+import ./calcit_runner/compiler_configs
 import ./calcit_runner/injection/canvas
 import ./calcit_runner/injection/event_loop
-import ./calcit_runner/codegen/emit_js
-import ./calcit_runner/codegen/emit_ir
 import ./calcit_runner/util/color_echo
 
 var runOnce = false
@@ -89,6 +87,8 @@ while true:
       jsMode = true
     elif cliArgs.key == "emit-ir":
       irMode = true
+    elif cliArgs.key == "mjs":
+      mjsMode = true
   of cmdArgument:
     snapshotFile = cliArgs.key
     incrementFile = cliArgs.key.replace("compact", ".compact-inc")

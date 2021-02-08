@@ -13,6 +13,7 @@ import cirru_edn
 import ternary_tree
 
 import calcit_runner/types
+import calcit_runner/compiler_configs
 import calcit_runner/core_syntax
 import calcit_runner/core_func
 import calcit_runner/util/errors
@@ -25,7 +26,6 @@ import calcit_runner/codegen/emit_js
 import calcit_runner/codegen/emit_ir
 import calcit_runner/util/color_echo
 import calcit_runner/data/to_edn
-import calcit_runner/injection/environment
 
 export CirruData, CirruDataKind, `==`
 
@@ -144,7 +144,6 @@ proc loadModules(modulePath: string, baseDir: string) =
     programCode[fileNs] = file
 
 proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): CirruData =
-  registerCoreProc("&get-calcit-running-mode", nativeGetCalcitRunningMode)
   let snapshotInfo = loadSnapshot(snapshotFile)
 
   for modulePath in snapshotInfo.configs.modules:
@@ -188,7 +187,7 @@ proc runEventListener*(event: CirruEdnValue) =
   let def = "on-window-event"
 
   if programCode.hasKey(ns).not or programCode[ns].defs.hasKey(def).not:
-    echo "Warning: " & ns & "/" & def & "does not exist"
+    echo "[Warn]: " & ns & "/" & def & "does not exist"
     return
   try:
     discard runCode(ns, def, event.ednToCirruData(ns, none(CirruDataScope)))

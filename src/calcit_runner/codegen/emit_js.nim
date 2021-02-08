@@ -12,6 +12,7 @@ import sequtils
 import ternary_tree
 
 import ../types
+import ../compiler_configs
 import ../util/errors
 import ../util/str_util
 
@@ -20,9 +21,6 @@ const cCurlyL = "{"
 const cCurlyR = "}"
 const cDbQuote = "\""
 
-# TODO dirty states controlling js backend
-var jsMode* = false
-var jsEmitPath* = "js-out"
 var firstCompilation = true # track if it's the first compilation
 
 # TODO mutable way of collect things
@@ -30,10 +28,16 @@ type ImplicitImportItem = tuple[ns: string, justNs: bool]
 var implicitImports: Table[string, ImplicitImportItem]
 
 proc toJsImportName(ns: string): string =
-  ("./" & ns).escape() # currently use `import "./ns.name"`
+  if mjsMode:
+    ("./" & ns & ".mjs").escape() # currently use `import "./ns.name"`
+  else:
+    ("./" & ns).escape() # currently use `import "./ns.name"`
 
 proc toJsFileName(ns: string): string =
-  ns & ".js"
+  if mjsMode:
+    ns & ".mjs"
+  else:
+    ns & ".js"
 
 proc hasNsPart(x: string): bool =
   let trySlashPos = x.find('/')
@@ -154,11 +158,6 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       return varPrefix & xs.symbolVal.escapeVar()
     elif localDefs.contains(xs.symbolVal):
       return xs.symbolVal.escapeVar()
-    elif xs.ns == coreNs:
-      # local variales inside calcit.core also uses this ns
-      return varPrefix & xs.symbolVal.escapeVar()
-    elif xs.ns == "":
-      raiseEvalError("Unpexpected ns at symbol", xs)
     elif xs.resolved.isSome():
       # TODO ditry code
       let resolved = xs.resolved.get()
@@ -169,9 +168,20 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Conflicted implicit imports", xs)
       else:
         implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false)
+      if xs.ns == coreNs:
+        return varPrefix & xs.symbolVal.escapeVar()
+      else:
+        return xs.symbolVal.escapeVar()
+    elif localdefs.contains(xs.symbolVal):
       return xs.symbolVal.escapeVar()
+    elif xs.ns == coreNs:
+      # local variales inside calcit.core also uses this ns
+      echo "[Warn] detected variable inside core not resolved"
+      return varPrefix & xs.symbolVal.escapeVar()
+    elif xs.ns == "":
+      raiseEvalError("Unpexpected ns at symbol", xs)
     elif xs.ns != ns: # probably via macro
-      # TODO ditry code
+      # TODO ditry code collecting imports
       if implicitImports.contains(xs.symbolVal):
         let prev = implicitImports[xs.symbolVal]
         if prev.ns != xs.ns:
@@ -181,9 +191,10 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
+      echo "[Warn] detected unresolved variable ", xs, " in ", ns
       return xs.symbolVal.escapeVar()
     else:
-      echo "[WARNING] Unpexpected case of code gen for ", xs, " in ", ns
+      echo "[Warn] Unpexpected case of code gen for ", xs, " in ", ns
       return varPrefix & xs.symbolVal.escapeVar()
   of crDataString:
     return xs.stringVal.escapeCirruStr()
@@ -199,7 +210,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     return varPrefix & "kwd(" & xs.keywordVal.escape() & ")"
   of crDataList:
     if xs.listVal.len == 0:
-      echo "[WARNING] Unpexpected empty list"
+      echo "[Warn] Unpexpected empty list"
       return "()"
     let head = xs.listVal[0]
     let body = xs.listVal.rest()
@@ -329,7 +340,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     var argsCode = genArgsCode(body, ns, localDefs)
     return head.toJsCode(ns, localDefs) & "(" & argsCode & ")"
   else:
-    raiseEvalError("[WARNING] unknown kind to gen js code: " & $xs.kind, xs)
+    raiseEvalError("[Warn] unknown kind to gen js code: " & $xs.kind, xs)
 
 proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "$calcit."
@@ -528,7 +539,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
         # should he handled inside compiler
         discard
       else:
-        echo "[WARNING] strange case for generating a definition ", $f.kind
+        echo "[Warn] strange case for generating a definition ", $f.kind
 
     if implicitImports.len > 0 and file.ns.isSome():
       let importsInfo = file.ns.get()

@@ -4,9 +4,7 @@ import parseopt
 import options
 
 import ./calcit_runner
-import ./calcit_runner/codegen/emit_js
-import ./calcit_runner/codegen/emit_ir
-import ./calcit_runner/version
+import ./calcit_runner/compiler_configs
 import ./calcit_runner/util/color_echo
 
 var evalOnce = false
@@ -35,6 +33,8 @@ while true:
       jsMode = true
     elif cliArgs.key == "emit-ir":
       irMode = true
+    elif cliArgs.key == "mjs":
+      mjsMode = true
   of cmdArgument:
     snapshotFile = cliArgs.key
     dimEcho "Runner: specifying files", snapshotFile

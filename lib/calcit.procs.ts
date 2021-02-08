@@ -1371,3 +1371,4 @@ export let dual_balanced_ternary = unavailableProc;
 export let gensym = unavailableProc;
 export let macroexpand = unavailableProc;
 export let macroexpand_all = unavailableProc;
+export let _AND_get_calcit_running_mode = unavailableProc;
