@@ -1,10 +1,12 @@
 
 {} (:package |test-cond)
   :configs $ {} (:init-fn |test-cond.main/main!) (:reload-fn |test-cond.main/reload!)
+    :modules $ |./util.cirru
   :files $ {}
     |test-cond.main $ {}
       :ns $ quote
         ns test-cond.main $ :require
+          [] util.core :refer $ [] inside-nim:
       :defs $ {}
 
         |test-cond $ quote
@@ -31,6 +33,25 @@
               assert= (detect-x 1) "|one"
               assert= (detect-x 2) "|two"
               assert= (detect-x 3) "|else"
+
+            inside-nim:
+              assert=
+                macroexpand $ quote
+                  case-default x |nothing
+                    1 |one
+                    2 |two
+                quote $ &let (v__2 x)
+                  &let (default__3 |nothing)
+                    &case v__2 default__3 (1 |one) (2 |two)
+
+            &let
+              detect-x $ fn (x)
+                case-default x |nothing
+                  1 |one
+                  2 |two
+              assert= (detect-x 0) |nothing
+              assert= (detect-x 1) |one
+              assert= (detect-x 2) |two
 
         |log-title $ quote
           defn log-title (title)

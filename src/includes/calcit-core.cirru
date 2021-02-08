@@ -277,7 +277,7 @@
                         ~ $ rest else
 
         |&case $ quote
-          defmacro &case (item pattern & others)
+          defmacro &case (item default pattern & others)
             assert "|expects pattern in a pair"
               &and (list? pattern) (&= 2 (count pattern))
             let
@@ -285,9 +285,9 @@
                 branch $ last pattern
               quote-replace
                 if (&= ~item ~x) ~branch
-                  ~ $ if (empty? others) nil
+                  ~ $ if (empty? others) default
                     quote-replace
-                      &case ~item ~@others
+                      &case ~item ~default ~@others
 
         |case $ quote
           defmacro case (item & patterns)
@@ -296,7 +296,19 @@
               quote-replace
                 &let
                   ~v ~item
-                  &case ~v ~@patterns
+                  &case ~v nil ~@patterns
+
+        |case-default $ quote
+          defmacro case (item default & patterns)
+            if (empty? patterns)
+              raise "|Expected patterns for case-default, got empty"
+            &let
+              v (gensym |v)
+              &let (default-var $ gensym |default)
+                quote-replace
+                  &let (~v ~item)
+                    &let (~default-var ~default)
+                      &case ~v ~default-var ~@patterns
 
         |get-in $ quote
           defn get-in (base path)

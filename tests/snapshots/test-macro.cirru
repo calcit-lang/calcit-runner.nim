@@ -59,19 +59,19 @@
                     3 |three
                 quote
                   &let (v__2 (+ 1 2))
-                    &case v__2
+                    &case v__2 nil
                       1 |one
                       2 |two
                       3 |three
               assert=
                 macroexpand $ quote
-                  &case v__2
+                  &case v__2 nil
                     1 |one
                     2 |two
                     3 |three
                 quote
                   if (&= v__2 1) |one
-                    &case v__2
+                    &case v__2 nil
                       2 |two
                       3 |three
 
