@@ -13,6 +13,7 @@ import cirru_edn
 import ternary_tree
 
 import calcit_runner/types
+import calcit_runner/compiler_configs
 import calcit_runner/core_syntax
 import calcit_runner/core_func
 import calcit_runner/util/errors
@@ -186,7 +187,7 @@ proc runEventListener*(event: CirruEdnValue) =
   let def = "on-window-event"
 
   if programCode.hasKey(ns).not or programCode[ns].defs.hasKey(def).not:
-    echo "Warning: " & ns & "/" & def & "does not exist"
+    echo "[Warn]: " & ns & "/" & def & "does not exist"
     return
   try:
     discard runCode(ns, def, event.ednToCirruData(ns, none(CirruDataScope)))

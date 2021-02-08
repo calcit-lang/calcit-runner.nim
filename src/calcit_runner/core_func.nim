@@ -22,6 +22,7 @@ import cirru_parser
 import dual_balanced_ternary
 
 import ./types
+import ./compiler_configs
 import ./data
 import ./util/errors
 import ./util/stack
@@ -1263,6 +1264,13 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
 proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
 
+proc nativeGetCalcitRunningMode*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if jsMode:
+    return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("js"))
+  if irMode:
+    return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("ir"))
+  return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("eval"))
+
 proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
     raiseEvalError("set->list expects 1 argument", args)
@@ -1398,6 +1406,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["display-stack"] = CirruData(kind: crDataProc, procVal: nativeDisplayStack)
   programData[coreNs].defs["dbt-digits"] = CirruData(kind: crDataProc, procVal: nativeDbtDigits)
   programData[coreNs].defs["&get-calcit-backend"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitBackend)
+  programData[coreNs].defs["&get-calcit-running-mode"] = CirruData(kind: crDataProc, procVal: nativeGetCalcitRunningMode)
   programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
   programData[coreNs].defs["blank?"] = CirruData(kind: crDataProc, procVal: nativeBlankQuestion)
   programData[coreNs].defs["compare-string"] = CirruData(kind: crDataProc, procVal: nativeCompareString)

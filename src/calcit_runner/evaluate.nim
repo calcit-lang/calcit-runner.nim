@@ -13,11 +13,13 @@ import ./types
 import ./data
 import ./loader
 import ./preprocess
+import ./compiler_configs
 
 import ./util/errors
 import ./util/stack
 import ./eval/arguments
 import ./eval/expression
+import ./codegen/special_calls
 
 var programCode*: Table[string, FileSource]
 var programData*: Table[string, ProgramFile]
@@ -293,6 +295,11 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
               raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
 
           # raiseEvalError(fmt"Unknown token {sym.symbolVal}", sym)
+          if jsMode:
+            if jsSyntaxProcs.contains(sym.symbolVal):
+              discard
+            else:
+              echo "[Warn] symbol not resolved: ", sym, " in ", ns
           return sym
 
   of crDataList:

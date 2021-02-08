@@ -1,10 +1,12 @@
 
 {} (:package |test-map)
   :configs $ {} (:init-fn |test-map.main/main!) (:reload-fn |test-map.main/reload!)
+    :modules $ [] |./util.cirru
   :files $ {}
     |test-map.main $ {}
       :ns $ quote
         ns test-map.main $ :require
+          [] util.core :refer $ [] log-title inside-nim:
       :defs $ {}
 
         |test-maps $ quote
@@ -91,23 +93,17 @@
 
         |test-native-map-syntax $ quote
           defn test-native-map-syntax ()
-            when
-              = :nim $ &get-calcit-backend
+
+            inside-nim:
               assert=
                 macroexpand $ quote $ {} (:a 1)
                 quote $ &{} :a 1
 
-        |log-title $ quote
-          defn log-title (title)
-            echo
-            echo title
-            echo
-
         |test-map-comma $ quote
           fn ()
             log-title "|Testing {,}"
-            when
-              = :nim $ &get-calcit-backend
+
+            inside-nim:
               assert=
                 macroexpand $ quote $ {,} :a 1 , :b 2 , :c 3
                 quote $ pairs-map $ section-by 2 $ [] :a 1 :b 2 :c 3

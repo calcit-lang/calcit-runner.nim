@@ -5,6 +5,7 @@
       , |./test-lens.cirru |./test-list.cirru |./test-macro.cirru |./test-map.cirru
       , |./test-math.cirru |./test-recursion.cirru |./test-set.cirru
       , |./test-string.cirru |./test-ternary.cirru |./test-js.cirru
+      , |./util.cirru
   :files $ {}
     |app.main $ {}
       :ns $ quote
@@ -22,20 +23,14 @@
           [] test-string.main :as test-string
           [] test-ternary.main :as test-ternary
           [] test-js.main :as test-js
+          [] util.core :refer $ [] log-title inside-nim: inside-js:
       :defs $ {}
-        |log-title $ quote
-          defn log-title (title)
-            echo
-            echo title
-            echo
-
         |test-keyword $ quote
           defn test-keyword ()
             assert "|keyword function" $ =
               :a ({} (:a 1))
               , 1
-            when
-              = :nim $ &get-calcit-backend
+            inside-nim:
               &let
                 base $ {} (:a 1)
                 assert= 1 $ base :a
@@ -129,7 +124,7 @@
               parse-cirru "|def f (a b) $ + a b"
               [] $ [] |def |f ([] |a |b)
                 [] |+ |a |b
-            
+
             assert=
               parse-cirru "|{,} :a 1 :b false"
               [] $ [] |{,} |:a |1 |:b |false
@@ -151,8 +146,7 @@
             log-title "|Testing detects"
             test-detects
 
-            when
-              = :nim $ &get-calcit-backend
+            inside-nim:
               log-title "|Testing id"
               test-id
 
@@ -166,9 +160,9 @@
 
             test-cirru-parser
 
-            when
-              = :nim $ &get-calcit-backend
-              test-macro/main!
+            test-macro/main!
+
+            inside-nim:
               test-gynienic/main!
               test-ternary/main!
 
@@ -182,8 +176,7 @@
             test-set/main!
             test-string/main!
 
-            when
-              = :js $ &get-calcit-backend
+            inside-js:
               test-js/main!
 
             do true

@@ -1,10 +1,12 @@
 
 {} (:package |test-list)
   :configs $ {} (:init-fn |test-list.main/main!) (:reload-fn |test-list.main/reload!)
+    :modules $ [] |./util.cirru
   :files $ {}
     |test-list.main $ {}
       :ns $ quote
         ns test-list.main $ :require
+          [] util.core :refer $ [] log-title inside-nim:
       :defs $ {}
 
         |test-list $ quote
@@ -238,12 +240,6 @@
                 [] 4 3 2 1
               [] 1 2 3 4
 
-        |log-title $ quote
-          defn log-title (title)
-            echo
-            echo title
-            echo
-
         |*counted $ quote
           defatom *counted 0
 
@@ -251,8 +247,7 @@
           fn ()
             log-title "|Testing doseq"
 
-            when
-              = :nim $ &get-calcit-backend
+            inside-nim:
               =
                 macroexpand $ quote
                   &doseq (n (range 5))
@@ -278,8 +273,8 @@
         |test-let[] $ quote
           fn ()
             log-title "|Testing let[]"
-            when
-              = :nim $ &get-calcit-backend
+
+            inside-nim:
               echo $ macroexpand $ quote
                 let[] (a b c & d) ([] 1 2 3 4 5)
                   echo a
