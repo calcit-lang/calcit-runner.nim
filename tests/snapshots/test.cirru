@@ -135,6 +135,13 @@
                 :a 1
                 :b $ [] 3 |4 nil
 
+        |test-fn $ quote
+          fn ()
+            log-title "|Testing fn"
+            &let
+              empty-f $ fn ()
+              assert= nil (empty-f)
+
         |reload! $ quote
           defn reload! () nil
 
@@ -159,6 +166,8 @@
             test-display-stack
 
             test-cirru-parser
+
+            test-fn
 
             test-macro/main!
 

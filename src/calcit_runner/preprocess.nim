@@ -27,8 +27,8 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
 proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
-  if xs.len <= 3:
-    raiseEvalError("Expects len >3 for defn", xs)
+  if xs.len < 3:
+    raiseEvalError("Expects len >=3 for defn", xs)
 
   var ys = xs.listVal.slice(0,3)
   let args = xs[2]
@@ -55,9 +55,9 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
 
 proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
+    raiseEvalError("Expected a list", xs)
   if xs.len < 3:
-    raiseEvalError("Expects len >=3", xs)
+    raiseEvalError("Expected &let to take >=3 nodes", xs)
 
   let head = xs[0]
   let pair = xs[1]

@@ -267,7 +267,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         return fmt"{cLine}({varPrefix}peekDefatom({atomPath}) ?? {varPrefix}defatom({atomPath}, {atomExpr.toJsCode(ns, localDefs)})){cLine}"
 
       of "defn":
-        if body.len < 3:
+        if body.len < 2:
           raiseEvalError("Expected name, args, code for gennerating func, too short", xs)
         let funcName = body[0]
         let funcArgs = body[1]
