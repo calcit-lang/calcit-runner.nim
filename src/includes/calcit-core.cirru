@@ -429,7 +429,9 @@
               if (empty? path) true
                 &let (k $ first path)
                   if (map? x)
-                    recur (get x k) (rest path)
+                    if (contains? x k)
+                      recur (get x k) (rest path)
+                      , false
                     if (list? x)
                       if (number? k)
                         recur (get x k) (rest path)
@@ -622,7 +624,10 @@
                   p0 $ first path
                   d $ either data $ &{}
                 assoc d p0
-                  assoc-in (get d p0) (rest path) v
+                  assoc-in
+                    if (contains? d p0) (get d p0) (&{})
+                    rest path
+                    , v
 
         |update-in $ quote
           defn update-in (data path f)
