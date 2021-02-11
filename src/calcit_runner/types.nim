@@ -12,6 +12,8 @@ import system
 import ternary_tree
 import dual_balanced_ternary
 
+import ./data/virtual_list
+
 proc loadKeyword*(content: string): string =
   return content
 
@@ -70,17 +72,17 @@ type
     of crDataFn:
       fnName*: string
       fnScope*: CirruDataScope
-      fnArgs*: TernaryTreeList[CirruData]
+      fnArgs*: CrVirtualList[CirruData]
       fnCode*: seq[CirruData]
       fnNs*: string
     of crDataMacro:
       macroName*: string
-      macroArgs*: TernaryTreeList[CirruData]
+      macroArgs*: CrVirtualList[CirruData]
       macroCode*: seq[CirruData]
       macroNs*: string
     of crDataSyntax:
       syntaxVal*: FnInData
-    of crDataList: listVal*: TernaryTreeList[CirruData]
+    of crDataList: listVal*: CrVirtualList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
     of crDataSymbol:
@@ -245,8 +247,8 @@ proc `$`*(xs: seq[CirruData]): string =
 # mutual recursion
 proc hash*(value: CirruData): Hash
 
-proc hash*[T](scope: TernaryTreeList[T]): Hash =
-  result = hash("ternary-list:")
+proc hash*[T](scope: CrVirtualList[T]): Hash =
+  result = hash("virtual-list:")
   for item in scope:
     result = result !& hash(item)
   return result

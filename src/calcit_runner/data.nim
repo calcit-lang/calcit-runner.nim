@@ -15,6 +15,7 @@ import dual_balanced_ternary
 import ./types
 import ./util/errors
 import ./util/str_util
+import ./data/virtual_list
 
 proc isNumber*(x: CirruData): bool = x.kind == crDataNumber
 proc isList*(x: CirruData): bool = x.kind == crDataList
@@ -38,7 +39,7 @@ iterator items*(x: CirruData): CirruData =
 
   of crDataMap:
     for k, v in x.mapVal:
-      yield CirruData(kind: crDataList, listVal: initTernaryTreeList(@[k, v]))
+      yield CirruData(kind: crDataList, listVal: initCrVirtualList(@[k, v]))
 
   of crDataSet:
     for child in x.setVal.items:
@@ -169,19 +170,19 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     return CirruData(kind: crDataString, stringVal: "\t")
   elif token.len >= 2 and token[0] == '@' and token[1..^1].matchesSimpleVar():
     # expects @*x-y? expanded as (deref *x-y?)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    return CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataSymbol, symbolVal: "deref", ns: ns),
       CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns),
     ]))
   elif token.len >= 3 and token[0..<2] == "~@" and token[2..^1].matchesSimpleVar():
     # expects ~@x-y? expanded as (~@ x-y?)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    return CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataSymbol, symbolVal: "~@", ns: ns),
       CirruData(kind: crDataSymbol, symbolVal: token[2..^1], ns: ns),
     ]))
   elif token.len >= 2 and token[0] == '~' and token[1..^1].matchesSimpleVar():
     # expects ~x-y? expanded as (~ x-y?)
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    return CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataSymbol, symbolVal: "~", ns: ns),
       CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns),
     ]))

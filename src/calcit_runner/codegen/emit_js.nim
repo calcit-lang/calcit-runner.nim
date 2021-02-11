@@ -16,6 +16,7 @@ import ../compiler_configs
 import ../util/errors
 import ../util/str_util
 import ../codegen/special_calls
+import ../data/virtual_list
 
 const cLine = "\n"
 const cCurlyL = "{"
@@ -104,8 +105,8 @@ proc escapeNs(name: string): string =
   "$" & name.escapeVar()
 
 # handle recursion
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
-proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string
+proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
+proc genArgsCode(body: CrVirtualList[CirruData], ns: string, localDefs: HashSet[string]): string
 
 let builtInJsProc = toHashSet([
   "aget", "aset",
@@ -339,7 +340,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   else:
     raiseEvalError("[Warn] unknown kind to gen js code: " & $xs.kind, xs)
 
-proc genArgsCode(body: TernaryTreeList[CirruData], ns: string, localDefs: HashSet[string]): string =
+proc genArgsCode(body: CrVirtualList[CirruData], ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   var spreading = false
   for x in body:
@@ -375,7 +376,7 @@ proc usesRecur(xs: CirruData): bool =
   else:
     return false
 
-proc genJsFunc(name: string, args: TernaryTreeList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
+proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   var localDefs = outerDefs
   var spreadingCode = "" # js list and calcit-js list are different, need to convert

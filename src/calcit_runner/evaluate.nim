@@ -11,6 +11,7 @@ import ternary_tree
 
 import ./types
 import ./data
+import ./data/virtual_list
 import ./loader
 import ./preprocess
 import ./compiler_configs
@@ -132,7 +133,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
 
     # echo "HEAD: ", head, " ", xs
-    # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
+    # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
     pushDefStack(head, CirruData(kind: crDataNil), args)
     let ret = f(args, interpret, scope, ns)
     popDefStack()
@@ -143,8 +144,8 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
 
     # echo "HEAD: ", head, " ", xs
-    pushDefStack(head, CirruData(kind: crDataList, listVal: initTernaryTreeList(value.fnCode)), args)
-    # echo "calling: ", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)), " ", xs
+    pushDefStack(head, CirruData(kind: crDataList, listVal: initCrVirtualList(value.fnCode)), args)
+    # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
     let ret = evaluteFnData(value, args, interpret, ns)
     popDefStack()
 
@@ -328,13 +329,13 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
 
       case value.kind
       of crDataProc, crDataFn:
-        var xs = initTernaryTreeList[CirruData](@[originalValue])
+        var xs = initCrVirtualList[CirruData](@[originalValue])
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)
       of crDataKeyword:
         if code.listVal.len != 2: raiseEvalError("Expected keyword call of length 2", code)
-        var xs = initTernaryTreeList[CirruData](@[
+        var xs = initCrVirtualList[CirruData](@[
           CirruData(kind: crDataSymbol, symbolVal: "get", ns: ns),
           code.listVal[1],
           code.listVal[0],
@@ -342,7 +343,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         return preprocess(CirruData(kind: crDataList, listVal: xs), localDefs, ns)
       of crDataMacro:
         let xs = code[1..^1]
-        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initTernaryTreeList(value.macroCode)), args: xs))
+        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initCrVirtualList(value.macroCode)), args: xs))
 
         let quoted = evaluteMacroData(value, xs, interpret, ns)
         popDefStack()
@@ -373,7 +374,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         raiseEvalError("thunk should have been extracted", code)
       else:
         # could be dynamically passed functions
-        var xs = initTernaryTreeList[CirruData](@[originalValue])
+        var xs = initCrVirtualList[CirruData](@[originalValue])
         for child in code.listVal.rest:
           xs = xs.append preprocess(child, localDefs, ns)
         return CirruData(kind: crDataList, listVal: xs)

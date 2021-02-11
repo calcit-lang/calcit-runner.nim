@@ -5,6 +5,7 @@ import ternary_tree
 
 import ./types
 import ./data
+import ./data/virtual_list
 import ./util/errors
 
 type
@@ -19,7 +20,7 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
   let head = xs[0]
   let body = xs.listVal.rest()
 
-  var ys = initTernaryTreeList[CirruData](@[head])
+  var ys = initCrVirtualList[CirruData](@[head])
   for item in body:
     ys = ys.append preprocess(item, localDefs, ns)
   return CirruData(kind: crDataList, listVal: ys)
@@ -64,9 +65,9 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   let body = xs.listVal.slice(2, xs.len)
   var newDefs = localDefs
 
-  var ys = initTernaryTreeList[CirruData](@[head])
+  var ys = initCrVirtualList[CirruData](@[head])
 
-  var bindingBuffer = initTernaryTreeList[CirruData](@[])
+  var bindingBuffer = initCrVirtualList[CirruData](@[])
 
   if pair.kind != crDataList:
     raiseEvalError("Expects a list in &let", pair)
@@ -76,7 +77,7 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   let defName = pair[0]
   let detail = pair[1]
 
-  let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+  let newPair = CirruData(kind: crDataList, listVal: initCrVirtualList(@[
     defName,
     preprocess(detail, newDefs, ns)
   ]))

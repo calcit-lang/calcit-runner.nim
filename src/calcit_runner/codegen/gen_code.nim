@@ -6,6 +6,7 @@ import ternary_tree
 
 import ../types
 import ../data
+import ../data/virtual_list
 
 var genSymIndex* = 0
 
@@ -22,7 +23,7 @@ proc genCirruData(xs: varargs[CirruData]): CirruData =
   var args: seq[CirruData]
   for x in xs:
     args.add x
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(args))
 
 proc toCirruCode*(v: JsonNode, ns: string): CirruData =
   case v.kind
@@ -38,7 +39,7 @@ proc toCirruCode*(v: JsonNode, ns: string): CirruData =
     let arr = v.elems.map(proc(item: JsonNode): CirruData =
       item.toCirruCode(ns)
     )
-    return CirruData(kind: crDataList, listVal: initTernaryTreeList(arr))
+    return CirruData(kind: crDataList, listVal: initCrVirtualList(arr))
   else:
     echo "Unexpected type: ", v
     raise newException(ValueError, "Cannot generate code from JSON based on unexpected type")
@@ -50,11 +51,11 @@ proc shortenCode*(code: string, n: int): string =
     code
 
 proc generateMainCode*(code: CirruData, ns: string): CirruData =
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+  CirruData(kind: crDataList, listVal: initCrVirtualList(@[
     CirruData(kind: crDataSymbol, symbolVal: "defn", ns: ns),
     CirruData(kind: crDataSymbol, symbolVal: "main!", ns: ns),
-    CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[])),
-    CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    CirruData(kind: crDataList, listVal: initCrVirtualList[CirruData](@[])),
+    CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataSymbol, symbolVal: "echo", ns: ns),
       code,
     ])),

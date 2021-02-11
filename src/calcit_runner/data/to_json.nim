@@ -10,6 +10,7 @@ import cirru_parser
 
 import ../types
 import ../util/errors
+import ../data/virtual_list
 
 proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   case x.kind:
@@ -81,7 +82,7 @@ proc jsonToCirruData*(v: JsonNode): CirruData =
   of JNull:
     return CirruData(kind: crDataNil)
   of JArray:
-    var arr = initTernaryTreeList[CirruData](@[])
+    var arr = initCrVirtualList[CirruData](@[])
     for v in v.elems:
       arr = arr.append jsonToCirruData(v)
     return CirruData(kind: crDataList, listVal: arr)

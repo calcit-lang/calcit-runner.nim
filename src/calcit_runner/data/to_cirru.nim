@@ -6,6 +6,7 @@ import ternary_tree
 
 import ../types
 import ../data
+import ../data/virtual_list
 import ../util/errors
 
 proc toCirruNode*(x: CirruData): CirruNode =
@@ -41,7 +42,7 @@ proc nodesToCirruData*(xs: CirruNode, ns: string): CirruData =
   if xs.kind == cirruToken:
     parseLiteral(xs.token, ns)
   else:
-    var list = initTernaryTreeList[CirruData](@[])
+    var list = initCrVirtualList[CirruData](@[])
     for x in xs:
       list = list.append x.nodesToCirruData(ns)
     CirruData(kind: crDataList, listVal: list)
@@ -51,7 +52,7 @@ proc toCirruNodesData*(xs: CirruNode): CirruData =
   if xs.kind == cirruToken:
     CirruData(kind: crDataString, stringVal: xs.token)
   else:
-    var list = initTernaryTreeList[CirruData](@[])
+    var list = initCrVirtualList[CirruData](@[])
     for x in xs:
       list = list.append x.toCirruNodesData()
     CirruData(kind: crDataList, listVal: list)

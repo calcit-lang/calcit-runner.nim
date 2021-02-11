@@ -8,6 +8,7 @@ import ternary_tree
 
 import ../types
 import ../util/errors
+import ../data/virtual_list
 
 import ./to_cirru
 
@@ -59,12 +60,12 @@ proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope
   of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
   of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword(xs.keywordVal))
   of crEdnVector:
-    var ys = initTernaryTreeList[CirruData](@[])
+    var ys = initCrVirtualList[CirruData](@[])
     for item in xs.vectorVal:
       ys = ys.append item.ednToCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: ys)
   of crEdnList:
-    var ys = initTernaryTreeList[CirruData](@[])
+    var ys = initCrVirtualList[CirruData](@[])
     for item in xs.listVal:
       ys = ys.append item.ednToCirruData(ns, scope)
     CirruData(kind: crDataList, listVal: ys)
