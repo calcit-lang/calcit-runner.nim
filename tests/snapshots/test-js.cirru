@@ -43,8 +43,6 @@
 
             assert= 2 $ get (to-js-data $ [] 1 2 3) 1
 
-            echo "|TARGET"
-
             assert-detect identity $ instance? js/Number (new js/Number 1)
             assert-detect not $ instance? js/String (new js/Number 1)
 
