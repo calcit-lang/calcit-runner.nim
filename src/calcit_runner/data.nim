@@ -93,7 +93,7 @@ proc get*(x: CirruData, k: CirruData): CirruData =
   case x.kind:
   of crDataMap:
     if x.contains(k):
-      return x.mapVal[k].get
+      return x.mapVal.loopGet(k)
     else:
       return CirruData(kind: crDataNil)
   else:

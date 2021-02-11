@@ -383,7 +383,7 @@ proc `==`*(x, y: CirruData): bool =
         return false
 
       for k, v in x.mapVal.pairs:
-        if not (y.mapVal.contains(k) and y.mapVal[k].get == v):
+        if not (y.mapVal.contains(k) and y.mapVal.loopGet(k) == v):
           return false
 
       return true

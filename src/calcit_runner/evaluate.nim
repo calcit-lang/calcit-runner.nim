@@ -72,9 +72,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
     return v
 
   if scope.contains(sym.symbolVal):
-    let fromScope = scope[sym.symbolVal]
-    if fromScope.isSome:
-      return fromScope.get
+    return scope.loopGet(sym.symbolVal)
 
   let coreDefs = programData[coreNs].defs
   if coreDefs.contains(sym.symbolVal):
@@ -158,11 +156,10 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   of crDataMap:
     if xs.len != 2: raiseEvalError("map function expects 1 argument", xs)
     let target = interpret(xs[1], scope, ns)
-    let ret = value.mapVal[target]
-    if ret.isNone:
-      return CirruData(kind: crDataNil)
+    if value.mapVal.contains(target):
+      return value.mapVal.loopGet(target)
     else:
-      return ret.get
+      return CirruData(kind: crDataNil)
 
   of crDataMacro:
     echo "[warn] Found macros: ", xs

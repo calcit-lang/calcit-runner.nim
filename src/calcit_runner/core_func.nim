@@ -168,11 +168,10 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
       return a[b.numberVal.int]
 
   of crDataMap:
-    let ret = a.mapVal[b]
-    if ret.isNone:
-      return CirruData(kind: crDataNil)
+    if a.mapVal.contains(b):
+      return a.mapVal.loopGet(b)
     else:
-      return ret.get
+      return CirruData(kind: crDataNil)
   else:
     raiseEvalError("Cannot get from data of this type", a)
 
