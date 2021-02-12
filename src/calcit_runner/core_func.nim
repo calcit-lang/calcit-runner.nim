@@ -566,27 +566,58 @@ proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
   return CirruData(kind: crDataMap, mapVal: base.mapVal.mergeSkip(another.mapVal, CirruData(kind: crDataNil)))
 
+# contains? to detect structual existence, keys, indexes, and then includes? to detect value existence
 proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
-    raiseEvalError("contains requires 2 args", args)
+    raiseEvalError("contains? expected 2 args", args)
   let base = args[0]
   let key = args[1]
 
   if base.isNil:
-    return CirruData(kind: crDataBool, boolVal: false)
+    raiseEvalError("nil contains nothing", args)
 
   case base.kind
   of crDataMap:
     return CirruData(kind: crDataBool, boolVal: base.mapVal.contains(key))
   of crDataList:
-    return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(key) >= 0)
+    if key.kind != crDataNumber:
+      raiseEvalError("a list contains nothing but numbers", args)
+    let length = base.listVal.len()
+    return CirruData(kind: crDataBool, boolVal: key.numberVal >= 0 and key.numberVal.int < length)
   of crDataSet:
-    return CirruData(kind: crDataBool, boolVal: base.setVal.contains(key))
+    raiseEvalError("set does not support `contains?` , use `includes?` instead", args)
   of crDataString:
-    if key.kind != crDataString: raiseEvalError("expects string for detecting", args)
-    return CirruData(kind: crDataBool, boolVal: base.stringVal.contains(key.stringVal))
+    if key.kind != crDataNumber:
+      raiseEvalError("a string, like a list, contains nothing but numbers", args)
+    let length = base.stringVal.len()
+    return CirruData(kind: crDataBool, boolVal: key.numberVal >= 0 and key.numberVal.int < length)
   else:
-    raiseEvalError("contains requires a map", args)
+    raiseEvalError("`contains?` expected a structure", args)
+
+proc nativeIncludesQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2:
+    raiseEvalError("`includes?` requires 2 args", args)
+  let base = args[0]
+  let item = args[1]
+
+  if base.isNil:
+    raiseEvalError("nil includes nothing", args)
+
+  case base.kind
+  of crDataMap:
+    for k, v in base.mapVal:
+      if v == item:
+        return CirruData(kind: crDataBool, boolVal: true)
+    return CirruData(kind: crDataBool, boolVal: false)
+  of crDataList:
+    return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(item) >= 0)
+  of crDataSet:
+    return CirruData(kind: crDataBool, boolVal: base.setVal.contains(item))
+  of crDataString:
+    if item.kind != crDataString: raiseEvalError("expects string for detecting", args)
+    return CirruData(kind: crDataBool, boolVal: base.stringVal.contains(item.stringVal))
+  else:
+    raiseEvalError("`includes?` expected a structure", args)
 
 proc nativeAssocBefore(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 3:
@@ -1347,6 +1378,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&merge"] = CirruData(kind: crDataProc, procVal: nativeMerge)
   programData[coreNs].defs["&merge-non-nil"] = CirruData(kind: crDataProc, procVal: nativeMergeNonNil)
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
+  programData[coreNs].defs["includes?"] = CirruData(kind: crDataProc, procVal: nativeIncludesQuestion)
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
   programData[coreNs].defs["assoc"] = CirruData(kind: crDataProc, procVal: nativeAssoc)

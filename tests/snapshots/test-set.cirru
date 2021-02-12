@@ -16,8 +16,8 @@
         |test-set $ quote
           defn test-set ()
             assert= 4 $ count $ #{} 1 2 3 4
-            assert-detect identity $ contains? (#{} 1 2 3) 2
-            assert= false $ contains? (#{} 1 2 3) 4
+            assert-detect identity $ includes? (#{} 1 2 3) 2
+            assert= false $ includes? (#{} 1 2 3) 4
             assert= (#{} 1 2 3) (#{} 2 3 1)
             assert= (include (#{} 1 2 3) 4) (#{} 1 2 3 4)
             assert= (include (#{} 1 2) 3 4) (#{} 1 2 3 4)
