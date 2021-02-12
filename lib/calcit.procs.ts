@@ -271,6 +271,37 @@ export let raise = (x: string): void => {
 
 export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   if (typeof xs === "string") {
+    if (typeof x != "number") {
+      throw new Error("Expected number index for detecting");
+    }
+    let size = xs.length;
+    if (x >= 0 && x < size) {
+      return true;
+    }
+    return false;
+  }
+  if (xs instanceof CrDataList) {
+    if (typeof x != "number") {
+      throw new Error("Expected number index for detecting");
+    }
+    let size = xs.len();
+    if (x >= 0 && x < size) {
+      return true;
+    }
+    return false;
+  }
+  if (xs instanceof CrDataMap) {
+    return xs.contains(x);
+  }
+  if (xs instanceof CrDataSet) {
+    throw new Error("Set expected `includes?` for detecting");
+  }
+
+  throw new Error("`contains?` expected a structure");
+};
+
+export let includes_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
+  if (typeof xs === "string") {
     if (typeof x !== "string") {
       throw new Error("Expected string");
     }
@@ -286,13 +317,18 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
     return false;
   }
   if (xs instanceof CrDataMap) {
-    return xs.contains(x);
+    for (let [k, v] of xs.pairs()) {
+      if (_AND__EQ_(v, x)) {
+        return true;
+      }
+    }
+    return false;
   }
   if (xs instanceof CrDataSet) {
     return xs.contains(x);
   }
 
-  throw new Error("Does not support contains? on this type");
+  throw new Error("includes? expected a structure");
 };
 
 export let get = function (xs: CrDataValue, k: CrDataValue) {
