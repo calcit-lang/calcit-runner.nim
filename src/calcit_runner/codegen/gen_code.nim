@@ -60,3 +60,13 @@ proc generateMainCode*(code: CirruData, ns: string): CirruData =
       code,
     ])),
   ]))
+
+# for generating JavaScript variables
+var jsGenSymFileIndex = 0
+
+proc resetJsGenSymIndex*(): void =
+  jsGenSymFileIndex = 0
+
+proc jsGenSym*(name: string = "_js_gen"): string =
+  jsGenSymFileIndex = jsGenSymFileIndex + 1
+  name & "_AUTO_" & $jsGenSymFileIndex
