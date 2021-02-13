@@ -350,7 +350,11 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
     return xs.get(k);
   }
   if (xs instanceof CrDataMap) {
-    return xs.get(k);
+    if (xs.contains(k)) {
+      return xs.get(k);
+    } else {
+      return null;
+    }
   }
   if (Array.isArray(xs)) {
     if (typeof k === "number") {
