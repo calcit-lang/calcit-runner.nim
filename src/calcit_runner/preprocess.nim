@@ -5,6 +5,7 @@ import ternary_tree
 
 import ./types
 import ./data
+import ./data/virtual_list
 import ./util/errors
 
 type
@@ -19,7 +20,7 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
   let head = xs[0]
   let body = xs.listVal.rest()
 
-  var ys = initTernaryTreeList[CirruData](@[head])
+  var ys = initCrVirtualList[CirruData](@[head])
   for item in body:
     ys = ys.append preprocess(item, localDefs, ns)
   return CirruData(kind: crDataList, listVal: ys)
@@ -27,8 +28,8 @@ proc processAll*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepro
 proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
     raiseEvalError("Expects a list", xs)
-  if xs.len <= 3:
-    raiseEvalError("Expects len >3 for defn", xs)
+  if xs.len < 3:
+    raiseEvalError("Expects len >=3 for defn", xs)
 
   var ys = xs.listVal.slice(0,3)
   let args = xs[2]
@@ -55,18 +56,18 @@ proc processDefn*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPrepr
 
 proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
+    raiseEvalError("Expected a list", xs)
   if xs.len < 3:
-    raiseEvalError("Expects len >=3", xs)
+    raiseEvalError("Expected &let to take >=3 nodes", xs)
 
   let head = xs[0]
   let pair = xs[1]
   let body = xs.listVal.slice(2, xs.len)
   var newDefs = localDefs
 
-  var ys = initTernaryTreeList[CirruData](@[head])
+  var ys = initCrVirtualList[CirruData](@[head])
 
-  var bindingBuffer = initTernaryTreeList[CirruData](@[])
+  var bindingBuffer = initCrVirtualList[CirruData](@[])
 
   if pair.kind != crDataList:
     raiseEvalError("Expects a list in &let", pair)
@@ -76,7 +77,7 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
   let defName = pair[0]
   let detail = pair[1]
 
-  let newPair = CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+  let newPair = CirruData(kind: crDataList, listVal: initCrVirtualList(@[
     defName,
     preprocess(detail, newDefs, ns)
   ]))

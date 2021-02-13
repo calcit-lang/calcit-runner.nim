@@ -6,6 +6,7 @@ import cirru_edn
 
 import ../types
 import ../data
+import ../data/virtual_list
 import ../util/errors
 
 proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
@@ -60,7 +61,7 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       args.add interpret(x, scope, ns)
   args
 
-proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[CirruData]): CirruDataScope =
+proc processArguments*(definedArgs: CrVirtualList[CirruData], passedArgs: seq[CirruData]): CirruDataScope =
   var argsScope: CirruDataScope
 
   let splitPosition = definedArgs.findIndex(proc(item: CirruData): bool =
@@ -77,7 +78,7 @@ proc processArguments*(definedArgs: TernaryTreeList[CirruData], passedArgs: seq[
       if definedArgName.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", definedArgName)
       argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
-    var varList = initTernaryTreeList[CirruData](@[])
+    var varList = initCrVirtualList[CirruData](@[])
     for idx in splitPosition..<passedArgs.len:
       varList = varList.append passedArgs[idx]
     let varArgName = definedArgs[definedArgs.len - 1]

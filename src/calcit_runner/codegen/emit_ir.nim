@@ -7,6 +7,7 @@ import json
 import ternary_tree
 
 import ../types
+import ../data/virtual_list
 import ../compiler_configs
 
 # mutual recursion
@@ -19,7 +20,7 @@ proc dumpCode(xs: seq[CirruData]): JsonNode =
 
   %*ys
 
-proc dumpCode(xs: TernaryTreeList[CirruData]): JsonNode =
+proc dumpCode(xs: CrVirtualList[CirruData]): JsonNode =
   var ys: seq[JsonNode]
   for item in xs:
     ys.add dumpCode(item)

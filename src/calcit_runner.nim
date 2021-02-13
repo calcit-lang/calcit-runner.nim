@@ -26,6 +26,7 @@ import calcit_runner/codegen/emit_js
 import calcit_runner/codegen/emit_ir
 import calcit_runner/util/color_echo
 import calcit_runner/data/to_edn
+import calcit_runner/data/virtual_list
 
 export CirruData, CirruDataKind, `==`
 

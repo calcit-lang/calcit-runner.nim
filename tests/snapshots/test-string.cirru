@@ -36,10 +36,12 @@
             assert= 1 $ compare-string |b |a
             assert= 0 $ compare-string |a |a
 
-        |test-contains $ quote
+        |test-includes $ quote
           fn ()
-            assert= true $ contains? |abc |abc
-            assert= false $ contains? |abd |abc
+            log-title "|Testing includes"
+
+            assert= true $ includes? |abc |abc
+            assert= false $ includes? |abd |abc
 
             assert= 3 $ str-find |0123456 |3
             assert= 3 $ str-find |0123456 |34
@@ -137,8 +139,7 @@
             log-title "|Testing str"
             test-str
 
-            log-title "|Testing contains"
-            test-contains
+            test-includes
 
             log-title "|Testing parse"
             test-parse

@@ -7,6 +7,7 @@ import ternary_tree
 import cirru_edn
 
 import ../types
+import ../data/virtual_list
 
 proc crData*(x: int): CirruData =
   CirruData(kind: crDataNumber, numberVal: x.float)
@@ -33,7 +34,7 @@ proc crData*(): CirruData =
   CirruData(kind: crDataNil)
 
 proc crData*(xs: seq[CirruData]): CirruData =
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
 proc crData*(xs: HashSet[CirruData]): CirruData =
   CirruData(kind: crDataSet, setVal: xs)

@@ -1,6 +1,4 @@
 
-import options
-
 import edn_paint
 import cirru_edn
 import ternary_tree
@@ -15,13 +13,16 @@ proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   else:
     let options = args[0]
     if options.kind == crDataMap:
-      let title = options.mapVal[CirruData(kind: crDataKeyword, keywordVal: loadKeyword("title"))]
-      let width = options.mapVal[CirruData(kind: crDataKeyword, keywordVal: loadKeyword("width"))]
-      let height = options.mapVal[CirruData(kind: crDataKeyword, keywordVal: loadKeyword("height"))]
-      assert title.isSome and title.get.kind == crDataString, "Expects title to be a string"
-      assert width.isSome and width.get.kind == crDataNumber, "Expects width to be a number"
-      assert height.isSome and height.get.kind == crDataNumber, "Expects height to be a number"
-      initCanvas(title.get.stringVal, width.get.numberVal.int, height.get.numberVal.int)
+      let titleKey = CirruData(kind: crDataKeyword, keywordVal: loadKeyword("title"))
+      let widthKey = CirruData(kind: crDataKeyword, keywordVal: loadKeyword("width"))
+      let heightKey = CirruData(kind: crDataKeyword, keywordVal: loadKeyword("height"))
+      let title = if options.mapVal.contains(titleKey): options.mapVal[titleKey] else: CirruData(kind: crDataNil)
+      let width = if options.mapVal.contains(widthKey): options.mapVal[widthKey] else: CirruData(kind: crDataNil)
+      let height = if options.mapVal.contains(heightKey): options.mapVal[heightKey] else: CirruData(kind: crDataNil)
+      assert title.kind == crDataString, "Expects title to be a string"
+      assert width.kind == crDataNumber, "Expects width to be a number"
+      assert height.kind == crDataNumber, "Expects height to be a number"
+      initCanvas(title.stringVal, width.numberVal.int, height.numberVal.int)
   return CirruData(kind: crDataBool, boolVal: true)
 
 proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =

@@ -24,6 +24,7 @@ import dual_balanced_ternary
 import ./types
 import ./compiler_configs
 import ./data
+import ./data/virtual_list
 import ./util/errors
 import ./util/stack
 import ./codegen/gen_code
@@ -167,11 +168,10 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
       return a[b.numberVal.int]
 
   of crDataMap:
-    let ret = a.mapVal[b]
-    if ret.isNone:
-      return CirruData(kind: crDataNil)
+    if a.mapVal.contains(b):
+      return a.mapVal.loopGet(b)
     else:
-      return ret.get
+      return CirruData(kind: crDataNil)
   else:
     raiseEvalError("Cannot get from data of this type", a)
 
@@ -230,7 +230,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
 
 proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
-    raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
   let fileName = args[0]
   if fileName.kind != crDataString:
@@ -243,7 +243,7 @@ proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
 
 proc nativeWriteFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
-    raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
   let fileName = args[0]
   if fileName.kind != crDataString:
@@ -258,7 +258,7 @@ proc nativeWriteFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
 
 proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
-    raiseEvalError("parse-json requires a string", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("parse-json requires a string", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
   let content = args[0]
   if content.kind != crDataString:
@@ -272,7 +272,7 @@ proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
 
 proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 1 or args.len > 2:
-    raiseEvalError("format-json requires 1~2 argument", CirruData(kind: crDataList, listVal: initTernaryTreeList(args)))
+    raiseEvalError("format-json requires 1~2 argument", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
   var addColon = false
   if args.len >= 2:
@@ -508,8 +508,9 @@ proc nativeConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     elif item.isList.not:
       raiseEvalError("&concat requires list, got: " & $item.kind, args)
     else:
-      xs.add item.listVal
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs.len, 0, xs))
+      item.listVal.turnIntoTree() # TODO need checking
+      xs.add item.listVal.treeData
+  return CirruData(kind: crDataList, listVal: initCrVirtualList(initTernaryTreeList(xs.len, 0, xs)))
 
 proc nativeFormatTernaryTree(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -519,7 +520,7 @@ proc nativeFormatTernaryTree(args: seq[CirruData], interpret: FnInterpret, scope
   of crDataNil:
     return CirruData(kind: crDataString, stringVal: "nil")
   of crDataList:
-    return CirruData(kind: crDataString, stringVal: item.listVal.formatInline)
+    return CirruData(kind: crDataString, stringVal: item.listVal.treeData.formatInline) # TODO need extracting
   of crDataMap:
     return CirruData(kind: crDataString, stringVal: item.mapVal.formatInline)
   else:
@@ -565,27 +566,58 @@ proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
   return CirruData(kind: crDataMap, mapVal: base.mapVal.mergeSkip(another.mapVal, CirruData(kind: crDataNil)))
 
+# contains? to detect structual existence, keys, indexes, and then includes? to detect value existence
 proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
-    raiseEvalError("contains requires 2 args", args)
+    raiseEvalError("contains? expected 2 args", args)
   let base = args[0]
   let key = args[1]
 
   if base.isNil:
-    return CirruData(kind: crDataBool, boolVal: false)
+    raiseEvalError("nil contains nothing", args)
 
   case base.kind
   of crDataMap:
     return CirruData(kind: crDataBool, boolVal: base.mapVal.contains(key))
   of crDataList:
-    return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(key) >= 0)
+    if key.kind != crDataNumber:
+      raiseEvalError("a list contains nothing but numbers", args)
+    let length = base.listVal.len()
+    return CirruData(kind: crDataBool, boolVal: key.numberVal >= 0 and key.numberVal.int < length)
   of crDataSet:
-    return CirruData(kind: crDataBool, boolVal: base.setVal.contains(key))
+    raiseEvalError("set does not support `contains?` , use `includes?` instead", args)
   of crDataString:
-    if key.kind != crDataString: raiseEvalError("expects string for detecting", args)
-    return CirruData(kind: crDataBool, boolVal: base.stringVal.contains(key.stringVal))
+    if key.kind != crDataNumber:
+      raiseEvalError("a string, like a list, contains nothing but numbers", args)
+    let length = base.stringVal.len()
+    return CirruData(kind: crDataBool, boolVal: key.numberVal >= 0 and key.numberVal.int < length)
   else:
-    raiseEvalError("contains requires a map", args)
+    raiseEvalError("`contains?` expected a structure", args)
+
+proc nativeIncludesQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2:
+    raiseEvalError("`includes?` requires 2 args", args)
+  let base = args[0]
+  let item = args[1]
+
+  if base.isNil:
+    raiseEvalError("nil includes nothing", args)
+
+  case base.kind
+  of crDataMap:
+    for k, v in base.mapVal:
+      if v == item:
+        return CirruData(kind: crDataBool, boolVal: true)
+    return CirruData(kind: crDataBool, boolVal: false)
+  of crDataList:
+    return CirruData(kind: crDataBool, boolVal: base.listVal.indexOf(item) >= 0)
+  of crDataSet:
+    return CirruData(kind: crDataBool, boolVal: base.setVal.contains(item))
+  of crDataString:
+    if item.kind != crDataString: raiseEvalError("expects string for detecting", args)
+    return CirruData(kind: crDataBool, boolVal: base.stringVal.contains(item.stringVal))
+  else:
+    raiseEvalError("`includes?` expected a structure", args)
 
 proc nativeAssocBefore(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 3:
@@ -717,7 +749,7 @@ proc nativeRange(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   while base < bound:
     ys.add CirruData(kind: crDataNumber, numberVal: base)
     base = base + step
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(ys))
+  return CirruData(kind: crDataList, listVal: initCrVirtualList(ys))
 
 proc nativeStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -946,7 +978,7 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   let target = args[1]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
   if target.kind != crDataString: raiseEvalError("replace expects a string", args)
-  var list = initTernaryTreeList[CirruData](@[])
+  var list = initCrVirtualList[CirruData](@[])
   # Nim splits with "" differently
   if target.stringVal == "":
     for idx in 0..<base.stringVal.runeLen:
@@ -960,7 +992,7 @@ proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   if args.len != 1: raiseEvalError("replace expects 1 argument", args)
   let base = args[0]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
-  var list = initTernaryTreeList[CirruData](@[])
+  var list = initCrVirtualList[CirruData](@[])
   for item in base.stringVal.splitLines:
     list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
@@ -971,7 +1003,7 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
   var acc: HashSet[CirruData]
   for pair in base.mapVal.toPairs:
-    let list = initTernaryTreeList[CirruData](@[pair.k, pair.v])
+    let list = initCrVirtualList[CirruData](@[pair.k, pair.v])
     acc.incl CirruData(kind: crDataList, listVal: list)
   return CirruData(kind: crDataSet, setVal: acc)
 
@@ -1083,7 +1115,7 @@ proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   return CirruData(kind: crDataString, stringVal: origin.stringVal.strip(chars = spaceChars))
 
 proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(args))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(args))
 
 proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   genSymIndex = genSymIndex + 1
@@ -1160,7 +1192,7 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
     echo "result:", a, " ", b, " ", ret
     return ret.numberVal.int
   )
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
 proc nativeDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("dual-balanced-ternary expects 2 arguments", args)
@@ -1179,7 +1211,7 @@ proc nativeDbtToPoint(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     CirruData(kind: crDataNumber, numberVal: v.x),
     CirruData(kind: crDataNumber, numberVal: v.y),
   ]
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
 proc nativeQuit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("quit expects 1 argument", args)
@@ -1228,7 +1260,7 @@ proc nativeReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   var xs: seq[CirruData]
   for y in ys:
     xs.add CirruData(kind: crDataString, stringVal: y)
-  return CirruData(kind: crDataList, listVal: initTernaryTreeList(xs))
+  return CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
 proc nativeDisplayStack(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 1: raiseEvalError("display stack expects 1 argument", args)
@@ -1242,12 +1274,12 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
   let dbtValue = args[0].ternaryVal
 
-  var xs = initTernaryTreeList[CirruData](@[])
+  var xs = initCrVirtualList[CirruData](@[])
   for idx in 0..<dbtValue.integral.len:
     let i = dbtValue.integral.len - idx - 1
     var chunk = initDeque[DualBalancedTernaryDigit]()
     chunk.addLast(dbtValue.integral[i])
-    xs = xs.append(CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    xs = xs.append(CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataNumber, numberVal: i.float),
       CirruData(kind: crDataTernary, ternaryVal: DualBalancedTernary(integral: chunk)),
     ])))
@@ -1255,7 +1287,7 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     let i = -1 - idx
     var chunk = initDeque[DualBalancedTernaryDigit]()
     chunk.addLast(dbtValue.fractional[idx])
-    xs = xs.append(CirruData(kind: crDataList, listVal: initTernaryTreeList(@[
+    xs = xs.append(CirruData(kind: crDataList, listVal: initCrVirtualList(@[
       CirruData(kind: crDataNumber, numberVal: i.float),
       CirruData(kind: crDataTernary, ternaryVal: DualBalancedTernary(integral: chunk)),
     ])))
@@ -1280,7 +1312,7 @@ proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   var acc: seq[CirruData]
   for y in x.setVal:
     acc.add y
-  CirruData(kind: crDataList, listVal: initTernaryTreeList(acc))
+  CirruData(kind: crDataList, listVal: initCrVirtualList(acc))
 
 proc nativeBlankQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1:
@@ -1346,6 +1378,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&merge"] = CirruData(kind: crDataProc, procVal: nativeMerge)
   programData[coreNs].defs["&merge-non-nil"] = CirruData(kind: crDataProc, procVal: nativeMergeNonNil)
   programData[coreNs].defs["contains?"] = CirruData(kind: crDataProc, procVal: nativeContainsQuestion)
+  programData[coreNs].defs["includes?"] = CirruData(kind: crDataProc, procVal: nativeIncludesQuestion)
   programData[coreNs].defs["assoc-before"] = CirruData(kind: crDataProc, procVal: nativeAssocBefore)
   programData[coreNs].defs["assoc-after"] = CirruData(kind: crDataProc, procVal: nativeAssocAfter)
   programData[coreNs].defs["assoc"] = CirruData(kind: crDataProc, procVal: nativeAssoc)

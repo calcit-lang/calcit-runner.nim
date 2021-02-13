@@ -20,6 +20,9 @@
               assert-detect identity (contains? dict :a)
               assert-detect not (contains? dict :a2)
 
+              assert-detect identity (includes? dict 2)
+              assert-detect not (includes? dict :a)
+
               ; echo $ keys dict
               assert=
                 keys dict

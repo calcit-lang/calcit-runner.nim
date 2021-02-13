@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.2.56"
+version       = "0.2.58"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
@@ -15,7 +15,7 @@ requires "nim >= 1.2.8"
 requires "libfswatch"
 requires "nanoid"
 requires "cirru_parser >= 0.3.0"
-requires "ternary_tree >= 0.1.32"
+requires "ternary_tree >= 0."
 requires "https://github.com/Cirru/cirru-edn.nim#v0.4.3"
 requires "https://github.com/calcit-lang/edn-paint#v0.2.7"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.4"

@@ -177,8 +177,17 @@ export class CrDataList {
     }
   }
   append(v: CrDataValue) {
-    this.turnListMode();
-    return new CrDataList(ternaryTree.append(this.value, v));
+    if (this.arrayMode && this.arrayEnd === this.arrayValue.length) {
+      // dirty trick to reuse list memory, data storage actually appended at existing array
+      this.arrayValue.push(v);
+      let newList = new CrDataList(this.arrayValue);
+      newList.arrayStart = this.arrayStart;
+      newList.arrayEnd = this.arrayEnd + 1;
+      return newList;
+    } else {
+      this.turnListMode();
+      return new CrDataList(ternaryTree.append(this.value, v));
+    }
   }
   prepend(v: CrDataValue) {
     this.turnListMode();

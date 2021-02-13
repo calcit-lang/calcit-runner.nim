@@ -3,6 +3,7 @@ import ternary_tree
 
 import ../types
 import ../data
+import ../data/virtual_list
 import ../util/errors
 
 proc checkExprStructure*(exprList: CirruData): bool =
@@ -46,13 +47,13 @@ proc replaceExpr*(exprList: CirruData, interpret: FnInterpret, scope: CirruDataS
   of crDataNil: return exprList
   of crDataList:
     if exprList.len == 0:
-      return CirruData(kind: crDataList, listVal: initTernaryTreeList[CirruData](@[]))
+      return CirruData(kind: crDataList, listVal: initCrVirtualList[CirruData](@[]))
     if exprList[0].isSymbol and exprList[0].symbolVal == "~":
       if exprList.len != 2:
         raiseEvalError "Expected 1 argument in ~ of quote-replace", exprList
       return interpret(exprList[1], scope, ns)
 
-    var list = initTernaryTreeList[CirruData](@[])
+    var list = initCrVirtualList[CirruData](@[])
     for item in exprList:
       if item.kind == crDataList and item.listVal.len > 0:
         let head = item[0]
