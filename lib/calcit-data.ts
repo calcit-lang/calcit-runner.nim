@@ -283,9 +283,13 @@ export class CrDataMap {
   get(k: CrDataValue) {
     let cursor = this.chain;
     while (cursor != null) {
-      let v = mapGet(cursor.value, k);
-      if (v != null && v !== this.skipValue) {
-        return v;
+      if (contains(cursor.value, k)) {
+        let v = mapGet(cursor.value, k);
+        if (v != null && v !== this.skipValue) {
+          return v;
+        } else {
+          cursor = cursor.next;
+        }
       } else {
         cursor = cursor.next;
       }

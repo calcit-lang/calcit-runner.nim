@@ -350,7 +350,11 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
     return xs.get(k);
   }
   if (xs instanceof CrDataMap) {
-    return xs.get(k);
+    if (xs.contains(k)) {
+      return xs.get(k);
+    } else {
+      return null;
+    }
   }
   if (Array.isArray(xs)) {
     if (typeof k === "number") {
@@ -498,34 +502,6 @@ export let empty_QUES_ = (xs: CrDataValue): boolean => {
 
   console.error(xs);
   throw new Error("Does not support `empty?` on this type");
-};
-
-export let wrapTailCall = (f: CrDataFn): CrDataFn => {
-  return (...args: CrDataValue[]): CrDataValue => {
-    if (typeof f !== "function") {
-      debugger;
-      throw new Error("Expected function to be called");
-    }
-
-    var result = f.apply(null, args);
-    var times = 0;
-    while (result instanceof CrDataRecur) {
-      if (f === recur) {
-        // do not recur on itself
-        break;
-      }
-      if (times > 10000) {
-        debugger;
-        throw new Error("Expected tail recursion to exist quickly");
-      }
-      result = f.apply(null, result.args);
-      times = times + 1;
-    }
-    if (result instanceof CrDataRecur) {
-      throw new Error("Expected actual value to be returned");
-    }
-    return result;
-  };
 };
 
 export let first = (xs: CrDataValue): CrDataValue => {

@@ -131,6 +131,13 @@
                 :c nil
               #{} :a :b
 
+        |test-get $ quote
+          fn ()
+            log-title "|Testing get"
+
+            assert= nil $ get (&{}) :a
+            assert= nil $ get-in (&{}) $ [] :a :b
+
         |main! $ quote
           defn main! ()
 
@@ -146,6 +153,8 @@
             test-map-comma
 
             test-keys
+
+            test-get
 
             do true
 
