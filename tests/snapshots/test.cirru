@@ -142,6 +142,16 @@
               empty-f $ fn ()
               assert= nil (empty-f)
 
+        |test-arguments $ quote
+          fn ()
+            log-title "|Testing arguments"
+            let
+                f1 $ fn (a ? b c) $ [] a b c
+
+              assert= (f1 :a) ([] :a nil nil)
+              assert= (f1 :a :b) ([] :a :b nil)
+              assert= (f1 :a :b :c) ([] :a :b :c)
+
         |reload! $ quote
           defn reload! () nil
 
@@ -170,6 +180,8 @@
             test-fn
 
             test-macro/main!
+
+            test-arguments
 
             inside-nim:
               test-gynienic/main!

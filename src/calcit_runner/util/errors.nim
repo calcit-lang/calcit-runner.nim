@@ -16,6 +16,10 @@ proc raiseEvalError*(msg: string, code: CirruData): void =
 
   raise e
 
+proc raiseEvalError*(msg: string, xs: CrVirtualList[CirruData]): void =
+  let code = CirruData(kind: crDataList, listVal: xs)
+  raiseEvalError(msg, code)
+
 proc raiseEvalError*(msg: string, xs: seq[CirruData]): void =
   let code = CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
   raiseEvalError(msg, code)
