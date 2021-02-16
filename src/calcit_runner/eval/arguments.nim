@@ -63,10 +63,21 @@ proc spreadFuncArgs*(xs: seq[CirruData], interpret: FnInterpret, scope: CirruDat
 
 proc processArguments*(definedArgs: CrVirtualList[CirruData], passedArgs: seq[CirruData]): CirruDataScope =
   var argsScope: CirruDataScope
+  var splitPosition = -1
+  var optionalPosition = -1
 
-  let splitPosition = definedArgs.findIndex(proc(item: CirruData): bool =
-    item.kind == crDataSymbol and item.symbolVal == "&"
-  )
+  for idx, item in definedArgs:
+    if item.kind == crDataSymbol:
+      if item.symbolVal == "&":
+        if optionalPosition >= 0:
+          raiseEvalError("already in optional args mode", definedArgs)
+        splitPosition = idx
+        break
+      if item.symbolVal == "?":
+        if splitPosition >= 0:
+          raiseEvalError("already in spreading args mode", definedArgs)
+        optionalPosition = idx
+        break
 
   if splitPosition >= 0:
     if passedArgs.len < splitPosition:
@@ -86,7 +97,26 @@ proc processArguments*(definedArgs: CrVirtualList[CirruData], passedArgs: seq[Ci
       raiseEvalError("Expected var arg in symbol", varArgName)
     argsScope = argsScope.assoc(varArgName.symbolVal, CirruData(kind: crDataList, listVal: varList))
     return argsScope
-
+  elif optionalPosition >= 0:
+    if passedArgs.len < optionalPosition:
+      raiseEvalError("No enough arguments for:" & $CirruData(kind: crDataList, listVal: definedArgs), definedArgs)
+    if passedArgs.len > definedArgs.len - 1:
+      raiseEvalError("Too many arguments for:" & $CirruData(kind: crDataList, listVal: definedArgs), definedArgs)
+    for idx in 0..<optionalPosition:
+      let definedArgName = definedArgs[idx]
+      if definedArgName.kind != crDataSymbol:
+        raiseEvalError("Expects arg in symbol", definedArgName)
+      argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
+    for idx in optionalPosition..<definedArgs.len:
+      let definedArgName = definedArgs[idx]
+      if definedArgName.kind != crDataSymbol:
+        raiseEvalError("Expects arg in symbol", definedArgName)
+      let pos = idx - 1
+      if pos < passedArgs.len:
+        argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[pos])
+      else:
+        argsScope = argsScope.assoc(definedArgName.symbolVal, CirruData(kind: crDataNil))
+    return argsScope
   else:
     var counter = 0
     if definedArgs.len != passedArgs.len:
@@ -130,7 +160,7 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
       quoted = interpret(child, loopScope, macroValue.macroNs)
 
   case quoted.kind
-  of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword:
+  of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword, crDataNil:
     discard
   else:
     raiseEvalError("expects a list or a liternal from defmacro, but got: " & $quoted.kind, quoted)

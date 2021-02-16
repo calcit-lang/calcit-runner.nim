@@ -113,22 +113,6 @@ proc nativeEqual(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   let b = args[1]
   return CirruData(kind: crDataBool, boolVal: a == b)
 
-proc nativeAnd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: raiseEvalError("Expected 2 arguments in native &and", args)
-  let a = args[0]
-  let b = args[1]
-  if a.kind != crDataBool: raiseEvalError("Required bool for &and", a)
-  if b.kind != crDataBool: raiseEvalError("Required bool for &and", b)
-  return CirruData(kind: crDataBool, boolVal: a.boolVal and b.boolVal)
-
-proc nativeOr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: raiseEvalError("Expected 2 arguments in native &or", args)
-  let a = args[0]
-  let b = args[1]
-  if a.kind != crDataBool: raiseEvalError("Required bool for &or, got: " & $a, a)
-  if b.kind != crDataBool: raiseEvalError("Required bool for &or, got: " & $b, b)
-  return CirruData(kind: crDataBool, boolVal: a.boolVal or b.boolVal)
-
 proc nativeNot(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("Expected 1 arguments in native not", args)
   let a = args[0]
@@ -1344,8 +1328,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&<"] = CirruData(kind: crDataProc, procVal: nativeLessThan)
   programData[coreNs].defs["&>"] = CirruData(kind: crDataProc, procVal: nativeGreaterThan)
   programData[coreNs].defs["&="] = CirruData(kind: crDataProc, procVal: nativeEqual)
-  programData[coreNs].defs["&and"] = CirruData(kind: crDataProc, procVal: nativeAnd)
-  programData[coreNs].defs["&or"] = CirruData(kind: crDataProc, procVal: nativeOr)
   programData[coreNs].defs["not"] = CirruData(kind: crDataProc, procVal: nativeNot)
   programData[coreNs].defs["count"] = CirruData(kind: crDataProc, procVal: nativeCount)
   programData[coreNs].defs["get"] = CirruData(kind: crDataProc, procVal: nativeGet)

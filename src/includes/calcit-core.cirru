@@ -17,11 +17,11 @@
 
         |&<= $ quote
           defn &<= (a b)
-            &or (&< a b) (&= a b)
+            if (&< a b) true (&= a b)
 
         |&>= $ quote
           defn &>= (a b)
-            &or (&> a b) (&= a b)
+            if (&> a b) true (&= a b)
 
         |first $ quote
           defn first (xs) (get xs 0)
@@ -131,8 +131,9 @@
 
         |fn? $ quote
           defn fn? (x)
-            &or
+            if
               &= (type-of x) :fn
+              , true
               &= (type-of x) :proc
 
         |each $ quote
@@ -263,7 +264,7 @@
         |cond $ quote
           defmacro cond (pair & else)
             assert "|expects a pair"
-              &and (list? pair) (&= 2 (count pair))
+              if (list? pair) (&= 2 (count pair)) false
             let
                 expr $ first pair
                 branch $ last pair
@@ -279,7 +280,7 @@
         |&case $ quote
           defmacro &case (item default pattern & others)
             assert "|expects pattern in a pair"
-              &and (list? pattern) (&= 2 (count pattern))
+              if (list? pattern) (&= 2 (count pattern)) false
             let
                 x $ first pattern
                 branch $ last pattern
@@ -323,12 +324,12 @@
 
         |&max $ quote
           defn &max (a b)
-            assert "|expects numbers for &max" $ &and (number? a) (number? b)
+            assert "|expects numbers for &max" $ if (number? a) (number? b) false
             if (&> a b) a b
 
         |&min $ quote
           defn &min (a b)
-            assert "|expects numbers for &min" $ &and (number? a) (number? b)
+            assert "|expects numbers for &min" $ if (number? a) (number? b) false
             if (&< a b) a b
 
         |max $ quote
@@ -414,8 +415,9 @@
             reduce
               fn (acc pair)
                 assert "|expects pair for pairs-map"
-                  &and (list? pair)
+                  if (list? pair)
                     &= 2 (count pair)
+                    , false
                 assoc acc (first pair) (last pair)
               {}
               , xs
@@ -445,7 +447,7 @@
               [] ({})xs0 ys0
               fn (acc xs ys)
                 if
-                  &or (empty? xs) (empty? ys)
+                  if (empty? xs) true (empty? ys)
                   , acc
                   recur
                     assoc acc (first xs) (first ys)
@@ -481,9 +483,10 @@
             assert "|expects a list" (list? xs)
             assert "|expects list key to be a number" (number? idx)
             assert "|expects list key to be an integer" (&= idx (floor idx))
-            &and
+            if
               &> idx 0
               &< idx (count xs)
+              , false
 
         |update $ quote
           defn update (x k f)
@@ -672,8 +675,9 @@
             assert "|expects pairs in pairs in loop"
               every?
                 defn detect-pairs? (x)
-                  &and (list? x)
+                  if (list? x)
                     &= 2 (count x)
+                    , false
                 , pairs
             let
                 args $ map first pairs
@@ -747,7 +751,7 @@
         |assert $ quote
           defmacro assert (message xs)
             if
-              &and (string? xs) (not (string? message))
+              if (string? xs) (not (string? message)) false
               quote-replace $ assert ~xs ~message
               quote-replace
                 do
@@ -809,7 +813,7 @@
               [] ([]) xs0 ys0
               fn (acc xs ys)
                 if
-                  &or (empty? xs) (empty? ys)
+                  if (empty? xs) true (empty? ys)
                   , acc
                   recur
                     -> acc (append (first xs)) (append (first ys))
@@ -833,7 +837,9 @@
 
         |and $ quote
           defmacro and (item & xs)
-            if (empty? xs) item
+            if (empty? xs)
+              quote-replace
+                if ~item ~item false
               quote-replace
                 if ~item
                   and
@@ -845,7 +851,7 @@
           defmacro or (item & xs)
             if (empty? xs) item
               quote-replace
-                if ~item true
+                if ~item ~item
                   or
                     ~ $ first xs
                     ~@ $ rest xs
@@ -872,7 +878,7 @@
         |&doseq $ quote
           defmacro &doseq (pair & body)
             assert "|doseq expects a pair"
-              &and (list? pair) (&= 2 (count pair))
+              if (list? pair) (&= 2 (count pair)) false
             let
                 name $ first pair
                 xs0 $ last pair
@@ -929,7 +935,7 @@
         |let{} $ quote
           defmacro let{} (items base & body)
             assert (str "|expects symbol names in binding names: " items)
-              &and (list? items) (every? symbol? items)
+              if (list? items) (every? symbol? items) false
             let
                 var-result $ gensym |result
               quote-replace
@@ -946,8 +952,9 @@
         |let[] $ quote
           defmacro let[] (vars data & body)
             assert "|expects a list of definitions"
-              &and (list? vars)
+              if (list? vars)
                 every? symbol? vars
+                , false
             let
                 v $ gensym |v
                 defs $ apply-args

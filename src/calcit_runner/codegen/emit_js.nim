@@ -383,7 +383,9 @@ proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData
   var spreadingCode = "" # js list and calcit-js list are different, need to convert
   var argsCode = ""
   var spreading = false
+  var hasOptional = false
   var argsCount = 0
+  var optionalCount = 0
   for x in args:
     if x.kind != crDataSymbol:
       raiseEvalError("Expected symbol for arg", x)
@@ -396,9 +398,18 @@ proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData
       # js list and calcit-js are different in spreading
       spreadingCode = spreadingCode & fmt"{cLine}{argName} = {varPrefix}arrayToList({argName});"
       break # no more args after spreading argument
+    elif hasOptional:
+      if argsCode != "":
+        argsCode = argsCode & ", "
+      localDefs.incl(x.symbolVal)
+      argsCode = argsCode & x.symbolVal.escapeVar
+      optionalCount = optionalCount + 1
     else:
       if x.symbolVal == "&":
         spreading = true
+        continue
+      if x.symbolVal == "?":
+        hasOptional = true
         continue
       if argsCode != "":
         argsCode = argsCode & ", "
@@ -407,11 +418,15 @@ proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData
       argsCount = argsCount + 1
 
   let checkArgs = if spreading:
-    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Args length mismatch') }"
+    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Too few arguments') }"
+  elif hasOptional:
+    cLine & "if (arguments.length < " & $argsCount & ") { throw new Error('Too few arguments') }" &
+      "\nif (arguments.length > " & $(argsCount + optionalCount) & ") { throw new Error('Too many arguments') }"
   else:
     cLine & "if (arguments.length !== " & $argsCount & ") { throw new Error('Args length mismatch') }"
-  if body.len > 0 and body[^1].usesRecur():
 
+  if body.len > 0 and body[^1].usesRecur():
+    # ugliy code for inlining tail recursion template
     let retVar = jsGenSym("ret")
     let timesVar = jsGenSym("times")
     let fnDefinition = "function " & name.escapeVar & "(" & argsCode & ")" &
