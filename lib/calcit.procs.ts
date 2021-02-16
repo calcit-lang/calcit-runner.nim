@@ -612,13 +612,6 @@ export let initCrTernary = (x: string): CrDataValue => {
   return null;
 };
 
-export let _AND_or = (x: boolean, y: boolean): boolean => {
-  return x || y;
-};
-export let _AND_and = (x: boolean, y: boolean): boolean => {
-  return x && y;
-};
-
 export let _SHA__MAP_ = (...xs: CrDataValue[]): CrDataValue => {
   var result = new Set<CrDataValue>();
   for (let idx in xs) {

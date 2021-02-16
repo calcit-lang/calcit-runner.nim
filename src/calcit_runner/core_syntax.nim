@@ -15,31 +15,28 @@ import ./eval/expression
 
 proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len < 2):
-    raiseEvalError(fmt"No arguments for if", exprList)
-  elif (exprList.len == 2):
-    let node = exprList[0]
-    let cond = interpret(node, scope, ns)
-    if cond.kind == crDataNil:
+    raiseEvalError(fmt"Too few arguments for if", exprList)
+
+  var condition: bool # any values other than false and nil are treated as true
+  let node = exprList[0]
+  let cond = interpret(node, scope, ns)
+  if cond.kind == crDataNil:
+    condition = false
+  elif cond.kind == crDataBool:
+    condition = cond.boolVal
+  else:
+    condition = true
+
+  if (exprList.len == 2):
+    if condition:
+      return interpret(exprList[1], scope, ns)
+    else:
       return CirruData(kind: crDataNil)
-    if cond.kind == crDataBool:
-      if cond.boolVal:
-        return interpret(exprList[1], scope, ns)
-      else:
-        return CirruData(kind: crDataNil)
-    else:
-      raiseEvalError("Not a bool in if: " & $cond, node)
   elif (exprList.len == 3):
-    let node = exprList[0]
-    let cond = interpret(node, scope, ns)
-    if cond.kind == crDataNil:
-      return interpret(exprList[2], scope, ns)
-    if cond.kind == crDataBool:
-      if cond.boolVal:
-        return interpret(exprList[1], scope, ns)
-      else:
-        return interpret(exprList[2], scope, ns)
+    if condition:
+      return interpret(exprList[1], scope, ns)
     else:
-      raiseEvalError("Not a bool in if: " & $cond, node)
+      return interpret(exprList[2], scope, ns)
   else:
     raiseEvalError("Too many arguments for if", exprList)
 
