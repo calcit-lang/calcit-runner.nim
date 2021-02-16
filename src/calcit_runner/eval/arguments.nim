@@ -160,7 +160,7 @@ proc evaluteMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: F
       quoted = interpret(child, loopScope, macroValue.macroNs)
 
   case quoted.kind
-  of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword:
+  of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword, crDataNil:
     discard
   else:
     raiseEvalError("expects a list or a liternal from defmacro, but got: " & $quoted.kind, quoted)

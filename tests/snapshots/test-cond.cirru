@@ -53,6 +53,26 @@
               assert= (detect-x 1) |one
               assert= (detect-x 2) |two
 
+        |test-or $ quote
+          fn ()
+            log-title "|Testing or"
+            assert= (or 1) 1
+            assert= (or nil) nil
+            assert= (or 1 nil) 1
+            assert= (or nil 1) 1
+            assert= (or nil nil 1) 1
+            assert= (or nil nil nil) nil
+
+            assert= (and 1) 1
+            assert= (and nil) false
+            assert= (and 1 nil) false
+            assert= (and nil 1) false
+            assert= (and 1 1) 1
+
+            assert= (and 1 1 1) 1
+            assert= (and 1 1 nil) false
+            assert= (and nil 1 1) false
+
         |log-title $ quote
           defn log-title (title)
             echo
@@ -63,6 +83,8 @@
           defn main! ()
             log-title "|Testing cond"
             test-cond
+
+            test-or
 
             test-case
             , true

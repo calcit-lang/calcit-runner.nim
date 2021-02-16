@@ -837,7 +837,9 @@
 
         |and $ quote
           defmacro and (item & xs)
-            if (empty? xs) item
+            if (empty? xs)
+              quote-replace
+                if ~item ~item false
               quote-replace
                 if ~item
                   and
@@ -849,7 +851,7 @@
           defmacro or (item & xs)
             if (empty? xs) item
               quote-replace
-                if ~item true
+                if ~item ~item
                   or
                     ~ $ first xs
                     ~@ $ rest xs
