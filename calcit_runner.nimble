@@ -15,9 +15,9 @@ requires "nim >= 1.2.8"
 requires "libfswatch"
 requires "nanoid"
 requires "cirru_parser >= 0.3.0"
-requires "ternary_tree >= 0."
-requires "https://github.com/Cirru/cirru-edn.nim#v0.4.3"
-requires "https://github.com/calcit-lang/edn-paint#v0.2.7"
+requires "ternary_tree >= 0.2.0"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.4.4"
+requires "https://github.com/calcit-lang/edn-paint#v0.2.8"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.4"
 
 task watch, "run and watch":
