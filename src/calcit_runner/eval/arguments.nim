@@ -107,7 +107,7 @@ proc processArguments*(definedArgs: CrVirtualList[CirruData], passedArgs: seq[Ci
       if definedArgName.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", definedArgName)
       argsScope = argsScope.assoc(definedArgName.symbolVal, passedArgs[idx])
-    for idx in optionalPosition..<definedArgs.len:
+    for idx in (optionalPosition + 1)..<definedArgs.len:
       let definedArgName = definedArgs[idx]
       if definedArgName.kind != crDataSymbol:
         raiseEvalError("Expects arg in symbol", definedArgName)
