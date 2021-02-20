@@ -437,6 +437,7 @@ proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData
       "if (" & timesVar & " > 10000) { throw new Error('Expected tail recursion to exist quickly') }\n" &
       body.toJsCode(ns, localDefs, retVar & " =") &
       "if (" & retVar & " instanceof " & varPrefix & "CrDataRecur) {\n" &
+      checkArgs.replace("arguments.length", retVar &  ".args.length") & "\n" &
       "[ " & argsCode & " ] = " & retVar &  ".args;\n" &
       spreadingCode &
       timesVar & " += 1;\ncontinue;\n" &
@@ -444,12 +445,12 @@ proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData
       "}\n}"
 
     let exportMark = if exported: fmt"export let {name.escapeVar} = " else: ""
-    return fmt"{exportMark}{fnDefinition}{cLine}"
+    return exportMark & fnDefinition & cLine
   else:
     let fnDefinition = fmt"function {name.escapeVar}({argsCode}) " &
       "{" & fmt"{checkArgs}{spreadingCode}{cLine}{body.toJsCode(ns, localDefs)}" & "}"
     let exportMark = if exported: "export " else: ""
-    return fmt"{exportMark}{fnDefinition}{cLine}"
+    return exportMark & fnDefinition & cLine
 
 proc containsSymbol(xs: CirruData, y: string): bool =
   case xs.kind
