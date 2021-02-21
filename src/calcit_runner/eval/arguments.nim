@@ -23,7 +23,7 @@ proc spreadArgs*(xs: seq[CirruData]): seq[CirruData] =
   for x in xs:
     if spreadMode:
       if x.isList.not:
-        raiseEvalError("Spread mode expects a list", xs)
+        raiseEvalError("Spread mode expects a list: " & $x, xs)
       for y in x:
         args.add y
       spreadMode = false

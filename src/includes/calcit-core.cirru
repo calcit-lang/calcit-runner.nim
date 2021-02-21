@@ -167,10 +167,9 @@
             slice xs n (count xs)
 
         |str $ quote
-          defn str (& xs)
-            reduce
-              fn (acc item) $ &str-concat acc item
-              , | xs
+          defmacro str (x0 & xs)
+            if (empty? xs) x0
+              quote-replace $ &str-concat ~x0 $ str ~@xs
 
         |include $ quote
           defn include (base & xs)
@@ -438,7 +437,7 @@
                       if (number? k)
                         recur (get x k) (rest path)
                         , false
-                      raise $ str "|Unknown structure for some-in? detection" x
+                      raise $ &str-concat "|Unknown structure for some-in? detection" x
 
 
         |zipmap $ quote
@@ -761,7 +760,7 @@
                     do
                       echo "|Failed assertion:" (quote ~xs)
                       raise
-                        ~ $ str message "| " xs
+                        ~ $ &str-concat (&str-concat message "| ") xs
 
         |println $ quote
           defn println (& xs)
@@ -964,7 +963,7 @@
                       do
                         when-not
                           symbol? (first xs)
-                          raise $ str "|Expected symbol for vars: " (first xs)
+                          raise $ &str-concat "|Expected symbol for vars: " (first xs)
                         if (&= (first xs) '&)
                           do
                             assert "|expected list spreading" (&= 2 (count xs))
