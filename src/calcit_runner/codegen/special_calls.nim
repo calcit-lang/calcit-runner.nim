@@ -15,4 +15,6 @@ let jsUnavailableProcs* = toHashSet([
   "gensym",
   "macroexpand",
   "macroexpand-all",
+  "to-cirru-edn",
+  "extract-cirru-edn",
 ])
