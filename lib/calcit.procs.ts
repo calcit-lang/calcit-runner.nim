@@ -1138,6 +1138,7 @@ export let starts_with_QUES_ = (xs: string, y: string): boolean => {
 
 type CirruEdnFormat = string | CirruEdnFormat[];
 
+/** better use string version of Cirru EDN in future */
 export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
   if (x == null) {
     return "nil";
