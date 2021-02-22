@@ -1,10 +1,11 @@
 
-
 import sets
 
 # these procs are ignored in checking during macro expansion
 let jsSyntaxProcs*: HashSet[string] = toHashSet([
-  "aget", "aset", "new", "to-js-data", "set!", "exists?", "instance?",
+  "aget", "aset", "new", "set!", "exists?", "instance?",
+  "to-calcit-data",
+  "to-js-data",
 ])
 
 let jsUnavailableProcs* = toHashSet([
