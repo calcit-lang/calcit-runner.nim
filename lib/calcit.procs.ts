@@ -238,8 +238,19 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
       if (x.len() !== y.len()) {
         return false;
       }
-      for (let v in x.value.values()) {
-        if (!y.contains(v)) {
+      for (let v of x.value) {
+        let found = false;
+        // testing by doing iteration is O(n2), could be slow
+        // but Set::contains does not satisfy here
+        for (let yv of y.value) {
+          if (_AND__EQ_(v, yv)) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          continue;
+        } else {
           return false;
         }
       }
