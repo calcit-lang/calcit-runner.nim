@@ -36,6 +36,10 @@
             assert= 1 $ compare-string |b |a
             assert= 0 $ compare-string |a |a
 
+            assert-detect identity $ < |a |b
+            assert-detect identity $ < |aa |ab
+            assert-detect not $ > |aa |ab
+
         |test-includes $ quote
           fn ()
             log-title "|Testing includes"

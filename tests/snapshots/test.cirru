@@ -35,6 +35,11 @@
                 base $ {} (:a 1)
                 assert= 1 $ base :a
 
+            assert-detect identity $ < :a :b
+            assert-detect identity $ < :aa :ab
+            assert-detect not $ > :a :b
+            assert-detect not $ > :aa :ab
+
         |test-id $ quote
           fn ()
             assert= 9 $ count $ generate-id! 9
