@@ -94,17 +94,31 @@ proc nativeLessThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if args.len != 2: raiseEvalError("Expected 2 arguments in native <", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataNumber: raiseEvalError("Required number for <", a)
-  if b.kind != crDataNumber: raiseEvalError("Required number for <", b)
-  return CirruData(kind: crDataBool, boolVal: a.numberVal < b.numberVal)
+  if a.kind != b.kind:
+    raiseEvalError("Expected 2 arguments in same type", args)
+  elif a.kind == crDataNumber and b.kind == crDataNumber:
+    return CirruData(kind: crDataBool, boolVal: a.numberVal < b.numberVal)
+  elif a.kind == crDataString and b.kind == crDataString:
+    return CirruData(kind: crDataBool, boolVal: a.stringVal < b.stringVal)
+  elif a.kind == crDataKeyword and b.kind == crDataKeyword:
+    return CirruData(kind: crDataBool, boolVal: a.keywordVal < b.keywordVal)
+  else:
+    raiseEvalError("Cannot compare type " & $a.kind, args)
 
 proc nativeGreaterThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native >", args)
   let a = args[0]
   let b = args[1]
-  if a.kind != crDataNumber: raiseEvalError("Required number for >", a)
-  if b.kind != crDataNumber: raiseEvalError("Required number for >", b)
-  return CirruData(kind: crDataBool, boolVal: a.numberVal > b.numberVal)
+  if a.kind != b.kind:
+    raiseEvalError("Expected 2 arguments in same type", args)
+  elif a.kind == crDataNumber and b.kind == crDataNumber:
+    return CirruData(kind: crDataBool, boolVal: a.numberVal > b.numberVal)
+  elif a.kind == crDataString and b.kind == crDataString:
+    return CirruData(kind: crDataBool, boolVal: a.stringVal > b.stringVal)
+  elif a.kind == crDataKeyword and b.kind == crDataKeyword:
+    return CirruData(kind: crDataBool, boolVal: a.keywordVal > b.keywordVal)
+  else:
+    raiseEvalError("Cannot compare type " & $a.kind, args)
 
 # should be working for all data types
 proc nativeEqual(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
