@@ -169,7 +169,10 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
 
   if jsMode or irMode:
-    emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
+    if initFn.isSome:
+      emitCode(initFn.get(), codeConfigs.reloadFn)
+    else:
+      emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
     CirruData(kind: crDataNil)
   else:
     let pieces = if initFn.isSome:
