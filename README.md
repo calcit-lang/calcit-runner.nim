@@ -57,6 +57,8 @@ cr compact.cirru --init-fn='app.main/main!' # specifying init-fn
 cr -e="range 100" # eval from CLI
 
 cr --emit-js # compile to js
+cr --emit-js --mjs # compile to mjs
+cr --emit-js --emit-path=out/ # compile to js and save in `out/`
 
 cr --emit-ir # compile to intermediate representation
 

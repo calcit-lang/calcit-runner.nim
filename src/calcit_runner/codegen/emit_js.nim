@@ -503,8 +503,8 @@ proc writeFileIfChanged(filename: string, content: string): bool =
   return true
 
 proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
-  if dirExists(jsEmitPath).not:
-    createDir(jsEmitPath)
+  if dirExists(codeEmitPath).not:
+    createDir(codeEmitPath)
 
   var unchangedNs: HashSet[string]
 
@@ -592,7 +592,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
           let importTarget = item.ns.toJsImportName()
           importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {importTarget};{cLine}"
 
-    let jsFilePath = joinPath(jsEmitPath, ns.toJsFileName())
+    let jsFilePath = joinPath(codeEmitPath, ns.toJsFileName())
     let wroteNew = writeFileIfChanged(jsFilePath, importCode & cLine & defsCode & cLine & valsCode)
     if wroteNew:
       echo "Emitted js file: ", jsFilePath

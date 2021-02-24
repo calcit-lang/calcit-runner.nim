@@ -35,6 +35,10 @@ while true:
       irMode = true
     elif cliArgs.key == "mjs":
       mjsMode = true
+    elif cliArgs.key == "emit-path":
+      codeEmitPath = cliArgs.val
+    else:
+      raise newException(OSError, "Unknown option: " & cliArgs.key)
   of cmdArgument:
     snapshotFile = cliArgs.key
     dimEcho "Runner: specifying files", snapshotFile
