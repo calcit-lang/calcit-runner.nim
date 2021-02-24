@@ -154,6 +154,12 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     programCode[fileNs] = file
   codeConfigs = snapshotInfo.configs
 
+  # dirty code pin down initFn and reloadFn
+  if initFn.isSome():
+    codeConfigs.initFn = initFn.get()
+  if programReloadFn.isSome():
+    codeConfigs.reloadFn = programReloadFn.get()
+
   programData.clear()
 
   programCode[coreNs] = FileSource()
@@ -169,16 +175,10 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
     programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
 
   if jsMode or irMode:
-    if initFn.isSome:
-      emitCode(initFn.get(), codeConfigs.reloadFn)
-    else:
-      emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
+    emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
     CirruData(kind: crDataNil)
   else:
-    let pieces = if initFn.isSome:
-      initFn.get.split("/")
-    else:
-     codeConfigs.initFn.split('/')
+    let pieces = codeConfigs.initFn.split('/')
 
     if pieces.len != 2:
       echo "Unknown initFn", pieces

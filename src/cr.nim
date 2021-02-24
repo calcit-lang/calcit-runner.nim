@@ -1,9 +1,6 @@
 
 import calcit_runner
-import parseopt
 import os
-import strutils
-import options
 import tables
 
 import cirru_edn
@@ -14,11 +11,6 @@ import ./calcit_runner/compiler_configs
 import ./calcit_runner/injection/canvas
 import ./calcit_runner/injection/event_loop
 import ./calcit_runner/util/color_echo
-
-var runOnce = false
-var evalOnce = false
-var evalOnceCode: string
-var initFn = none(string)
 
 # https://rosettacode.org/wiki/Handle_a_signal#Nim
 proc handleControl() {.noconv.} =
@@ -63,36 +55,8 @@ proc watchFile(snapshotFile: string, incrementFile: string): void =
 
     sleep(90)
 
-var cliArgs = initOptParser(commandLineParams())
-var snapshotFile = "compact.cirru"
-var incrementFile = ".compact-inc.cirru"
-
-while true:
-  cliArgs.next()
-  case cliArgs.kind
-  of cmdEnd: break
-  of cmdShortOption:
-    if cliArgs.key == "e":
-      evalOnce = true
-      evalOnceCode = cliArgs.val
-      break
-  of cmdLongOption:
-    if cliArgs.key == "once":
-      if cliArgs.val == "" or cliArgs.val == "true":
-        runOnce = true
-        dimEcho "Runner: watching mode disabled."
-    elif cliArgs.key == "init-fn" and cliArgs.val != "":
-      initFn = some(cliArgs.val)
-    elif cliArgs.key == "emit-js":
-      jsMode = true
-    elif cliArgs.key == "emit-ir":
-      irMode = true
-    elif cliArgs.key == "mjs":
-      mjsMode = true
-  of cmdArgument:
-    snapshotFile = cliArgs.key
-    incrementFile = cliArgs.key.replace("compact", ".compact-inc")
-    dimEcho "Runner: specifying files", snapshotFile, incrementFile
+# reuse code
+parseCliArgs()
 
 if not (jsMode or irMode):
   registerCoreProc("init-canvas", nativeInitCanvas)
@@ -100,14 +64,14 @@ if not (jsMode or irMode):
   registerCoreProc("draw-error-message", nativeDrawErrorMessage)
   registerCoreProc("timeout-call", nativeTimeoutCall)
 
-if evalOnce:
-  discard evalSnippet(evalOnceCode)
-elif runOnce:
+if programEvalOnce:
+  discard evalSnippet(programEvalOnceCode)
+elif programRunOnce:
   echo "Calcit runner version: ", commandLineVersion
-  discard runProgram(snapshotFile, initFn)
+  discard runProgram(programSnapshotFile, programInitFn)
 else:
   echo "Calcit runner version: ", commandLineVersion
-  discard runProgram(snapshotFile, initFn)
+  discard runProgram(programSnapshotFile, programInitFn)
   # watch mode by default
   setControlCHook(handleControl)
-  watchFile(snapshotFile, incrementFile)
+  watchFile(programSnapshotFile, programIncrementFile)

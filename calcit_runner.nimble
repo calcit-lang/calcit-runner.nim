@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.2.68"
+version       = "0.2.70"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
@@ -43,9 +43,9 @@ task e, "eval some code":
   exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr -e='range 10'"
 
 task genjs, "try generating js":
-  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr_once --emit-js tests/snapshots/test.cirru --once"
-  # exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr_once --emit-js tests/snapshots/test.cirru"
+  # exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru"
 
 task genir, "try generating ir":
-  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr_once --emit-ir tests/snapshots/test.cirru --once"
-  # exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru --once"
+  exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr_once --emit-ir tests/snapshots/test.cirru"
+  # exec "nim compile --verbosity:0 --hints:off --threads:on -r src/cr --emit-js example/compact.cirru"

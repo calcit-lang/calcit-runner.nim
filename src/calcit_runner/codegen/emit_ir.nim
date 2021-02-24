@@ -111,8 +111,8 @@ proc emitIR*(programData: Table[string, ProgramFile], initFn, reloadFn: string):
   }
 
   let content = data.pretty()
-  if dirExists(irEmitPath).not:
-    createDir(irEmitPath)
+  if dirExists(codeEmitPath).not:
+    createDir(codeEmitPath)
 
-  writeFile (irEmitPath & "/program-ir.json"), content
-  echo "emitted to ", (irEmitPath & "/program-ir.json")
+  writeFile (codeEmitPath & "/program-ir.json"), content
+  echo "emitted to ", (codeEmitPath & "/program-ir.json")
