@@ -526,8 +526,8 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
     return x.toString();
   }
 
-  console.error(x);
-  throw new Error("Unexpected data for toString");
+  console.warn('Unknown structure to string, better use `console.log`', x);
+  return `${x}`
 };
 
 export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
