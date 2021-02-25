@@ -168,7 +168,8 @@
 
         |str $ quote
           defmacro str (x0 & xs)
-            if (empty? xs) x0
+            if (empty? xs)
+              quote-replace $ &str ~x0
               quote-replace $ &str-concat ~x0 $ str ~@xs
 
         |include $ quote
