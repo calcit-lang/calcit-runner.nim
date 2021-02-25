@@ -7,7 +7,7 @@ import strutils
 # calcit-runner is used for both evaling and compiling to js
 # configs collected in order to expose to whole program
 
-let commandLineVersion* = "0.2.70"
+let commandLineVersion* = "0.2.71"
 
 # dirty states controlling js backend
 var jsMode* = false
@@ -40,7 +40,10 @@ proc parseCliArgs*(): void =
         programEvalOnceCode = cliArgs.val
         break
     of cmdLongOption:
-      if cliArgs.key == "init-fn" and cliArgs.val != "":
+      if cliArgs.key == "once":
+        programRunOnce = true
+        echo "Runner: run-noce mode."
+      elif cliArgs.key == "init-fn" and cliArgs.val != "":
         programInitFn = some(cliArgs.val)
       elif cliArgs.key == "reload-fn" and cliArgs.val != "":
         programReloadFn = some(cliArgs.val)
