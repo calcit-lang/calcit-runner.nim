@@ -69,6 +69,7 @@
           fn ()
             assert= | $ trim "|    "
             assert= |1 $ trim "|  1  "
+            assert= |1 $ trim "|\n1\n"
 
             assert= | $ trim "|______" |_
             assert= |1 $ trim "|__1__" |_

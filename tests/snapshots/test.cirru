@@ -140,6 +140,11 @@
                 :a 1
                 :b $ [] 3 |4 nil
 
+            assert= "|[] |a |b $ [] |c |d"
+              trim $ write-cirru-edn $ [] |a |b $ [] |c |d
+            assert= "|a b $ c d"
+              trim $ write-cirru $ [] $ [] |a |b $ [] |c |d
+
         |test-fn $ quote
           fn ()
             log-title "|Testing fn"

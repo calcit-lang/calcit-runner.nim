@@ -12,6 +12,11 @@
   resolved "https://registry.yarnpkg.com/@cirru/parser.ts/-/parser.ts-0.0.1.tgz#0870b051bd9f56626759ec22d7a0d5c51b19fe9c"
   integrity sha512-FlUWZ2VqIUK/5cG926CVw9fQ7IGQzRDz8NL2Zc1lK2NyvOltAyZEDxxj/ztWjGOOnetVtM5mDx8rsbsr/SLYhg==
 
+"@cirru/writer.ts@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@cirru/writer.ts/-/writer.ts-0.1.2.tgz#1fa667c2fbdcf083901654b771ed40879d2998e1"
+  integrity sha512-TU1uNk6ei+qsaEY7w9kHyGrAoAYkfDjZu5XyHUjb4i4UvAC+c5EHeA6rVPQL7IhIeFJeFgrnBNb7LizduzWpgA==
+
 "@discoveryjs/json-ext@^0.5.0":
   version "0.5.2"
   resolved "https://registry.npm.taobao.org/@discoveryjs/json-ext/download/@discoveryjs/json-ext-0.5.2.tgz#8f03a22a04de437254e8ce8cc84ba39689288752"

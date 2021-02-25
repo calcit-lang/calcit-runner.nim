@@ -1,5 +1,6 @@
 import { overwriteComparator, initTernaryTreeMap } from "@calcit/ternary-tree";
 import { parse } from "@cirru/parser.ts";
+import { CirruWriterNode, writeCirruCode } from "@cirru/writer.ts";
 
 import {
   CrDataSymbol,
@@ -1350,6 +1351,34 @@ export let parse_cirru = (code: string): CrDataList => {
 
 export let parse_cirru_edn = (code: string) => {
   return extract_cirru_edn(parse(code)[0]);
+};
+
+let toWriterNode = (xs: CrDataList): CirruWriterNode => {
+  if (typeof xs === "string") {
+    return xs;
+  }
+  if (xs instanceof CrDataList) {
+    return xs.toArray().map(toWriterNode);
+  } else {
+    throw new Error("Unexpected type for CirruWriteNode");
+  }
+};
+
+export let write_cirru = (data: CrDataList, useInline: boolean): string => {
+  let chunk = toWriterNode(data);
+  if (!Array.isArray(chunk)) {
+    throw new Error("Expected data of list");
+  }
+  for (let item of chunk) {
+    if (!Array.isArray(item)) {
+      throw new Error("Expected data in a list of lists");
+    }
+  }
+  return writeCirruCode(chunk, { useInline });
+};
+
+export let write_cirru_edn = (data: CrDataValue, useInline: boolean): string => {
+  return writeCirruCode([to_cirru_edn(data)], { useInline: useInline });
 };
 
 /** return in seconds, like from Nim */
