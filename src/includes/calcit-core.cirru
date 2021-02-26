@@ -218,12 +218,12 @@
               fn (idx xs)
                 if (empty? xs) nil
                   if (f (first xs)) idx
-                    recur (&+ 1 idx) f (rest xs)
+                    recur (&+ 1 idx) (rest xs)
 
         |find $ quote
           defn find (f xs)
             &let
-              idx (&find-index 0 f xs)
+              idx (find-index f xs)
               if (nil? idx) nil (get xs idx)
 
         |-> $ quote
