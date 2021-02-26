@@ -13,6 +13,10 @@
             assert= 4 (- 10 1 2 3)
             assert= 24 (* 1 2 3 4)
             assert= 15 (/ 360 2 3 4)
+
+            assert= (- 2) -2
+            assert= (/ 2) 0.5
+
             assert-detect identity $ < 1 2 3 4 5
             assert-detect identity $ > 10 8 6 4
             assert-detect empty? nil

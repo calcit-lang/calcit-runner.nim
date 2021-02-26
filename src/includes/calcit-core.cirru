@@ -38,13 +38,19 @@
           defn + (x & ys) $ reduce &+ x ys
 
         |- $ quote
-          defn - (x & ys) $ reduce &- x ys
+          defn - (x & ys)
+            if (empty? ys)
+              &- 0 x
+              reduce &- x ys
 
         |* $ quote
           defn * (x & ys) $ reduce &* x ys
 
         |/ $ quote
-          defn / (x & ys) $ reduce &/ x ys
+          defn / (x & ys)
+            if (empty? ys)
+              &/ 1 x
+              reduce &/ x ys
 
         |foldl-compare $ quote
           defn foldl-compare (f acc xs)
