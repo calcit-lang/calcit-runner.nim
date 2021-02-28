@@ -46,10 +46,22 @@
             assert-detect identity $ instance? js/Number (new js/Number 1)
             assert-detect not $ instance? js/String (new js/Number 1)
 
+        |test-let-example $ quote
+          fn ()
+            log-title "|Testing code emitting of using let"
+            let
+                a 1
+                b 2
+                c $ + a b
+                b 4
+                d 5
+              echo $ + a b c d
+
         |main! $ quote
           defn main! ()
             log-title "|Testing js"
             test-js
+            test-let-example
 
             when (> 1 2)
               raise (str "|error of math" 2 1)

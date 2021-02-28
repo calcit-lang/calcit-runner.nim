@@ -129,6 +129,20 @@ let preferredJsProc = toHashSet([
   "starts-with?",
 ])
 
+proc makeLetWithBind(left: string, right: string, body: string): string =
+  "(function __let__(" & left & "){\n" &
+    body &
+    "})(" & right & ")"
+
+proc makeLetWithWrapper(left: string, right: string, body: string): string =
+  "(function __let__(){\n" &
+    "let " & left & " = " & right & ";\n" &
+    body &
+    "})()"
+
+proc makeFnWrapper(body: string): string =
+  "(function __fn__(){\n" & body & "\n})()"
+
 proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   let varPrefix = if ns == "calcit.core": "" else: "$calcit."
   case xs.kind
@@ -215,43 +229,84 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         let falseBranch = if body.len >= 3: body[2].toJsCode(ns, localDefs) else: "null"
         return "(" & body[0].toJsCode(ns, localDefs) & "?" & body[1].toJsCode(ns, localDefs) & ":" & falseBranch & ")"
       of "&let":
-        if body.len <= 1:
-          raiseEvalError("Unpexpected empty content in let", xs)
-        let pair = body.first()
-        let content = body.rest()
-        if pair.kind != crDataList:
-          raiseEvalError("Expected pair a list of length 2", pair)
-        if pair.listVal.len != 2:
-          raiseEvalError("Expected pair of length 2", pair)
-        let defName = pair.listVal[0]
-        if defName.kind != crDataSymbol:
-          raiseEvalError("Expected symbol behind let", pair)
-        # TODO `let` inside expressions makes syntax error
-        let left = escapeVarName(defName.symbolVal)
-        let right = pair.listVal[1].toJsCode(ns, localDefs)
-        result = result & fmt"(({left})=>{cCurlyL}"
+        var letDefBody = body
+
         # defined new local variable
         var scopedDefs = localDefs
-        scopedDefs.incl(defName.symbolVal)
-        for idx, x in content:
-          if idx == content.len - 1:
-            result = result & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
+        var defsCode = ""
+        var variableExisted = false
+        var bodyPart = ""
+
+        while true: # break unless nested &let is found
+
+          if letDefBody.len <= 1:
+            raiseEvalError("Unpexpected empty content in let", xs)
+          let pair = letDefBody.first()
+          let content = letDefBody.rest()
+          if pair.kind != crDataList:
+            raiseEvalError("Expected pair a list of length 2", pair)
+          if pair.listVal.len != 2:
+            raiseEvalError("Expected pair of length 2", pair)
+
+          let defName = pair.listVal[0]
+          let exprCode = pair.listVal[1]
+
+          if defName.kind != crDataSymbol:
+            raiseEvalError("Expected symbol behind let", pair)
+          # TODO `let` inside expressions makes syntax error
+          let left = escapeVarName(defName.symbolVal)
+          let right = exprCode.toJsCode(ns, scopedDefs)
+
+          defsCode = defsCode & "let " & left & " = " & right & ";\n"
+
+          if scopedDefs.contains(defName.symbolVal):
+            variableExisted = true
           else:
-            result = result & x.toJsCode(ns, scopedDefs) & ";\n"
-        return result & fmt"{cCurlyR})({right})"
+            scopedDefs.incl(defName.symbolVal)
+
+          if variableExisted:
+            for idx, x in content:
+              if idx == content.len - 1:
+                bodyPart = bodyPart & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
+              else:
+                bodyPart = bodyPart & x.toJsCode(ns, scopedDefs) & ";\n"
+
+            # first variable is using conflicted name
+            if localDefs.contains(defName.symbolVal):
+              return makeLetWithBind(left, right, bodyPart)
+            else:
+              return makeLetWithWrapper(left, right, bodyPart)
+          else:
+            if content.len == 1:
+              let child = content[0]
+              if child.kind == crDataList and child.listVal.len >= 2 and child.listVal[0].kind == crDataSymbol and child.listVal[0].symbolVal == "&let":
+                let nextPair = child.listVal[1]
+                if nextPair.kind == crDataList and nextPair.listVal.len == 2:
+                  if nextPair.listVal[0].kind == crDataSymbol and not scopedDefs.contains(nextPair.listVal[0].symbolVal):
+                    letDefBody = child.listVal.rest()
+                    continue
+
+            for idx, x in content:
+              if idx == content.len - 1:
+                bodyPart = bodyPart & "return " & x.toJsCode(ns, scopedDefs) & ";\n"
+              else:
+                bodyPart = bodyPart & x.toJsCode(ns, scopedDefs) & ";\n"
+
+            break
+
+        return makeFnWrapper(defsCode & bodyPart)
       of ";":
         return "(/* " & $CirruData(kind: crDataList, listVal: body) & " */ null)"
       of "do":
-        result = "(()=>{" & cLine
+        var bodyPart: string
         for idx, x in body:
           if idx > 0:
-            result = result & ";\n"
+            bodyPart = bodyPart & ";\n"
           if idx == body.len - 1:
-            result = result & "return " & x.toJsCode(ns, localDefs)
+            bodyPart = bodyPart & "return " & x.toJsCode(ns, localDefs)
           else:
-            result = result & x.toJsCode(ns, localDefs)
-        result = result & cLine & "})()"
-        return result
+            bodyPart = bodyPart & x.toJsCode(ns, localDefs)
+        return makeFnWrapper(bodyPart)
 
       of "quote":
         if body.len < 1:
@@ -289,7 +344,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if body.len != 1:
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = body[0].toJsCode(ns, localDefs)
-        return fmt"(()=> {cCurlyL} throw new Error({message}) {cCurlyR})() "
+        return makeFnWrapper("throw new Error(" & message & ")")
       of "echo", "println":
         # not core syntax, but treat as macro for better debugging experience
         let args = xs.listVal.slice(1, xs.listVal.len)
