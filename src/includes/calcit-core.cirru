@@ -311,11 +311,9 @@
               raise "|Expected patterns for case-default, got empty"
             &let
               v (gensym |v)
-              &let (default-var $ gensym |default)
-                quote-replace
-                  &let (~v ~item)
-                    &let (~default-var ~default)
-                      &case ~v ~default-var ~@patterns
+              quote-replace
+                &let (~v ~item)
+                  &case ~v ~default ~@patterns
 
         |get-in $ quote
           defn get-in (base path)

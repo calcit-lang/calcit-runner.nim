@@ -41,8 +41,7 @@
                     1 |one
                     2 |two
                 quote $ &let (v__2 x)
-                  &let (default__3 |nothing)
-                    &case v__2 default__3 (1 |one) (2 |two)
+                  &case v__2 |nothing (1 |one) (2 |two)
 
             &let
               detect-x $ fn (x)
