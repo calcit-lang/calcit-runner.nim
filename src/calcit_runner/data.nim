@@ -188,3 +188,12 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     ]))
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
+
+# for detecting lambda alias syntax `\x x`.
+# Notice: this is not in code reader, but in preprocessor. so macros won't handle this
+proc isLambdaAlias*(x: CirruData): bool =
+  if x.kind == crDataSymbol:
+    let token = x.symbolVal
+    token.len >= 2 and token[0] == '\\' and token[1..^1].matchesSimpleVar()
+  else:
+    false

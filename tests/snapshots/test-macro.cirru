@@ -140,7 +140,7 @@
             assert= 36
               ->% 3 (+ % %) (* % %)
 
-        |test-labmda $ quote
+        |test-lambda $ quote
           fn ()
             log-title "|Testing lambda macro"
 
@@ -171,7 +171,7 @@
 
               assert=
                 macroexpand-all $ quote $ \ x
-                quote $ defn f% (%) (x)
+                quote $ defn f% () (x)
 
               assert=
                 macroexpand-all $ quote $ \ + x %
@@ -180,6 +180,10 @@
               assert=
                 macroexpand-all $ quote $ \ + x % %2
                 quote $ defn f% (% %2) (+ x % %2)
+
+            ; "special syntax inside preprocess"
+            assert= 3
+              (\x + x 1) 2
 
         |test-gensym $ quote
           fn ()
@@ -343,7 +347,7 @@
 
             test-thread-macros
 
-            test-labmda
+            test-lambda
 
             log-title "|Testing gensym"
             test-gensym

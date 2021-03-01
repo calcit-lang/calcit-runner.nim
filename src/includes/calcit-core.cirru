@@ -480,7 +480,9 @@
           defmacro \ (& xs)
             if (contains-symbol? xs '%2)
               quote-replace $ fn (% %2) ~xs
-              quote-replace $ fn (%) ~xs
+              if (contains-symbol? xs '%)
+                quote-replace $ fn (%) ~xs
+                quote-replace $ fn () ~xs
 
         |has-index? $ quote
           defn has-index? (xs idx)
