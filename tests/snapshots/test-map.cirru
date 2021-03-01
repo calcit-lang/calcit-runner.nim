@@ -138,6 +138,8 @@
             assert= nil $ get (&{}) :a
             assert= nil $ get-in (&{}) $ [] :a :b
 
+            assert= nil $ get nil :a
+
         |main! $ quote
           defn main! ()
 

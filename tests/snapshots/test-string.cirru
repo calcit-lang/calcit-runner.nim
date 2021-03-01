@@ -104,6 +104,8 @@
             assert= 97 $ get-char-code |a
             assert= 27721 $ get-char-code |汉
 
+            assert= |a $ nth |abc 0
+            assert= |b $ nth |abc 1
             assert= |a $ first |abc
             assert= |c $ last |abc
             assert= nil $ first |

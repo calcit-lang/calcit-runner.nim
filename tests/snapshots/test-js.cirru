@@ -41,7 +41,7 @@
               set! (.-a a) 2
               assert= (.-a a) 2
 
-            assert= 2 $ get (to-js-data $ [] 1 2 3) 1
+            assert= 2 $ nth (to-js-data $ [] 1 2 3) 1
 
             assert-detect identity $ instance? js/Number (new js/Number 1)
             assert-detect not $ instance? js/String (new js/Number 1)
@@ -55,7 +55,7 @@
                 c $ + a b
                 b 4
                 d 5
-              echo $ + a b c d
+              assert= 13 $ + a b c d
 
         |main! $ quote
           defn main! ()
