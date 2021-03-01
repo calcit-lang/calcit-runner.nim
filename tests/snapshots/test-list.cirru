@@ -129,6 +129,16 @@
                 update (range 4) 11 $ \ + % 10
                 range 4
 
+              assert= 6
+                find
+                  fn (x) (> x 5)
+                  range 10
+
+              assert= 6
+                find-index
+                  fn (x) (> x 5)
+                  range 10
+
         |test-groups $ quote
           defn test-groups ()
 

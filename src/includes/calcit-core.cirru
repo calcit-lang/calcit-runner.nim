@@ -38,13 +38,19 @@
           defn + (x & ys) $ reduce &+ x ys
 
         |- $ quote
-          defn - (x & ys) $ reduce &- x ys
+          defn - (x & ys)
+            if (empty? ys)
+              &- 0 x
+              reduce &- x ys
 
         |* $ quote
           defn * (x & ys) $ reduce &* x ys
 
         |/ $ quote
-          defn / (x & ys) $ reduce &/ x ys
+          defn / (x & ys)
+            if (empty? ys)
+              &/ 1 x
+              reduce &/ x ys
 
         |foldl-compare $ quote
           defn foldl-compare (f acc xs)
@@ -168,7 +174,8 @@
 
         |str $ quote
           defmacro str (x0 & xs)
-            if (empty? xs) x0
+            if (empty? xs)
+              quote-replace $ &str ~x0
               quote-replace $ &str-concat ~x0 $ str ~@xs
 
         |include $ quote
@@ -217,12 +224,12 @@
               fn (idx xs)
                 if (empty? xs) nil
                   if (f (first xs)) idx
-                    recur (&+ 1 idx) f (rest xs)
+                    recur (&+ 1 idx) (rest xs)
 
         |find $ quote
           defn find (f xs)
             &let
-              idx (&find-index 0 f xs)
+              idx (find-index f xs)
               if (nil? idx) nil (get xs idx)
 
         |-> $ quote
@@ -304,11 +311,9 @@
               raise "|Expected patterns for case-default, got empty"
             &let
               v (gensym |v)
-              &let (default-var $ gensym |default)
-                quote-replace
-                  &let (~v ~item)
-                    &let (~default-var ~default)
-                      &case ~v ~default-var ~@patterns
+              quote-replace
+                &let (~v ~item)
+                  &case ~v ~default ~@patterns
 
         |get-in $ quote
           defn get-in (base path)

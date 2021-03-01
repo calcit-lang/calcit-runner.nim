@@ -6,6 +6,8 @@ let jsSyntaxProcs*: HashSet[string] = toHashSet([
   "aget", "aset", "new", "set!", "exists?", "instance?",
   "to-calcit-data",
   "to-js-data",
+  "to-cirru-edn",
+  "extract-cirru-edn",
 ])
 
 let jsUnavailableProcs* = toHashSet([

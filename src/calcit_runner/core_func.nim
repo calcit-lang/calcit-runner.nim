@@ -19,6 +19,7 @@ import deques
 import ternary_tree
 import cirru_edn
 import cirru_parser
+import cirru_writer
 import dual_balanced_ternary
 
 import ./types
@@ -32,6 +33,7 @@ import ./codegen/gen_code
 import ./data/to_json
 import ./data/to_edn
 import ./data/to_cirru
+import ./data/to_writer
 
 import ./evaluate
 import ./eval/arguments
@@ -789,6 +791,33 @@ proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let raw = parseCirru(content.stringVal)
   return raw.toCirruNodesData()
 
+proc nativeWriteCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1 and args.len != 2:
+    raiseEvalError("write-cirru-edn requires 1~2 arguments", args)
+  let data = args[0]
+  var inlineMode = false
+  if args.len >= 2:
+    if args[1].kind != crDataBool:
+      raiseEvalError("write-cirru-edn expected option in a bool", args)
+    inlineMode = args[1].boolVal
+  return CirruData(kind: crDataString, stringVal: data.toEdn().formatToCirru(inlineMode))
+
+proc nativeWriteCirru(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1 and args.len != 2:
+    raiseEvalError("write-cirru requires 1~2 arguments", args)
+  let data = args[0]
+  var inlineMode = false
+  if args.len >= 2:
+    if args[1].kind != crDataBool:
+      raiseEvalError("write-cirru expected option in a bool", args)
+    inlineMode = args[1].boolVal
+  if data.kind != crDataList:
+    raiseEvalError("write-cirru expected a list of data", args)
+  for item in data.listVal:
+    if item.kind != crDataList:
+      raiseEvalError("write-cirru expected a list of lists", args)
+  return CirruData(kind: crDataString, stringVal: data.toWriterNode().writeCirruCode((useInline: inlineMode)))
+
 proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
   let item = args[0]
@@ -1102,7 +1131,7 @@ proc nativeParseFloat(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
 
 proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 1 or args.len > 2: raiseEvalError("trim expects 1~2 arguments", args)
-  var spaceChars: set[char] = {' '}
+  var spaceChars: set[char] = {' ', '\n'}
   let origin = args[0]
   if origin.kind != crDataString: raiseEvalError("trim expects string", args)
   if args.len >= 2:
@@ -1384,6 +1413,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&str-concat"] = CirruData(kind: crDataProc, procVal: nativeStrConcat)
   programData[coreNs].defs["parse-cirru-edn"] = CirruData(kind: crDataProc, procVal: nativeParseCirruEdn)
   programData[coreNs].defs["parse-cirru"] = CirruData(kind: crDataProc, procVal: nativeParseCirru)
+  programData[coreNs].defs["write-cirru-edn"] = CirruData(kind: crDataProc, procVal: nativeWriteCirruEdn)
+  programData[coreNs].defs["write-cirru"] = CirruData(kind: crDataProc, procVal: nativeWriteCirru)
   programData[coreNs].defs["sqrt"] = CirruData(kind: crDataProc, procVal: nativeSqrt)
   programData[coreNs].defs["ceil"] = CirruData(kind: crDataProc, procVal: nativeCeil)
   programData[coreNs].defs["floor"] = CirruData(kind: crDataProc, procVal: nativeFloor)
