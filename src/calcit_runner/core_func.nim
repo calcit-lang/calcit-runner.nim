@@ -152,8 +152,8 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("Cannot count data of type: " & $a.kind, a)
 
-proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 2: raiseEvalError("Expected 2 arguments in native get", args)
+proc nativeNth(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("Expected 2 arguments in nth", args)
   let a = args[0]
   let b = args[1]
   case a.kind
@@ -166,14 +166,38 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
       return CirruData(kind: crDataNil)
     else:
       return a[b.numberVal.int]
+  of crDataString:
+    if b.kind != crDataNumber:
+      raiseEvalError("Required number index for list", b)
+    if b.numberVal.round.float != b.numberVal:
+      raiseEvalError("Required round number index for list", b)
+    if b.numberVal >= a.len.float or b.numberVal < 0.float:
+      return CirruData(kind: crDataNil)
+    else:
+      return CirruData(kind: crDataString, stringVal: $a.stringVal[b.numberVal.int])
+  of crDataMap:
+    raiseEvalError("Cannot read nth from map", a)
+  else:
+    raiseEvalError("Cannot read nth from data of " & $a.kind, a)
 
+proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2: raiseEvalError("Expected 2 arguments in &get", args)
+  let a = args[0]
+  let b = args[1]
+  case a.kind
   of crDataMap:
     if a.mapVal.contains(b):
       return a.mapVal.loopGet(b)
     else:
       return CirruData(kind: crDataNil)
+  of crDataNil:
+    raiseEvalError("&get does not work on `nil`, need to use `get`", a)
+  of crDataList:
+    return nativeNth(args, interpret, scope, ns)
+  of crDataString:
+    return nativeNth(args, interpret, scope, ns)
   else:
-    raiseEvalError("Cannot get from data of this type", a)
+    raiseEvalError("Cannot &get from data of " & $a.kind, a)
 
 proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("Expected 1 arguments in native rest", args)
@@ -1373,7 +1397,8 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["&="] = CirruData(kind: crDataProc, procVal: nativeEqual)
   programData[coreNs].defs["not"] = CirruData(kind: crDataProc, procVal: nativeNot)
   programData[coreNs].defs["count"] = CirruData(kind: crDataProc, procVal: nativeCount)
-  programData[coreNs].defs["get"] = CirruData(kind: crDataProc, procVal: nativeGet)
+  programData[coreNs].defs["&get"] = CirruData(kind: crDataProc, procVal: nativeGet)
+  programData[coreNs].defs["nth"] = CirruData(kind: crDataProc, procVal: nativeNth)
   programData[coreNs].defs["rest"] = CirruData(kind: crDataProc, procVal: nativeRest)
   programData[coreNs].defs["raise"] = CirruData(kind: crDataProc, procVal: nativeRaise)
   programData[coreNs].defs["type-of"] = CirruData(kind: crDataProc, procVal: nativeTypeOf)

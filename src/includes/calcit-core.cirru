@@ -315,6 +315,15 @@
                 &let (~v ~item)
                   &case ~v ~default ~@patterns
 
+        |get $ quote
+          defn get (base k)
+            cond
+              (nil? base) nil
+              (string? base) (nth base k)
+              (map? base) (&get base k)
+              (list? base) (nth base k)
+              true $ raise "|Expected map or list for get"
+
         |get-in $ quote
           defn get-in (base path)
             assert "|expects path in a list" (list? path)
@@ -480,7 +489,9 @@
           defmacro \ (& xs)
             if (contains-symbol? xs '%2)
               quote-replace $ fn (% %2) ~xs
-              quote-replace $ fn (%) ~xs
+              if (contains-symbol? xs '%)
+                quote-replace $ fn (%) ~xs
+                quote-replace $ fn () ~xs
 
         |has-index? $ quote
           defn has-index? (xs idx)

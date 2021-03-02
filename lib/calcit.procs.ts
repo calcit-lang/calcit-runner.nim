@@ -220,7 +220,7 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
         if (!y.contains(k)) {
           return false;
         }
-        if (!_AND__EQ_(v, get(y, k))) {
+        if (!_AND__EQ_(v, _AND_get(y, k))) {
           return false;
         }
       }
@@ -343,24 +343,32 @@ export let includes_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   throw new Error("includes? expected a structure");
 };
 
-export let get = function (xs: CrDataValue, k: CrDataValue) {
+export let nth = function (xs: CrDataValue, k: CrDataValue) {
   if (arguments.length !== 2) {
-    throw new Error("get takes 2 arguments");
+    throw new Error("nth takes 2 arguments");
+  }
+  if (typeof k !== "number") {
+    throw new Error("Expected number index for a list");
   }
 
   if (typeof xs === "string") {
-    if (typeof k === "number") {
-      return xs[k];
-    } else {
-      throw new Error("Expected number index for a string");
-    }
+    return xs[k];
   }
   if (xs instanceof CrDataList) {
-    if (typeof k !== "number") {
-      throw new Error("Expected number index for a list");
-    }
     return xs.get(k);
   }
+  if (Array.isArray(xs)) {
+    return xs[k];
+  }
+
+  throw new Error("Does not support `nth` on this type");
+};
+
+export let _AND_get = function (xs: CrDataValue, k: CrDataValue) {
+  if (arguments.length !== 2) {
+    throw new Error("&get takes 2 arguments");
+  }
+
   if (xs instanceof CrDataMap) {
     if (xs.contains(k)) {
       return xs.get(k);
@@ -368,15 +376,17 @@ export let get = function (xs: CrDataValue, k: CrDataValue) {
       return null;
     }
   }
-  if (Array.isArray(xs)) {
-    if (typeof k === "number") {
-      return xs[k];
-    } else {
-      throw new Error("Expected number index for an array");
-    }
+  if (xs == null) {
+    throw new Error("`&get` does not work on `nil`, need to use `get`");
+  }
+  if (typeof xs === "string") {
+    return nth(xs, k);
+  }
+  if (xs instanceof CrDataList) {
+    return nth(xs, k);
   }
 
-  throw new Error("Does not support `get` on this type");
+  throw new Error("Does not support `&get` on this type");
 };
 
 export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
