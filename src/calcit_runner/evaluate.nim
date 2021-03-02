@@ -174,7 +174,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     return quoted
 
   else:
-    raiseEvalError(fmt"Unknown head({head.kind}) for calling", head)
+    raiseEvalError(fmt"Unknown head({head.kind}) for calling", xs)
 
 proc placeholderFunc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   echo "[Warn] placeholder function for preprocessing"
@@ -303,17 +303,6 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
   of crDataList:
     if code.listVal.len == 0:
       return code
-    elif code.listVal.len >= 2 and isLambdaAlias(code.listVal[0]):
-      # for detecting lambda alias syntax `\x x`
-      let token = code.listVal[0].symbolVal
-      let expandedCode = CirruData(kind: crDataList, listVal: initCrVirtualList(@[
-        CirruData(kind: crDataSymbol, symbolVal: "defn", ns: ns),
-        CirruData(kind: crDataSymbol, symbolVal: "fn_" & token[1..^1], ns: ns),
-        CirruData(kind: crDataList, listVal: initCrVirtualList(@[
-          CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns),
-        ])),
-      ]).concat(code.listVal.rest()))
-      return preprocess(expandedCode, localDefs, ns)
     else:
       let head = code.listVal[0]
       let originalValue = preprocess(head, localDefs, ns)

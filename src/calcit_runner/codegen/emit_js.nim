@@ -59,6 +59,7 @@ proc escapeVarName(name: string): string =
 
   result = name
   .replace("-", "_")
+  .replace(".", "_DOT_") # dot might be part of variable `\.`. not confused with syntax
   .replace("?", "_QUES_")
   .replace("+", "_ADD_")
   .replace("^", "_CRT_")
