@@ -167,23 +167,42 @@
             inside-nim:
               assert=
                 macroexpand-all $ quote (\ + 2 %)
-                quote $ defn f% (%) (+ 2 %)
+                quote $ defn f% (? % %2) (+ 2 %)
 
               assert=
                 macroexpand-all $ quote $ \ x
-                quote $ defn f% () (x)
+                quote $ defn f% (? % %2) (x)
 
               assert=
                 macroexpand-all $ quote $ \ + x %
-                quote $ defn f% (%) (+ x %)
+                quote $ defn f% (? % %2) (+ x %)
 
               assert=
                 macroexpand-all $ quote $ \ + x % %2
-                quote $ defn f% (% %2) (+ x % %2)
+                quote $ defn f% (? % %2) (+ x % %2)
 
-            ; "special syntax inside preprocess"
-            assert= 3
-              (\x + x 1) 2
+              assert=
+                macroexpand $ quote $ \. x x
+                quote $ defn f_x (x) x
+
+              assert=
+                macroexpand $ quote $ \. x.y x
+                quote $ defn f_x (x) (defn f_y (y) x)
+
+              assert=
+                macroexpand $ quote $ \. x.y (echo x y) x
+                quote $ defn f_x (x) (defn f_y (y) (do (echo x y) x))
+
+            echo "|evaluating lambda alias"
+
+            assert= 2
+              (\. x x) 2
+
+            assert= 2
+              ((\. x.y x) 2) 3
+
+            assert= 2
+              ((\. x.y (echo "|inside lambda alias" x y) x) 2) 3
 
         |test-gensym $ quote
           fn ()

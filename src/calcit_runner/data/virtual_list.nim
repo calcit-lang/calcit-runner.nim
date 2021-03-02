@@ -172,6 +172,15 @@ proc map*[T](list: CrVirtualList[T], f: proc (x: T): T): CrVirtualList[T] =
 proc identical*[T](xs: CrVirtualList[T], ys: CrVirtualList[T]): bool =
   cast[pointer](xs) == cast[pointer](ys)
 
+proc concat*[T](args: varargs[CrVirtualList[T]]): CrVirtualList[T] =
+  var xs: seq[TernaryTreeList[T]]
+  for item in args:
+    if item.len == 0:
+      continue
+    item.turnIntoTree() # TODO need checking
+    xs.add item.treeData
+  return initCrVirtualList(initTernaryTreeList(xs.len, 0, xs))
+
 iterator items*[T](list: CrVirtualList[T]): T =
   if list.kind == vListSeq:
     for idx in list.start..<list.ending:
