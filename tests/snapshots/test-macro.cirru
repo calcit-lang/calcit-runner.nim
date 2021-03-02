@@ -183,7 +183,9 @@
 
             ; "special syntax inside preprocess"
             assert= 3
-              (\x + x 1) 2
+              (\x (+ x 1)) 2
+            assert= 10
+              (\x 10) 2
 
         |test-gensym $ quote
           fn ()

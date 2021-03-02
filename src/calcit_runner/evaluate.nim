@@ -312,8 +312,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         CirruData(kind: crDataList, listVal: initCrVirtualList(@[
           CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns),
         ])),
-        CirruData(kind: crDataList, listVal: code.listVal.rest()),
-      ]))
+      ]).concat(code.listVal.rest()))
       return preprocess(expandedCode, localDefs, ns)
     else:
       let head = code.listVal[0]
