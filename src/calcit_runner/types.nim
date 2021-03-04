@@ -89,8 +89,6 @@ type
       symbolVal*: string
       ns*: string
       resolved*: Option[ResolvedPath]
-      # TODO looking for simpler solution
-      dynamic*: bool
     of crDataRecur:
       recurArgs*: seq[CirruData]
     of crDataAtom:

@@ -58,9 +58,6 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   if sym.kind != crDataSymbol:
     raiseEvalError("Expects a symbol", sym)
 
-  if sym.dynamic:
-    return sym
-
   if sym.resolved.isSome:
     let path = sym.resolved.get
 
@@ -219,9 +216,6 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
   # echo "\nPreprocess: ", code
   case code.kind
   of crDataSymbol:
-    if code.dynamic:
-      return code
-
     if code.symbolVal.contains("/") and code.symbolVal[0] != '/' and code.symbolVal[^1] != '/':
       var sym = code
       let pieces = sym.symbolVal.split('/')

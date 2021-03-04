@@ -60,7 +60,6 @@ proc dumpCode(xs: CirruData): JsonNode =
       "kind": "symbol",
       "val": xs.symbolVal,
       "ns": xs.ns,
-      "dynamic": xs.dynamic,
       "resolved": resolvedData
     }
   of crDataFn:
