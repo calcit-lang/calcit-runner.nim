@@ -25,6 +25,7 @@ import {
   toPairsArray,
   assocBefore,
   assocAfter,
+  mapGetDefault,
 } from "@calcit/ternary-tree";
 
 export class CrDataKeyword {
@@ -284,7 +285,7 @@ export class CrDataMap {
     let cursor = this.chain;
     while (cursor != null) {
       if (contains(cursor.value, k)) {
-        let v = mapGet(cursor.value, k);
+        let v = mapGetDefault(cursor.value, k, null);
         if (v != null && v !== this.skipValue) {
           return v;
         } else {

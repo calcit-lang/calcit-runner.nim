@@ -370,11 +370,7 @@ export let _AND_get = function (xs: CrDataValue, k: CrDataValue) {
   }
 
   if (xs instanceof CrDataMap) {
-    if (xs.contains(k)) {
-      return xs.get(k);
-    } else {
-      return null;
-    }
+    return xs.get(k);
   }
   if (xs == null) {
     throw new Error("`&get` does not work on `nil`, need to use `get`");

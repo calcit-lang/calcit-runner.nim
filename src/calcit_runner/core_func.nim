@@ -186,10 +186,7 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   let b = args[1]
   case a.kind
   of crDataMap:
-    if a.mapVal.contains(b):
-      return a.mapVal.loopGet(b)
-    else:
-      return CirruData(kind: crDataNil)
+    return a.mapVal.loopGetDefault(b, CirruData(kind: crDataNil))
   of crDataNil:
     raiseEvalError("&get does not work on `nil`, need to use `get`", a)
   of crDataList:
