@@ -252,6 +252,7 @@ export class CrDataMap {
   cachedHash: Hash;
   chain: MapChain;
   depth: number;
+  /** make sure it's primative */
   skipValue: CrDataValue;
   constructor(value: TernaryTreeMap<CrDataValue, CrDataValue>) {
     this.chain = { value: value, next: null };
@@ -284,13 +285,12 @@ export class CrDataMap {
   get(k: CrDataValue) {
     let cursor = this.chain;
     while (cursor != null) {
-      if (contains(cursor.value, k)) {
-        let v = mapGetDefault(cursor.value, k, null);
-        if (v != null && v !== this.skipValue) {
-          return v;
-        } else {
-          cursor = cursor.next;
-        }
+      let v = mapGetDefault(cursor.value, k, fakeUniqueSymbol);
+      if (v === fakeUniqueSymbol) {
+        cursor = cursor.next;
+        continue; // cannot found a value
+      } else if (v !== this.skipValue) {
+        return v;
       } else {
         cursor = cursor.next;
       }
@@ -527,8 +527,8 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
     return x.toString();
   }
 
-  console.warn('Unknown structure to string, better use `console.log`', x);
-  return `${x}`
+  console.warn("Unknown structure to string, better use `console.log`", x);
+  return `${x}`;
 };
 
 export let cloneSet = (xs: Set<CrDataValue>): Set<CrDataValue> => {
