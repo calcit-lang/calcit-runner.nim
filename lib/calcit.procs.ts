@@ -98,9 +98,10 @@ export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
   if (xs.length % 2 !== 0) {
     throw new Error("&map expects even number of arguments");
   }
-  var dict = new Map();
-  for (let idx = 0; idx < xs.length >> 1; idx++) {
-    dict = dict.set(xs[idx << 1], xs[(idx << 1) + 1]);
+  var dict: Array<[CrDataValue, CrDataValue]> = [];
+  let halfLength = xs.length >> 1;
+  for (let idx = 0; idx < halfLength; idx++) {
+    dict.push([xs[idx << 1], xs[(idx << 1) + 1]]);
   }
   return new CrDataMap(initTernaryTreeMap(dict));
 };
@@ -370,11 +371,7 @@ export let _AND_get = function (xs: CrDataValue, k: CrDataValue) {
   }
 
   if (xs instanceof CrDataMap) {
-    if (xs.contains(k)) {
-      return xs.get(k);
-    } else {
-      return null;
-    }
+    return xs.get(k);
   }
   if (xs == null) {
     throw new Error("`&get` does not work on `nil`, need to use `get`");
@@ -1029,9 +1026,9 @@ export let to_calcit_data = (x: any, noKeyword: boolean = false): CrDataValue =>
   }
   // detects object
   if (x === Object(x)) {
-    let result: Map<CrDataValue, CrDataValue> = new Map();
+    let result: Array<[CrDataValue, CrDataValue]> = [];
     Object.keys(x).forEach((k) => {
-      result.set(to_calcit_data(k, noKeyword), to_calcit_data(x[k], noKeyword));
+      result.push([to_calcit_data(k, noKeyword), to_calcit_data(x[k], noKeyword)]);
     });
     return new CrDataMap(initTernaryTreeMap(result));
   }
@@ -1237,10 +1234,13 @@ export let extract_cirru_edn = (x: CirruEdnFormat): CrDataValue => {
       throw new Error("Cannot be empty");
     }
     if (x[0] === "{}") {
-      let result = new Map<CrDataValue, CrDataValue>();
-      x.slice(1).forEach((pair) => {
+      let result: Array<[CrDataValue, CrDataValue]> = [];
+      x.forEach((pair, idx) => {
+        if (idx == 0) {
+          return; // skip first `{}` symbol
+        }
         if (pair instanceof Array && pair.length == 2) {
-          result.set(extract_cirru_edn(pair[0]), extract_cirru_edn(pair[1]));
+          result.push([extract_cirru_edn(pair[0]), extract_cirru_edn(pair[1])]);
         } else {
           throw new Error("Expected pairs for map");
         }

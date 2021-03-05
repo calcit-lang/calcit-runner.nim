@@ -97,14 +97,12 @@ proc processNativeLet*(xs: CirruData, localDefs: Hashset[string], preprocess: Fn
 
 proc processQuote*(xs: CirruData, localDefs: Hashset[string], preprocess: FnPreprocess, ns: string): CirruData =
   if xs.kind != crDataList:
-    raiseEvalError("Expects a list", xs)
-  if xs.len < 1:
-    raiseEvalError("Expects len >1", xs)
+    raiseEvalError("Expected a list of expression", xs)
+  if xs.len != 2:
+    raiseEvalError("Expected quote to take 1 argument", xs)
 
-  let body = xs.listVal.rest()
-
-  for item in body:
-    discard preprocess(item, localDefs, ns)
+  # quote just returns content, no need to preprocess
+  # let body = xs.listVal[1]
 
   xs
 

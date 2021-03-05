@@ -147,7 +147,19 @@ proc parseLiteral*(token: string, ns: string): CirruData =
   elif token[0] == ':':
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword(token[1..^1]))
   elif token[0] == '\'':
-    return CirruData(kind: crDataSymbol, symbolVal: token[1..^1], ns: ns, dynamic: true)
+    var quoteCount = 0
+    for c in token:
+      if c == '\'':
+        quoteCount = quoteCount + 1
+    let val = token[quoteCount..^1]
+    var ret = CirruData(kind: crDataSymbol, symbolVal: val, ns: ns)
+    for i in 0..<quoteCount:
+      let cloned = ret
+      ret = CirruData(kind: crDataList, listVal: initCrVirtualList(@[
+        CirruData(kind: crDataSymbol, symbolVal: "quote", ns: ns),
+        cloned,
+      ]))
+    return ret
   elif token.startsWith("0x"):
     return CirruData(kind: crDataNumber, numberVal: token.parseHexInt.float)
   elif token.matchesFloat:

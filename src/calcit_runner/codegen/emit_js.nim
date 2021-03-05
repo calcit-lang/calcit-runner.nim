@@ -160,8 +160,6 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         else:
           implicitImports[nsPart] = (ns: nsPart, justNs: true)
       return xs.symbolVal.escapeVar()
-    elif xs.dynamic:
-      return "new " & varPrefix & "CrDataSymbol(" & xs.symbolVal.escape() & ")"
     elif builtInJsProc.contains(xs.symbolVal):
       return varPrefix & xs.symbolVal.escapeVar()
     elif localDefs.contains(xs.symbolVal):

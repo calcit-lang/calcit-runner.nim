@@ -186,10 +186,7 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   let b = args[1]
   case a.kind
   of crDataMap:
-    if a.mapVal.contains(b):
-      return a.mapVal.loopGet(b)
-    else:
-      return CirruData(kind: crDataNil)
+    return a.mapVal.loopGetDefault(b, CirruData(kind: crDataNil))
   of crDataNil:
     raiseEvalError("&get does not work on `nil`, need to use `get`", a)
   of crDataList:
@@ -725,9 +722,9 @@ proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: ns, dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: ns)
   of crDataString:
-    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: ns, dynamic: true)
+    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: ns)
   of crDataSymbol:
     return x
   else:
@@ -1172,14 +1169,14 @@ proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   genSymIndex = genSymIndex + 1
   case args.len
   of 0:
-    return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: "G__" & $genSymIndex)
+    return CirruData(kind: crDataSymbol, ns: ns, symbolVal: "G__" & $genSymIndex)
   of 1:
     let item = args[0]
     case item.kind
     of crDataSymbol:
-      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.symbolVal & "__" & $genSymIndex)
+      return CirruData(kind: crDataSymbol, ns: ns, symbolVal: item.symbolVal & "__" & $genSymIndex)
     of crDataString:
-      return CirruData(kind: crDataSymbol, ns: ns, dynamic: false, symbolVal: item.stringVal & "__" & $genSymIndex)
+      return CirruData(kind: crDataSymbol, ns: ns, symbolVal: item.stringVal & "__" & $genSymIndex)
     else:
       raiseEvalError("gensym expects a symbol or a string", args)
   else:
