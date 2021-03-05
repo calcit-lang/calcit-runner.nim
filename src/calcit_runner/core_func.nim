@@ -40,6 +40,8 @@ import ./eval/arguments
 import ./eval/expression
 import ./eval/atoms
 
+import ./core/record_funcs
+
 # init generator for rand
 randomize()
 
@@ -187,6 +189,12 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   case a.kind
   of crDataMap:
     return a.mapVal.loopGetDefault(b, CirruData(kind: crDataNil))
+  of crDataRecord:
+    let field = b.getString()
+    for idx, name in a.recordFields:
+      if name == field:
+        return a.recordValues[idx]
+    raiseEvalError("Cannot find field `" & $field & "` among" & $a.recordFields, args)
   of crDataNil:
     raiseEvalError("&get does not work on `nil`, need to use `get`", a)
   of crDataList:
@@ -246,6 +254,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     of crDataSymbol: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("symbol"))
     of crDataAtom: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("atom"))
     of crDataTernary: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("ternary"))
+    of crDataRecord: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("record"))
     # TODO better extract thunk in such cases
     of crDataThunk: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("thunk"))
 
@@ -680,6 +689,15 @@ proc nativeAssoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     return CirruData(kind: crDataList, listVal: base.listVal.assoc(idx.numberVal.int, args[2]))
   of crDataMap:
     return CirruData(kind: crDataMap, mapVal: base.mapVal.assoc(args[1], args[2]))
+  of crDataRecord:
+    let k = args[1].getString()
+    let fields = base.recordFields
+    result = base
+    for idx, field in fields:
+      if k == field:
+        result.recordValues[idx] = args[2]
+        return result
+    raiseEvalError("Invalid key `" & k & "` for record " & $result.recordFields, args)
   else:
     raiseEvalError("assoc expects a list or a map", args)
 
@@ -1048,12 +1066,24 @@ proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
 proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
   let base = args[0]
-  if base.kind != crDataMap: raiseEvalError("to-pairs expects a map", args)
-  var acc: HashSet[CirruData]
-  for pair in base.mapVal.toPairs:
-    let list = initCrVirtualList[CirruData](@[pair.k, pair.v])
-    acc.incl CirruData(kind: crDataList, listVal: list)
-  return CirruData(kind: crDataSet, setVal: acc)
+  case base.kind
+  of crDataMap:
+    var acc: HashSet[CirruData]
+    for pair in base.mapVal.toPairs:
+      let list = initCrVirtualList[CirruData](@[pair.k, pair.v])
+      acc.incl CirruData(kind: crDataList, listVal: list)
+    return CirruData(kind: crDataSet, setVal: acc)
+  of crDataRecord:
+    var acc: HashSet[CirruData]
+    for idx, field in base.recordFields:
+      let list = initCrVirtualList[CirruData](@[
+        CirruData(kind: crDataSymbol, symbolVal: field),
+        base.recordValues[idx]
+      ])
+      acc.incl CirruData(kind: crDataList, listVal: list)
+    return CirruData(kind: crDataSet, setVal: acc)
+  else:
+    raiseEvalError("to-pairs expects a map", args)
 
 proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len mod 2) != 0:
@@ -1492,3 +1522,11 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["set->list"] = CirruData(kind: crDataProc, procVal: nativeSetToList)
   programData[coreNs].defs["blank?"] = CirruData(kind: crDataProc, procVal: nativeBlankQuestion)
   programData[coreNs].defs["compare-string"] = CirruData(kind: crDataProc, procVal: nativeCompareString)
+
+  # record funs
+  programData[coreNs].defs["defrecord"] = CirruData(kind: crDataProc, procVal: defineRecord)
+  programData[coreNs].defs["&%{}"] = CirruData(kind: crDataProc, procVal: nativeRecord)
+  programData[coreNs].defs["make-record"] = CirruData(kind: crDataProc, procVal: makeRecord)
+  programData[coreNs].defs["get-record-name"] = CirruData(kind: crDataProc, procVal: getRecordName)
+  programData[coreNs].defs["turn-map"] = CirruData(kind: crDataProc, procVal: turnMap)
+  programData[coreNs].defs["relevant-record?"] = CirruData(kind: crDataProc, procVal: relevantRecord)

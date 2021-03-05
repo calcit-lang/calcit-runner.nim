@@ -126,7 +126,7 @@ let preferredJsProc = toHashSet([
   "map?", "nil?",
   "list?", "set?",
   "string?", "fn?",
-  "bool?", "atom?",
+  "bool?", "atom?", "record?",
   "starts-with?",
 ])
 

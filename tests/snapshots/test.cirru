@@ -4,7 +4,7 @@
     :modules $ [] |./test-cond.cirru |./test-gynienic.cirru |./test-json.cirru
       , |./test-lens.cirru |./test-list.cirru |./test-macro.cirru |./test-map.cirru
       , |./test-math.cirru |./test-recursion.cirru |./test-set.cirru
-      , |./test-string.cirru |./test-ternary.cirru |./test-js.cirru
+      , |./test-string.cirru |./test-ternary.cirru |./test-js.cirru |./test-record.cirru
       , |./util.cirru
   :files $ {}
     |app.main $ {}
@@ -23,6 +23,7 @@
           [] test-string.main :as test-string
           [] test-ternary.main :as test-ternary
           [] test-js.main :as test-js
+          [] test-record.main :as test-record
           [] util.core :refer $ [] log-title inside-nim: inside-js:
       :defs $ {}
         |test-keyword $ quote
@@ -206,6 +207,7 @@
             test-recursion/main!
             test-set/main!
             test-string/main!
+            test-record/main!
 
             inside-js:
               test-js/main!

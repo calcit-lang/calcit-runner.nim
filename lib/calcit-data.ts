@@ -369,6 +369,74 @@ export class CrDataMap {
   }
 }
 
+export let getStringName = (x: CrDataValue): string => {
+  if (typeof x === "string") {
+    return x;
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.value;
+  }
+  if (x instanceof CrDataSymbol) {
+    return x.value;
+  }
+  throw new Error("Cannot get string as name");
+};
+
+export class CrDataRecord {
+  name: string;
+  fields: Array<string>;
+  values: Array<CrDataValue>;
+  constructor(name: string, fields: Array<CrDataValue>, values?: Array<CrDataValue>) {
+    this.name = name;
+    let fieldNames = fields.map(getStringName);
+    this.fields = fieldNames;
+    if (values != null) {
+      if (values.length != fields.length) {
+        throw new Error("value length not match");
+      }
+      this.values = values;
+    } else {
+      this.values = new Array(fieldNames.length);
+    }
+  }
+  get(k: CrDataValue) {
+    let field = getStringName(k);
+    for (let idx in this.fields) {
+      if (this.fields[idx] === field) {
+        return this.values[idx];
+      }
+    }
+    throw new Error(`Cannot find :${field} among (${this.values.join(",")})`);
+  }
+  assoc(k: CrDataValue, v: CrDataValue): CrDataRecord {
+    let values: Array<CrDataValue> = new Array(this.fields.length);
+    let name = getStringName(k);
+    for (let idx in this.fields) {
+      if (this.fields[idx] === name) {
+        values[idx] = v;
+      } else {
+        values[idx] = this.values[idx];
+      }
+    }
+    return new CrDataRecord(this.name, this.fields, values);
+  }
+  merge() {
+    // TODO
+  }
+  toString(): string {
+    let ret = "%{ " + this.name;
+    for (let idx in this.fields) {
+      if (idx === "0") {
+        ret += " ";
+      } else {
+        ret += ", ";
+      }
+      ret += this.fields[idx] + " " + toString(this.values[idx], false);
+    }
+    return ret + " }";
+  }
+}
+
 export type CrDataValue =
   | string
   | number
@@ -381,6 +449,7 @@ export type CrDataValue =
   | CrDataAtom
   | CrDataFn
   | CrDataRecur // should not be exposed to function
+  | CrDataRecord
   | null;
 
 var keywordRegistery: Record<string, CrDataKeyword> = {};
@@ -524,6 +593,9 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
     return x.toString();
   }
   if (x instanceof CrDataSet) {
+    return x.toString();
+  }
+  if (x instanceof CrDataRecord) {
     return x.toString();
   }
 

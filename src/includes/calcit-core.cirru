@@ -129,6 +129,9 @@
         |nil? $ quote
           defn nil? (x) $ &= (type-of x) :nil
 
+        |record? $ quote
+          defn record? (x) $ &= (type-of x) :record
+
         |macro? $ quote
           defn macro? (x) $ &= (type-of x) :macro
 
@@ -322,6 +325,7 @@
               (string? base) (nth base k)
               (map? base) (&get base k)
               (list? base) (nth base k)
+              (record? base) (&get base k)
               true $ raise "|Expected map or list for get"
 
         |get-in $ quote
@@ -607,6 +611,12 @@
             &let
               ys $ concat & xs
               quote-replace $ &{} ~@ys
+
+        |%{} $ quote
+          defmacro %{} (R & xs)
+            &let
+              args $ &concat & xs
+              quote-replace $ &%{} ~R ~@args
 
         |fn $ quote
           defmacro fn (args & body)

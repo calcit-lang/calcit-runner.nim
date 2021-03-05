@@ -39,6 +39,12 @@ proc toEdn*(x: CirruData): CirruEdnValue =
     for k, v in x.mapVal:
       fields[toEdn(k)] = toEdn(v)
     return CirruEdnValue(kind: crEdnMap, mapVal: fields)
+  # TODO need custom syntax
+  of crDataRecord:
+    var fields: Table[CirruEdnValue, CirruEdnValue]
+    for idx, field in x.recordFields:
+      fields[CirruEdnValue(kind: crEdnString, stringVal: field)] = toEdn(x.recordValues[idx])
+    return CirruEdnValue(kind: crEdnMap, mapVal: fields)
 
   of crDataSymbol:
     # not implement symbol in cirru-edn
