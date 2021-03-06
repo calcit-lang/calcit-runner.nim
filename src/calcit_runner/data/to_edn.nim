@@ -39,12 +39,15 @@ proc toEdn*(x: CirruData): CirruEdnValue =
     for k, v in x.mapVal:
       fields[toEdn(k)] = toEdn(v)
     return CirruEdnValue(kind: crEdnMap, mapVal: fields)
-  # TODO need custom syntax
+
   of crDataRecord:
-    var fields: Table[CirruEdnValue, CirruEdnValue]
-    for idx, field in x.recordFields:
-      fields[CirruEdnValue(kind: crEdnString, stringVal: field)] = toEdn(x.recordValues[idx])
-    return CirruEdnValue(kind: crEdnMap, mapVal: fields)
+    var values: seq[CirruEdnValue]
+    for v in x.recordValues:
+      values.add toEdn(v)
+    return CirruEdnValue(
+      kind: crEdnRecord, recordName: x.recordName,
+      recordFields: x.recordFields, recordValues: values
+    )
 
   of crDataSymbol:
     # not implement symbol in cirru-edn
@@ -85,6 +88,21 @@ proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope
     for key, value in xs.mapVal:
       ys[key.ednToCirruData(ns, scope)] = value.ednToCirruData(ns, scope)
     CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
+  of crEdnRecord:
+    for idx, field in xs.recordFields:
+      if idx == 0:
+        continue
+      if field <= xs.recordFields[idx-1]:
+        raiseEvalError("Invalid order from EDN data", CirruData(kind: crDataString, stringVal: field))
+
+    var values: seq[CirruData]
+    for v in xs.recordValues:
+      values.add(v.ednToCirruData(ns, scope))
+    CirruData(
+      kind: crDataRecord, recordName: xs.recordName,
+      recordFields: xs.recordFields, recordValues: values,
+    )
+
   of crEdnQuotedCirru: xs.quotedVal.nodesToCirruData(ns)
 
 proc getKwd*(x: CirruEdnValue, k: string): CirruEdnValue =

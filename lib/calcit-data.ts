@@ -424,14 +424,14 @@ export class CrDataRecord {
     // TODO
   }
   toString(): string {
-    let ret = "%{ " + this.name;
+    let ret = "%{" + this.name;
     for (let idx in this.fields) {
       if (idx === "0") {
         ret += " ";
       } else {
         ret += ", ";
       }
-      ret += this.fields[idx] + " " + toString(this.values[idx], false);
+      ret += this.fields[idx] + " " + toString(this.values[idx], true);
     }
     return ret + " }";
   }
@@ -566,7 +566,12 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
   }
   if (typeof x === "string") {
     if (escaped) {
-      return JSON.stringify(x);
+      // turn to visual string representation
+      if (/[\)\(\s\"]/.test(x)) {
+        return JSON.stringify("|" + x);
+      } else {
+        return "|" + x;
+      }
     } else {
       return x;
     }

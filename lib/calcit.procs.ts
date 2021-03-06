@@ -1254,6 +1254,14 @@ export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
     }
     return buffer;
   }
+  if (x instanceof CrDataRecord) {
+    let result: Record<string, CrDataValue> = {};
+    let buffer: CirruEdnFormat = ["%{}", x.name];
+    for (let idx in x.fields) {
+      buffer.push([x.fields[idx], to_cirru_edn(x.values[idx])]);
+    }
+    return buffer;
+  }
   if (x instanceof CrDataSet) {
     let buffer: CirruEdnFormat = ["#{}"];
     for (let y of x.value) {
@@ -1312,6 +1320,31 @@ export let extract_cirru_edn = (x: CirruEdnFormat): CrDataValue => {
         }
       });
       return new CrDataMap(initTernaryTreeMap(result));
+    }
+    if (x[0] === "%{}") {
+      let name = x[1];
+      if (typeof name != "string") {
+        throw new Error("Expected string for record name");
+      }
+      let fields: Array<string> = [];
+      let values: Array<CrDataValue> = [];
+      x.forEach((pair, idx) => {
+        if (idx <= 1) {
+          return; // skip %{} name
+        }
+
+        if (pair instanceof Array && pair.length == 2) {
+          if (typeof pair[0] === "string") {
+            fields.push(pair[0]);
+          } else {
+            throw new Error("Expected string as field");
+          }
+          values.push(extract_cirru_edn(pair[1]));
+        } else {
+          throw new Error("Expected pairs for map");
+        }
+      });
+      return new CrDataRecord(name, fields, values);
     }
     if (x[0] === "[]") {
       return new CrDataList(x.slice(1).map(extract_cirru_edn));

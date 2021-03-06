@@ -186,7 +186,7 @@ proc escapeCirruStr*(s: string, prefix = "\"", suffix = "\""): string =
   add(result, suffix)
 
 proc escapeString(x: string): string =
-  if x.contains("\"") or x.contains(' '):
+  if x.contains("\"") or x.contains(' ') or x.contains('(') or x.contains(')'):
     escapeCirruStr("|" & x)
   else:
     "|" & x
@@ -200,7 +200,7 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
         "false"
     of crDataNumber:
       if val.numberVal.trunc == val.numberVal:
-        $val.numberVal.int
+        $(val.numberVal.int)
       else:
         $(val.numberVal)
     of crDataString:
