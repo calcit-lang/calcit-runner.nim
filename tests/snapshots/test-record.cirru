@@ -68,6 +68,14 @@
               assert-detect not $ = p1 p3
               assert-detect not $ = p1 c1
 
+              assert=
+                %{} p1 (:age 23) (:name |Ye) (:position :mainland)
+                merge p1 $ {} (:age 23) (:name |Ye)
+
+              assert=
+                %{} p1 (:age 23) (:name |Ye) (:position :mainland)
+                merge p1 $ {} (:age 23) (:name |Ye)
+
         |main! $ quote
           defn main! ()
             test-record

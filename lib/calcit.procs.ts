@@ -17,6 +17,7 @@ import {
   CrDataSet,
   cloneSet,
   CrDataRecord,
+  getStringName,
 } from "./calcit-data";
 
 import { fieldsEqual } from "./record-procs";
@@ -783,21 +784,39 @@ export let floor = (n: number): number => {
   return Math.floor(n);
 };
 
-export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
+export let _AND_merge = (a: CrDataValue, b: CrDataMap): CrDataValue => {
   if (a == null) {
     return b;
   }
   if (b == null) {
     return a;
   }
-  if (!(a instanceof CrDataMap)) {
-    throw new Error("Expected map");
+  if (a instanceof CrDataMap) {
+    if (b instanceof CrDataMap) {
+      return a.merge(b);
+    } else {
+      throw new Error("Expected an argument of map");
+    }
   }
-  if (!(b instanceof CrDataMap)) {
-    throw new Error("Expected map");
+  if (a instanceof CrDataRecord) {
+    if (b instanceof CrDataMap) {
+      let values = [];
+      for (let item of a.values) {
+        values.push(item);
+      }
+      for (let [k, v] of b.pairs()) {
+        let field = getStringName(k);
+        let idx = a.fields.indexOf(field);
+        if (idx >= 0) {
+          values[idx] = v;
+        } else {
+          throw new Error(`Cannot find field ${field} among (${a.fields.join(", ")})`);
+        }
+      }
+      return new CrDataRecord(a.name, a.fields, values);
+    }
   }
-
-  return a.merge(b);
+  throw new Error("Expected map or record");
 };
 
 export let _AND_merge_non_nil = (a: CrDataMap, b: CrDataMap): CrDataMap => {

@@ -571,10 +571,30 @@ proc nativeMerge(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if another.isNil:
     return base
 
-  if not base.isMap or not another.isMap:
-    raiseEvalError("merge requires two maps", args)
+  if base.isMap:
+    if another.isMap:
+      return CirruData(kind: crDataMap, mapVal: base.mapVal.merge(another.mapVal))
+    else:
+      raiseEvalError("merge expected argument of a map", args)
 
-  return CirruData(kind: crDataMap, mapVal: base.mapVal.merge(another.mapVal))
+  if base.kind == crDataRecord:
+    if another.kind == crDataMap:
+      var values = base.recordValues
+      for pair in another.mapVal.toPairs:
+        let field = pair.k.getString()
+        let idx = base.recordFields.find(field)
+        if idx >= 0:
+          values[idx] = pair.v
+        else:
+          raiseEvalError("Unexpected key `" & field & "` among " & $base.recordFields, args)
+      return CirruData(
+        kind: crDataRecord, recordName: base.recordName,
+        recordFields: base.recordFields, recordValues: values
+      )
+    else:
+      raiseEvalError("merge expected argument of a map", args)
+
+  raiseEvalError("merge requires map or record", args)
 
 proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 2:
