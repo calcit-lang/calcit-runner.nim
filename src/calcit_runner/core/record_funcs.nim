@@ -136,3 +136,21 @@ proc relevantRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   if a.recordName != b.recordName:
     return CirruData(kind: crDataBool, boolVal: false)
   return CirruData(kind: crDataBool, boolVal: a.recordFields == b.recordFields)
+
+proc findInFields*(xs: seq[string], y: string): int =
+  var lower = 0
+  var upper = xs.len - 1
+
+  while (upper - lower) > 1:
+    let pos = (lower + upper) shr 1
+    let v = xs[pos]
+    if y < v:
+      upper = pos - 1
+    elif y > v:
+      lower = pos + 1
+    else:
+      return pos
+
+  if y == xs[lower]: return lower
+  if y == xs[upper]: return upper
+  return -1

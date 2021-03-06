@@ -582,7 +582,7 @@ proc nativeMerge(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       var values = base.recordValues
       for pair in another.mapVal.toPairs:
         let field = pair.k.getString()
-        let idx = base.recordFields.find(field)
+        let idx = base.recordFields.findInFields(field)
         if idx >= 0:
           values[idx] = pair.v
         else:

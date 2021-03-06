@@ -382,6 +382,27 @@ export let getStringName = (x: CrDataValue): string => {
   throw new Error("Cannot get string as name");
 };
 
+function findInFields(xs: Array<string>, y: string): number {
+  let lower = 0;
+  let upper = xs.length - 1;
+
+  while (upper - lower > 1) {
+    let pos = (lower + upper) >> 1;
+    let v = xs[pos];
+    if (y < v) {
+      upper = pos - 1;
+    } else if (y > v) {
+      lower = pos + 1;
+    } else {
+      return pos;
+    }
+  }
+
+  if (y == xs[lower]) return lower;
+  if (y == xs[upper]) return upper;
+  return -1;
+}
+
 export class CrDataRecord {
   name: string;
   fields: Array<string>;
@@ -401,12 +422,12 @@ export class CrDataRecord {
   }
   get(k: CrDataValue) {
     let field = getStringName(k);
-    for (let idx in this.fields) {
-      if (this.fields[idx] === field) {
-        return this.values[idx];
-      }
+    let idx = findInFields(this.fields, field);
+    if (idx >= 0) {
+      return this.values[idx];
+    } else {
+      throw new Error(`Cannot find :${field} among (${this.values.join(",")})`);
     }
-    throw new Error(`Cannot find :${field} among (${this.values.join(",")})`);
   }
   assoc(k: CrDataValue, v: CrDataValue): CrDataRecord {
     let values: Array<CrDataValue> = new Array(this.fields.length);

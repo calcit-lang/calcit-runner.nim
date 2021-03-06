@@ -33,6 +33,9 @@ let fieldPairOrder = (a: [string, CrDataValue], b: [string, CrDataValue]) => {
 };
 
 export let fieldsEqual = (xs: Array<string>, ys: Array<string>): boolean => {
+  if (xs === ys) {
+    return true; // special case, referential equal
+  }
   if (xs.length !== ys.length) {
     return false;
   }
