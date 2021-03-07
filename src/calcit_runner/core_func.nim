@@ -147,6 +147,8 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
   of crDataMap:
     return CirruData(kind: crDataNumber, numberVal: a.len.float)
+  of crDataRecord:
+    return CirruData(kind: crDataNumber, numberVal: a.recordFields.len.float)
   of crDataSet:
     return CirruData(kind: crDataNumber, numberVal: a.setVal.len.float)
   of crDataString:
@@ -158,21 +160,25 @@ proc nativeNth(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   if args.len != 2: raiseEvalError("Expected 2 arguments in nth", args)
   let a = args[0]
   let b = args[1]
+  if b.kind != crDataNumber:
+    raiseEvalError("Required number index for list", b)
   case a.kind
   of crDataList:
-    if b.kind != crDataNumber:
-      raiseEvalError("Required number index for list", b)
-    if b.numberVal.round.float != b.numberVal:
-      raiseEvalError("Required round number index for list", b)
     if b.numberVal >= a.len.float or b.numberVal < 0.float:
       return CirruData(kind: crDataNil)
     else:
       return a[b.numberVal.int]
+
+  of crDataRecord:
+    let idx = b.numberVal.int()
+    if idx >= a.recordFields.len or idx < 0:
+      raiseEvalError("Cannot access field at index " & $idx, args)
+    return CirruData(kind: crDataList, listVal: initCrVirtualList[CirruData](@[
+      CirruData(kind: crDataSymbol, symbolVal: a.recordFields[idx]),
+      a.recordValues[idx]
+    ]))
+
   of crDataString:
-    if b.kind != crDataNumber:
-      raiseEvalError("Required number index for list", b)
-    if b.numberVal.round.float != b.numberVal:
-      raiseEvalError("Required round number index for list", b)
     if b.numberVal >= a.len.float or b.numberVal < 0.float:
       return CirruData(kind: crDataNil)
     else:
@@ -629,6 +635,10 @@ proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope:
   case base.kind
   of crDataMap:
     return CirruData(kind: crDataBool, boolVal: base.mapVal.contains(key))
+  of crDataRecord:
+    let field = key.getString()
+    let pos = findInFields(base.recordFields, field)
+    return CirruData(kind: crDataBool, boolVal: pos >= 0)
   of crDataList:
     if key.kind != crDataNumber:
       raiseEvalError("a list contains nothing but numbers", args)

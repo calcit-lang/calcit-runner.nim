@@ -76,6 +76,13 @@
                 %{} p1 (:age 23) (:name |Ye) (:position :mainland)
                 merge p1 $ {} (:age 23) (:name |Ye)
 
+              assert-detect identity $ contains? p1 :name
+              assert-detect not $ contains? p1 :surname
+              assert= 3 $ count p1
+              assert=
+                nth p1 1
+                [] 'name |Chen
+
         |main! $ quote
           defn main! ()
             test-record

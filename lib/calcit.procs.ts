@@ -18,6 +18,7 @@ import {
   cloneSet,
   CrDataRecord,
   getStringName,
+  findInFields,
 } from "./calcit-data";
 
 import { fieldsEqual } from "./record-procs";
@@ -91,6 +92,9 @@ export let count = (x: CrDataValue): number => {
   }
   if (x instanceof CrDataMap) {
     return x.len();
+  }
+  if (x instanceof CrDataRecord) {
+    return x.fields.length;
   }
   if (x instanceof CrDataSet) {
     return x.len();
@@ -339,6 +343,10 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   if (xs instanceof CrDataMap) {
     return xs.contains(x);
   }
+  if (xs instanceof CrDataRecord) {
+    let pos = findInFields(xs.fields, getStringName(x));
+    return pos >= 0;
+  }
   if (xs instanceof CrDataSet) {
     throw new Error("Set expected `includes?` for detecting");
   }
@@ -390,6 +398,12 @@ export let nth = function (xs: CrDataValue, k: CrDataValue) {
   }
   if (xs instanceof CrDataList) {
     return xs.get(k);
+  }
+  if (xs instanceof CrDataRecord) {
+    if (k < 0 || k >= xs.fields.length) {
+      throw new Error("Out of bound");
+    }
+    return new CrDataList([new CrDataSymbol(xs.fields[k]), xs.values[k]]);
   }
   if (Array.isArray(xs)) {
     return xs[k];
