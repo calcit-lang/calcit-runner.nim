@@ -113,6 +113,11 @@
                 parse-cirru-edn edn-demo
                 %{} Person (:name |Chen) (:age 23)
 
+              assert= 'a
+                parse-cirru-edn "|do 'a"
+              assert= "|[] 'a"
+                trim $ write-cirru-edn $ [] 'a
+
         |test-char $ quote
           fn ()
             log-title "|Test char"

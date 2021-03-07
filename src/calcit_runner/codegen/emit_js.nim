@@ -310,7 +310,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       of "quote":
         if body.len < 1:
           raiseEvalError("Unpexpected empty body", xs)
-        return ($body[0]).escapeCirruStr()
+        return "new " & varPrefix & "CrDataSymbol(" & ($body[0]).escapeCirruStr() & ")"
       of "defatom":
         if body.len != 2:
           raiseEvalError("defatom expects 2 nodes", xs)

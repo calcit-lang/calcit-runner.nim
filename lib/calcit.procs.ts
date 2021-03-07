@@ -203,6 +203,12 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
+  if (x instanceof CrDataSymbol) {
+    if (y instanceof CrDataSymbol) {
+      return x.value === y.value;
+    }
+    return false;
+  }
   if (x instanceof CrDataList) {
     if (y instanceof CrDataList) {
       if (x.len() !== y.len()) {
@@ -846,7 +852,7 @@ export let to_pairs = (xs: CrDataValue): CrDataSet => {
   } else if (xs instanceof CrDataRecord) {
     var result: Set<CrDataList> = new Set();
     for (let idx in xs.fields) {
-      result.add(new CrDataList([xs.fields[idx], xs.values[idx]]));
+      result.add(new CrDataList([new CrDataSymbol(xs.fields[idx]), xs.values[idx]]));
     }
     return new CrDataSet(result);
   } else {

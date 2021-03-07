@@ -50,8 +50,7 @@ proc toEdn*(x: CirruData): CirruEdnValue =
     )
 
   of crDataSymbol:
-    # not implement symbol in cirru-edn
-    return CirruEdnValue(kind: crEdnString, stringVal: x.symbolVal)
+    return CirruEdnValue(kind: crEdnSymbol, symbolVal: x.symbolVal)
 
   of crDataTernary: return CirruEdnValue(kind: crEdnString, stringVal: $x.ternaryVal)
 
@@ -67,6 +66,7 @@ proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope
   of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
   of crEdnNumber: CirruData(kind: crDataNumber, numberVal: xs.numberVal)
   of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
+  of crEdnSymbol: CirruData(kind: crDataSymbol, symbolVal: xs.symbolVal)
   of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword(xs.keywordVal))
   of crEdnVector:
     var ys = initCrVirtualList[CirruData](@[])
