@@ -50,6 +50,7 @@ type
     crDataAtom,
     crDataTernary,
     crDataThunk,
+    crDataRecord,
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
@@ -103,6 +104,10 @@ type
       thunkCode*: ref CirruData
       thunkScope*: CirruDataScope
       thunkNs*: string
+    of crDataRecord:
+      recordName*: string
+      recordFields*: seq[string]
+      recordValues*: seq[CirruData]
 
   RefCirruData* = ref CirruData
 
@@ -151,6 +156,16 @@ proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData], symbolDetai
   tableStr = tableStr & "}"
   return tableStr
 
+proc fromRecordToString(name: string, fields: seq[string], values: seq[CirruData], symbolDetail: bool): string =
+  result = "%{" & name
+  for idx, fieldName in fields:
+    if idx == 0:
+      result &= " "
+    else:
+      result &= ", "
+    result &= fieldName & " " & toString(values[idx], true, symbolDetail)
+  result &= " }"
+
 # based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
 # strutils.escape turns Chinese into longer something "\xE6\xB1\x89",
 # so... this is a simplified one according to Cirru Parser
@@ -171,7 +186,7 @@ proc escapeCirruStr*(s: string, prefix = "\"", suffix = "\""): string =
   add(result, suffix)
 
 proc escapeString(x: string): string =
-  if x.contains("\"") or x.contains(' '):
+  if x.contains("\"") or x.contains(' ') or x.contains('(') or x.contains(')'):
     escapeCirruStr("|" & x)
   else:
     "|" & x
@@ -185,7 +200,7 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
         "false"
     of crDataNumber:
       if val.numberVal.trunc == val.numberVal:
-        $val.numberVal.int
+        $(val.numberVal.int)
       else:
         $(val.numberVal)
     of crDataString:
@@ -196,6 +211,7 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
     of crDataList: fromListToString(val.listVal.toSeq, symbolDetail)
     of crDataSet: fromSetToString(val.setVal, symbolDetail)
     of crDataMap: fromMapToString(val.mapVal, symbolDetail)
+    of crDataRecord: fromRecordToString(val.recordName, val.recordFields, val.recordValues, symbolDetail)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
     of crDataProc: "(:&proc)"
@@ -304,7 +320,13 @@ proc hash*(value: CirruData): Hash =
       for k, v in value.mapVal.pairs:
         result = result !& hash(k)
         result = result !& hash(v)
+      result = !$ result
 
+    of crDataRecord:
+      result = hash("record:")
+      for idx, field in value.recordFields:
+        result = result !& hash(field)
+        result = result !& hash(value.recordValues[idx])
       result = !$ result
 
     of crDataSymbol:
@@ -381,9 +403,21 @@ proc `==`*(x, y: CirruData): bool =
         return false
 
       for k, v in x.mapVal.pairs:
-        if not (y.mapVal.contains(k) and y.mapVal.loopGet(k) == v):
+        if y.mapVal.loopGetDefault(k, CirruData(kind: crDataNil)) != v:
           return false
 
+      return true
+
+    of crDataRecord:
+      if x.recordName != y.recordName:
+        return false
+      if x.recordFields.len != y.recordFields.len:
+        return false
+      for idx, field in x.recordFields:
+        if field != y.recordFields[idx]:
+          return false
+        if x.recordValues[idx] != y.recordValues[idx]:
+          return false
       return true
 
     of crDataSymbol:

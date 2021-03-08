@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.2.84"
+version       = "0.2.89"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"
@@ -16,8 +16,8 @@ requires "libfswatch"
 requires "nanoid"
 requires "cirru_parser >= 0.3.0"
 requires "ternary_tree >= 0.2.2"
-requires "https://github.com/Cirru/cirru-edn.nim#v0.4.5"
-requires "https://github.com/calcit-lang/edn-paint#v0.2.9"
+requires "https://github.com/Cirru/cirru-edn.nim#v0.4.8"
+requires "https://github.com/calcit-lang/edn-paint#v0.2.12"
 requires "https://github.com/dual-balanced-ternary/dual-balanced-ternary.nim#v0.0.4"
 
 task watch, "run and watch":

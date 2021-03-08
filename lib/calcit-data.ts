@@ -369,6 +369,95 @@ export class CrDataMap {
   }
 }
 
+export let getStringName = (x: CrDataValue): string => {
+  if (typeof x === "string") {
+    return x;
+  }
+  if (x instanceof CrDataKeyword) {
+    return x.value;
+  }
+  if (x instanceof CrDataSymbol) {
+    return x.value;
+  }
+  throw new Error("Cannot get string as name");
+};
+
+export function findInFields(xs: Array<string>, y: string): number {
+  let lower = 0;
+  let upper = xs.length - 1;
+
+  while (upper - lower > 1) {
+    let pos = (lower + upper) >> 1;
+    let v = xs[pos];
+    if (y < v) {
+      upper = pos - 1;
+    } else if (y > v) {
+      lower = pos + 1;
+    } else {
+      return pos;
+    }
+  }
+
+  if (y == xs[lower]) return lower;
+  if (y == xs[upper]) return upper;
+  return -1;
+}
+
+export class CrDataRecord {
+  name: string;
+  fields: Array<string>;
+  values: Array<CrDataValue>;
+  constructor(name: string, fields: Array<CrDataValue>, values?: Array<CrDataValue>) {
+    this.name = name;
+    let fieldNames = fields.map(getStringName);
+    this.fields = fieldNames;
+    if (values != null) {
+      if (values.length != fields.length) {
+        throw new Error("value length not match");
+      }
+      this.values = values;
+    } else {
+      this.values = new Array(fieldNames.length);
+    }
+  }
+  get(k: CrDataValue) {
+    let field = getStringName(k);
+    let idx = findInFields(this.fields, field);
+    if (idx >= 0) {
+      return this.values[idx];
+    } else {
+      throw new Error(`Cannot find :${field} among (${this.values.join(",")})`);
+    }
+  }
+  assoc(k: CrDataValue, v: CrDataValue): CrDataRecord {
+    let values: Array<CrDataValue> = new Array(this.fields.length);
+    let name = getStringName(k);
+    for (let idx in this.fields) {
+      if (this.fields[idx] === name) {
+        values[idx] = v;
+      } else {
+        values[idx] = this.values[idx];
+      }
+    }
+    return new CrDataRecord(this.name, this.fields, values);
+  }
+  merge() {
+    // TODO
+  }
+  toString(): string {
+    let ret = "%{" + this.name;
+    for (let idx in this.fields) {
+      if (idx === "0") {
+        ret += " ";
+      } else {
+        ret += ", ";
+      }
+      ret += this.fields[idx] + " " + toString(this.values[idx], true);
+    }
+    return ret + " }";
+  }
+}
+
 export type CrDataValue =
   | string
   | number
@@ -381,6 +470,7 @@ export type CrDataValue =
   | CrDataAtom
   | CrDataFn
   | CrDataRecur // should not be exposed to function
+  | CrDataRecord
   | null;
 
 var keywordRegistery: Record<string, CrDataKeyword> = {};
@@ -497,7 +587,12 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
   }
   if (typeof x === "string") {
     if (escaped) {
-      return JSON.stringify(x);
+      // turn to visual string representation
+      if (/[\)\(\s\"]/.test(x)) {
+        return JSON.stringify("|" + x);
+      } else {
+        return "|" + x;
+      }
     } else {
       return x;
     }
@@ -524,6 +619,9 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
     return x.toString();
   }
   if (x instanceof CrDataSet) {
+    return x.toString();
+  }
+  if (x instanceof CrDataRecord) {
     return x.toString();
   }
 

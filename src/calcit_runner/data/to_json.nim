@@ -51,6 +51,11 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
       else:
         raise newException(ValueError, "required string keys in JObject")
     return JsonNode(kind: JObject, fields: fields)
+  of crDataRecord:
+    var fields: OrderedTable[string, JsonNode]
+    for idx, field in x.recordFields:
+      fields[field] = toJson(x.recordValues[idx], keywordColon)
+    return JsonNode(kind: JObject, fields: fields)
 
   of crDataSymbol:
     return JsonNode(kind: JString, str: x.symbolVal)

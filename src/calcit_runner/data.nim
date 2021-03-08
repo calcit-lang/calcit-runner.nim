@@ -92,10 +92,7 @@ proc contains*(x: CirruData, k: CirruData): bool =
 proc get*(x: CirruData, k: CirruData): CirruData =
   case x.kind:
   of crDataMap:
-    if x.contains(k):
-      return x.mapVal.loopGet(k)
-    else:
-      return CirruData(kind: crDataNil)
+    return x.mapVal.loopGetDefault(k, CirruData(kind: crDataNil))
   else:
     raise newException(EdnOpError, "can't run get on a literal or seq")
 
@@ -200,3 +197,19 @@ proc parseLiteral*(token: string, ns: string): CirruData =
     ]))
   else:
     return CirruData(kind: crDataSymbol, symbolVal: token, ns: ns)
+
+proc getString*(x: CirruData): string =
+  case x.kind:
+    of crDataString:
+      return x.stringVal
+    of crDataKeyword:
+      return x.keywordVal
+    of crDataSymbol:
+      return x.symbolVal
+    else:
+      raiseEvalError("Expected string, keyword or symbol for string content", x)
+
+type RecordInPair* = tuple[k: string, v: CirruData]
+
+proc recordFieldOrder*(p1, p2: RecordInPair): int =
+  cmp(p1.k, p2.k)

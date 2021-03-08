@@ -16,9 +16,15 @@ import {
   toString,
   CrDataSet,
   cloneSet,
+  CrDataRecord,
+  getStringName,
+  findInFields,
 } from "./calcit-data";
 
+import { fieldsEqual } from "./record-procs";
+
 export * from "./calcit-data";
+export * from "./record-procs";
 
 let inNodeJs = typeof process !== "undefined" && process?.release?.name === "node";
 
@@ -49,6 +55,9 @@ export let type_of = (x: any): CrDataKeyword => {
   }
   if (x instanceof CrDataSet) {
     return kwd("set");
+  }
+  if (x instanceof CrDataRecord) {
+    return kwd("record");
   }
   if (x === true || x === false) {
     return kwd("bool");
@@ -83,6 +92,9 @@ export let count = (x: CrDataValue): number => {
   }
   if (x instanceof CrDataMap) {
     return x.len();
+  }
+  if (x instanceof CrDataRecord) {
+    return x.fields.length;
   }
   if (x instanceof CrDataSet) {
     return x.len();
@@ -195,6 +207,12 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
+  if (x instanceof CrDataSymbol) {
+    if (y instanceof CrDataSymbol) {
+      return x.value === y.value;
+    }
+    return false;
+  }
   if (x instanceof CrDataList) {
     if (y instanceof CrDataList) {
       if (x.len() !== y.len()) {
@@ -267,8 +285,27 @@ export let _AND__EQ_ = (x: CrDataValue, y: CrDataValue): boolean => {
     }
     return false;
   }
+  if (x instanceof CrDataRecord) {
+    if (y instanceof CrDataRecord) {
+      if (x.name !== y.name) {
+        return false;
+      }
+      if (!fieldsEqual(x.fields, y.fields)) {
+        return false;
+      }
+      if (x.values.length !== y.values.length) {
+        return false;
+      }
+      for (let idx in x.fields) {
+        if (!_AND__EQ_(x.values[idx], y.values[idx])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
   throw new Error("Missing handler for this type");
-  return false;
 };
 
 // overwrite internary comparator of ternary-tree
@@ -305,6 +342,10 @@ export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   }
   if (xs instanceof CrDataMap) {
     return xs.contains(x);
+  }
+  if (xs instanceof CrDataRecord) {
+    let pos = findInFields(xs.fields, getStringName(x));
+    return pos >= 0;
   }
   if (xs instanceof CrDataSet) {
     throw new Error("Set expected `includes?` for detecting");
@@ -358,6 +399,12 @@ export let nth = function (xs: CrDataValue, k: CrDataValue) {
   if (xs instanceof CrDataList) {
     return xs.get(k);
   }
+  if (xs instanceof CrDataRecord) {
+    if (k < 0 || k >= xs.fields.length) {
+      throw new Error("Out of bound");
+    }
+    return new CrDataList([new CrDataSymbol(xs.fields[k]), xs.values[k]]);
+  }
   if (Array.isArray(xs)) {
     return xs[k];
   }
@@ -382,6 +429,9 @@ export let _AND_get = function (xs: CrDataValue, k: CrDataValue) {
   if (xs instanceof CrDataList) {
     return nth(xs, k);
   }
+  if (xs instanceof CrDataRecord) {
+    return xs.get(k);
+  }
 
   throw new Error("Does not support `&get` on this type");
 };
@@ -398,6 +448,10 @@ export let assoc = function (xs: CrDataValue, k: CrDataValue, v: CrDataValue) {
   }
 
   if (xs instanceof CrDataMap) {
+    return xs.assoc(k, v);
+  }
+
+  if (xs instanceof CrDataRecord) {
     return xs.assoc(k, v);
   }
 
@@ -750,21 +804,39 @@ export let floor = (n: number): number => {
   return Math.floor(n);
 };
 
-export let _AND_merge = (a: CrDataMap, b: CrDataMap): CrDataMap => {
+export let _AND_merge = (a: CrDataValue, b: CrDataMap): CrDataValue => {
   if (a == null) {
     return b;
   }
   if (b == null) {
     return a;
   }
-  if (!(a instanceof CrDataMap)) {
-    throw new Error("Expected map");
+  if (a instanceof CrDataMap) {
+    if (b instanceof CrDataMap) {
+      return a.merge(b);
+    } else {
+      throw new Error("Expected an argument of map");
+    }
   }
-  if (!(b instanceof CrDataMap)) {
-    throw new Error("Expected map");
+  if (a instanceof CrDataRecord) {
+    if (b instanceof CrDataMap) {
+      let values = [];
+      for (let item of a.values) {
+        values.push(item);
+      }
+      for (let [k, v] of b.pairs()) {
+        let field = getStringName(k);
+        let idx = a.fields.indexOf(field);
+        if (idx >= 0) {
+          values[idx] = v;
+        } else {
+          throw new Error(`Cannot find field ${field} among (${a.fields.join(", ")})`);
+        }
+      }
+      return new CrDataRecord(a.name, a.fields, values);
+    }
   }
-
-  return a.merge(b);
+  throw new Error("Expected map or record");
 };
 
 export let _AND_merge_non_nil = (a: CrDataMap, b: CrDataMap): CrDataMap => {
@@ -784,15 +856,22 @@ export let _AND_merge_non_nil = (a: CrDataMap, b: CrDataMap): CrDataMap => {
   return a.mergeSkip(b, null);
 };
 
-export let to_pairs = (xs: CrDataMap): CrDataSet => {
-  if (!(xs instanceof CrDataMap)) {
+export let to_pairs = (xs: CrDataValue): CrDataSet => {
+  if (xs instanceof CrDataMap) {
+    var result: Set<CrDataList> = new Set();
+    for (let [k, v] of xs.pairs()) {
+      result.add(new CrDataList([k, v]));
+    }
+    return new CrDataSet(result);
+  } else if (xs instanceof CrDataRecord) {
+    var result: Set<CrDataList> = new Set();
+    for (let idx in xs.fields) {
+      result.add(new CrDataList([new CrDataSymbol(xs.fields[idx]), xs.values[idx]]));
+    }
+    return new CrDataSet(result);
+  } else {
     throw new Error("Expected a map");
   }
-  var result: Set<CrDataList> = new Set();
-  for (let [k, v] of xs.pairs()) {
-    result.add(new CrDataList([k, v]));
-  }
-  return new CrDataSet(result);
 };
 
 // Math functions
@@ -985,6 +1064,13 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
     x.value.forEach((v) => {
       result.add(to_js_data(v, addColon));
     });
+    return result;
+  }
+  if (x instanceof CrDataRecord) {
+    let result: Record<string, CrDataValue> = {};
+    for (let idx in x.fields) {
+      result[x.fields[idx]] = to_js_data(x.values[idx]);
+    }
     return result;
   }
   console.error(x);
@@ -1188,6 +1274,14 @@ export let to_cirru_edn = (x: CrDataValue): CirruEdnFormat => {
     }
     return buffer;
   }
+  if (x instanceof CrDataRecord) {
+    let result: Record<string, CrDataValue> = {};
+    let buffer: CirruEdnFormat = ["%{}", x.name];
+    for (let idx in x.fields) {
+      buffer.push([x.fields[idx], to_cirru_edn(x.values[idx])]);
+    }
+    return buffer;
+  }
   if (x instanceof CrDataSet) {
     let buffer: CirruEdnFormat = ["#{}"];
     for (let y of x.value) {
@@ -1246,6 +1340,31 @@ export let extract_cirru_edn = (x: CirruEdnFormat): CrDataValue => {
         }
       });
       return new CrDataMap(initTernaryTreeMap(result));
+    }
+    if (x[0] === "%{}") {
+      let name = x[1];
+      if (typeof name != "string") {
+        throw new Error("Expected string for record name");
+      }
+      let fields: Array<string> = [];
+      let values: Array<CrDataValue> = [];
+      x.forEach((pair, idx) => {
+        if (idx <= 1) {
+          return; // skip %{} name
+        }
+
+        if (pair instanceof Array && pair.length == 2) {
+          if (typeof pair[0] === "string") {
+            fields.push(pair[0]);
+          } else {
+            throw new Error("Expected string as field");
+          }
+          values.push(extract_cirru_edn(pair[1]));
+        } else {
+          throw new Error("Expected pairs for map");
+        }
+      });
+      return new CrDataRecord(name, fields, values);
     }
     if (x[0] === "[]") {
       return new CrDataList(x.slice(1).map(extract_cirru_edn));
@@ -1332,6 +1451,9 @@ export let fn_QUES_ = (x: CrDataValue): boolean => {
 };
 export let atom_QUES_ = (x: CrDataValue): boolean => {
   return x instanceof CrDataAtom;
+};
+export let record_QUES_ = (x: CrDataValue): boolean => {
+  return x instanceof CrDataRecord;
 };
 
 export let escape = (x: string) => JSON.stringify(x);

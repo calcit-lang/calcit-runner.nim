@@ -40,9 +40,17 @@ proc toEdn*(x: CirruData): CirruEdnValue =
       fields[toEdn(k)] = toEdn(v)
     return CirruEdnValue(kind: crEdnMap, mapVal: fields)
 
+  of crDataRecord:
+    var values: seq[CirruEdnValue]
+    for v in x.recordValues:
+      values.add toEdn(v)
+    return CirruEdnValue(
+      kind: crEdnRecord, recordName: x.recordName,
+      recordFields: x.recordFields, recordValues: values
+    )
+
   of crDataSymbol:
-    # not implement symbol in cirru-edn
-    return CirruEdnValue(kind: crEdnString, stringVal: x.symbolVal)
+    return CirruEdnValue(kind: crEdnSymbol, symbolVal: x.symbolVal)
 
   of crDataTernary: return CirruEdnValue(kind: crEdnString, stringVal: $x.ternaryVal)
 
@@ -58,6 +66,7 @@ proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope
   of crEdnBool: CirruData(kind: crDataBool, boolVal: xs.boolVal)
   of crEdnNumber: CirruData(kind: crDataNumber, numberVal: xs.numberVal)
   of crEdnString: CirruData(kind: crDataString, stringVal: xs.stringVal)
+  of crEdnSymbol: CirruData(kind: crDataSymbol, symbolVal: xs.symbolVal)
   of crEdnKeyword: CirruData(kind: crDataKeyword, keywordVal: loadKeyword(xs.keywordVal))
   of crEdnVector:
     var ys = initCrVirtualList[CirruData](@[])
@@ -79,6 +88,21 @@ proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope
     for key, value in xs.mapVal:
       ys[key.ednToCirruData(ns, scope)] = value.ednToCirruData(ns, scope)
     CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(ys))
+  of crEdnRecord:
+    for idx, field in xs.recordFields:
+      if idx == 0:
+        continue
+      if field <= xs.recordFields[idx-1]:
+        raiseEvalError("Invalid order from EDN data", CirruData(kind: crDataString, stringVal: field))
+
+    var values: seq[CirruData]
+    for v in xs.recordValues:
+      values.add(v.ednToCirruData(ns, scope))
+    CirruData(
+      kind: crDataRecord, recordName: xs.recordName,
+      recordFields: xs.recordFields, recordValues: values,
+    )
+
   of crEdnQuotedCirru: xs.quotedVal.nodesToCirruData(ns)
 
 proc getKwd*(x: CirruEdnValue, k: string): CirruEdnValue =

@@ -68,6 +68,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
       programData[path.ns].defs[path.def] = v
     return v
 
+  # TODO looped twice, could be faster
   if scope.contains(sym.symbolVal):
     return scope.loopGet(sym.symbolVal)
 
@@ -153,10 +154,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   of crDataMap:
     if xs.len != 2: raiseEvalError("map function expects 1 argument", xs)
     let target = interpret(xs[1], scope, ns)
-    if value.mapVal.contains(target):
-      return value.mapVal.loopGet(target)
-    else:
-      return CirruData(kind: crDataNil)
+    return value.mapVal.loopGetDefault(target, CirruData(kind: crDataNil))
 
   of crDataMacro:
     echo "[warn] Found macros: ", xs

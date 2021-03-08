@@ -33,7 +33,7 @@ proc toCirruNode*(x: CirruData): CirruNode =
   of crDataTernary:
     return CirruNode(kind: cirruToken, token: $x.ternaryVal)
 
-  of crDataSet, crDataMap, crDataFn, crDataProc, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
+  of crDataSet, crDataMap, crDataFn, crDataProc, crDataMacro, crDataSyntax, crDataRecur, crDataAtom, crDataRecord:
     raiseEvalError("Unexpect set to convert to CirruNode: ", x)
   of crDataThunk:
     raiseEvalError("must calculate thunk before converting", x)

@@ -5,6 +5,7 @@
     |test-string.main $ {}
       :ns $ quote
         ns test-string.main $ :require
+          [] util.core :refer $ [] inside-nim:
       :defs $ {}
 
         |test-str $ quote
@@ -89,13 +90,33 @@
             assert= |1.23 $ format-number 1.23456789 2
             assert= |1.2 $ format-number 1.23456789 1
 
-            echo
-              pr-str $ {}
-                :a 1
-                :b |2
-                :c $ [] 3
-                :d $ {}
-                  ([] 1 2) 3
+            inside-nim:
+
+              assert= "|{:c (3), :a 1, :b |2, :d {(1 2) 3}}"
+                pr-str $ {}
+                  :a 1
+                  :b |2
+                  :c $ [] 3
+                  :d $ {}
+                    ([] 1 2) 3
+
+            let
+                Person $ defrecord 'Person :name :age
+                edn-demo "|%{} Person (age 23)\n  name |Chen"
+              assert=
+                pr-str $ %{} Person (:name |Chen) (:age 23)
+                , "|%{Person age 23, name |Chen }"
+              assert= edn-demo
+                trim $ write-cirru-edn $ %{} Person (:name |Chen) (:age 23)
+
+              assert=
+                parse-cirru-edn edn-demo
+                %{} Person (:name |Chen) (:age 23)
+
+              assert= 'a
+                parse-cirru-edn "|do 'a"
+              assert= "|[] 'a"
+                trim $ write-cirru-edn $ [] 'a
 
         |test-char $ quote
           fn ()
