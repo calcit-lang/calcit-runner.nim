@@ -624,6 +624,9 @@ export let toString = (x: CrDataValue, escaped: boolean): string => {
   if (x instanceof CrDataRecord) {
     return x.toString();
   }
+  if (x instanceof CrDataAtom) {
+    return x.toString();
+  }
 
   console.warn("Unknown structure to string, better use `console.log`", x);
   return `${x}`;
@@ -713,7 +716,7 @@ export class CrDataSet {
   toString() {
     let itemsCode = "";
     this.value.forEach((child, idx) => {
-      if (idx > 0) {
+      if (itemsCode !== "") {
         itemsCode = `${itemsCode} `;
       }
       itemsCode = `${itemsCode}${toString(child, true)}`;

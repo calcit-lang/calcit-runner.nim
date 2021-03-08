@@ -25,6 +25,7 @@ import { fieldsEqual } from "./record-procs";
 
 export * from "./calcit-data";
 export * from "./record-procs";
+export * from "./custom-formatter";
 
 let inNodeJs = typeof process !== "undefined" && process?.release?.name === "node";
 

@@ -8,6 +8,8 @@ let jsSyntaxProcs*: HashSet[string] = toHashSet([
   "to-js-data",
   "to-cirru-edn",
   "extract-cirru-edn",
+  "timeout-call",
+  "load-console-formatter!",
 ])
 
 let jsUnavailableProcs* = toHashSet([
