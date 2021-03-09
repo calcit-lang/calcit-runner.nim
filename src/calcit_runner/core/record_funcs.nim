@@ -11,9 +11,9 @@ import ../types
 import ../data
 import ../util/errors
 
-proc defineRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeNewRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len < 2:
-    raiseEvalError("defrecord expected >2 arguments", args)
+    raiseEvalError("new-record expected >2 arguments", args)
   let name = args[0].getString()
 
   var fields = newSeq[string](args.len - 1)

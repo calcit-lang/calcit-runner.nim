@@ -19,7 +19,7 @@
                   echo "\"item:" $ dissoc item |children
                   dissoc item |children
             echo $ stringify-json new-data
-            write-file "\"codes-new.json" (stringify-json new-data) 
+            write-file "\"codes-new.json" (stringify-json new-data)
         |main! $ quote
           defn main! () (println "\"Loaded program!") (; try-func) (; try-hygienic) (; try-var-args) (; try-edn) (; try-json) (; echo [,])
             ; echo $ fn (a) 1
@@ -41,7 +41,7 @@
                 {} (:name "\"A") (:weight 10)
                 , 1 2 $ []
             let
-                P $ defrecord 'P :name :age :home :tags
+                P $ new-record 'P :name :age :home :tags
               js/console.log "\"Record" P $ %{} P (:name "\"Re") (:age 10) (:home "\"Shanghai")
                 :tags $ #{} :lang :web
             js/console.log "\"Set" $ #{} 1 2 3 4
@@ -62,7 +62,7 @@
                 "\"mouse-button-down" $ when
                   &= "\"inc" $ get event "\"path"
                   reset! draw/*control-point $ let
-                      p (deref draw/*control-point) 
+                      p (deref draw/*control-point)
                     {}
                       :x $ &+ 4 (:x p)
                       :y $ &- (:y p) 2
