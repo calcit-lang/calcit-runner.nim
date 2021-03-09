@@ -27,7 +27,7 @@ const cDbQuote = "\""
 var firstCompilation = true # track if it's the first compilation
 
 # TODO mutable way of collect things
-type ImplicitImportItem = tuple[ns: string, justNs: bool]
+type ImplicitImportItem = tuple[ns: string, justNs: bool, nsInStr: bool]
 var implicitImports: Table[string, ImplicitImportItem]
 
 proc toJsImportName(ns: string): string =
@@ -154,13 +154,16 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       let nsPart = xs.symbolVal.split("/")[0]
       # TODO ditry code
       if nsPart != "js":
+        if xs.resolved.isNone():
+          raiseEvalError("Expected symbol with ns being resolved", xs)
+        let resolved = xs.resolved.get()
         if implicitImports.contains(nsPart):
           let prev = implicitImports[nsPart]
-          if prev.justNs.not or prev.ns != nsPart:
+          if prev.justNs.not or prev.ns != resolved.ns:
             echo implicitImports, " ", xs
             raiseEvalError("Conflicted implicit ns import", xs)
         else:
-          implicitImports[nsPart] = (ns: nsPart, justNs: true)
+          implicitImports[nsPart] = (ns: resolved.ns, justNs: true, nsInStr: resolved.nsInStr)
       return xs.symbolVal.escapeVar()
     elif builtInJsProc.contains(xs.symbolVal):
       return varPrefix & xs.symbolVal.escapeVar()
@@ -175,7 +178,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           echo implicitImports, " ", xs
           raiseEvalError("Conflicted implicit imports", xs)
       else:
-        implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false)
+        implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false, nsInStr: resolved.nsInStr)
       if xs.ns == coreNs:
         return varPrefix & xs.symbolVal.escapeVar()
       else:
@@ -196,7 +199,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           echo implicitImports, " ", xs
           raiseEvalError("Conflicted implicit imports, probably via macro", xs)
       else:
-        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false)
+        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false, nsInStr: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
       echo "[Warn] detected unresolved variable ", xs, " in ", ns
@@ -633,17 +636,12 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
         echo "[Warn] strange case for generating a definition ", $f.kind
 
     if implicitImports.len > 0 and file.ns.isSome():
-      let importsInfo = file.ns.get()
       # echo "imports: ", implicitImports
       for def, item in implicitImports:
-        # if not importsInfo.contains(def):
         # echo "implicit import ", defNs, "/", def, " in ", ns
         if item.justNs:
-          if importsInfo.contains(item.ns).not:
-            raiseEvalError("Unknown import: " & item.ns, CirruData(kind: crDataNil))
-          let importRule = importsInfo[item.ns]
-          let importTarget = if importRule.nsInStr: importRule.ns.escape() else: importRule.ns.toJsImportName()
-          importCode = importCode & fmt"{cLine}import * as {item.ns.escapeNs} from {importTarget};{cLine}"
+          let importTarget = if item.nsInStr: item.ns.escape() else: item.ns.toJsImportName()
+          importCode = importCode & fmt"{cLine}import * as {def.escapeNs} from {importTarget};{cLine}"
         else:
           let importTarget = item.ns.toJsImportName()
           importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {importTarget};{cLine}"
