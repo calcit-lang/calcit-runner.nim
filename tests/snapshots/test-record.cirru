@@ -83,6 +83,9 @@
                 nth p1 1
                 [] 'name |Chen
 
+              assert= 21
+                get (update p1 :age inc) :age
+
         |main! $ quote
           defn main! ()
             test-record

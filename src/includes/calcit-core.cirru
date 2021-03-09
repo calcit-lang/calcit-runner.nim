@@ -527,14 +527,18 @@
             cond
               (list? x)
                 if (has-index? x k)
-                  assoc x k $ f (get x k)
+                  assoc x k $ f (nth x k)
                   , x
               (map? x)
                 if (contains? x k)
-                  assoc x k $ f (get x k)
+                  assoc x k $ f (&get x k)
+                  , x
+              (record? x)
+                if (contains? x k)
+                  assoc x k $ f (&get x k)
                   , x
               true
-                raise $ &str "|Cannot update key on item: " x
+                raise $ &str-concat "|Cannot update key on item: " x
 
         |group-by $ quote
           defn group-by (f xs0)
