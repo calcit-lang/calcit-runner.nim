@@ -7,7 +7,7 @@ import strutils
 # calcit-runner is used for both evaling and compiling to js
 # configs collected in order to expose to whole program
 
-let commandLineVersion* = "0.2.90"
+let commandLineVersion* = "0.2.91"
 
 # dirty states controlling js backend
 var jsMode* = false
