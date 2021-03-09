@@ -110,6 +110,7 @@ proc escapeNs(name: string): string =
 proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
 proc genArgsCode(body: CrVirtualList[CirruData], ns: string, localDefs: HashSet[string]): string
 
+# tell compiler to handle namespace code generation
 let builtInJsProc = toHashSet([
   "aget", "aset",
   "extract-cirru-edn",
@@ -117,6 +118,7 @@ let builtInJsProc = toHashSet([
   "to-js-data",
   "to-calcit-data",
   "printable", "instance?",
+  "timeout-call", "load-console-formatter!",
 ])
 
 # code generated from calcit.core.cirru may not be faster enough,
