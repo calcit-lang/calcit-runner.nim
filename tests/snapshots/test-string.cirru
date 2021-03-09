@@ -101,7 +101,7 @@
                     ([] 1 2) 3
 
             let
-                Person $ defrecord 'Person :name :age
+                Person $ new-record 'Person :name :age
                 edn-demo "|%{} Person (age 23)\n  name |Chen"
               assert=
                 pr-str $ %{} Person (:name |Chen) (:age 23)

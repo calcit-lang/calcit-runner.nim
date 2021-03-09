@@ -1554,7 +1554,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["compare-string"] = CirruData(kind: crDataProc, procVal: nativeCompareString)
 
   # record funs
-  programData[coreNs].defs["defrecord"] = CirruData(kind: crDataProc, procVal: defineRecord)
+  programData[coreNs].defs["new-record"] = CirruData(kind: crDataProc, procVal: nativeNewRecord)
   programData[coreNs].defs["&%{}"] = CirruData(kind: crDataProc, procVal: nativeRecord)
   programData[coreNs].defs["make-record"] = CirruData(kind: crDataProc, procVal: makeRecord)
   programData[coreNs].defs["get-record-name"] = CirruData(kind: crDataProc, procVal: getRecordName)

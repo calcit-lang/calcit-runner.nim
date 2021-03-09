@@ -1024,6 +1024,11 @@
                     ~ defs
                     ~@ body
 
+        |defrecord $ quote
+          defmacro defrecord (name & xs)
+            quote-replace
+              new-record (quote ~name) ~@xs
+
         |conj $ quote
           def conj append
 

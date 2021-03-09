@@ -11,8 +11,8 @@
           fn ()
             log-title "|Testing record"
             let
-                Person $ defrecord 'Person :name :age :position
-                City $ defrecord 'City :name :province
+                Person $ new-record 'Person :name :age :position
+                City $ new-record 'City :name :province
                 p1 $ %{} Person
                   :name |Chen
                   :age 20
@@ -85,6 +85,12 @@
 
               assert= 21
                 get (update p1 :age inc) :age
+
+              assert= Cat
+                new-record 'Cat :name :color
+
+        |Cat $ quote
+          defrecord Cat :name :color
 
         |main! $ quote
           defn main! ()

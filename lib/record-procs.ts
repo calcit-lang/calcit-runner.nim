@@ -17,7 +17,7 @@ import {
   CrDataRecord,
 } from "./calcit-data";
 
-export let defrecord = (name: CrDataValue, ...fields: Array<CrDataValue>): CrDataValue => {
+export let new_record = (name: CrDataValue, ...fields: Array<CrDataValue>): CrDataValue => {
   let fieldNames = fields.map(getStringName).sort();
   return new CrDataRecord(getStringName(name), fieldNames);
 };
