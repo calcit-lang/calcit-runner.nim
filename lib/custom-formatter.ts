@@ -38,12 +38,12 @@ export let load_console_formatter_BANG_ = () => {
             return [
               "div",
               { style: "color: hsl(280, 80%, 60%, 0.4)" },
-              obj.toString(),
+              obj.toString(true),
               ["span", { style: "font-size: 80%; vertical-align: 0.7em; color: hsl(280, 80%, 60%, 0.8)" }, `${obj.len()}`],
             ];
           }
           if (obj instanceof CrDataMap) {
-            return ["div", { style: "color: hsl(280, 80%, 60%, 0.4)" }, obj.toString()];
+            return ["div", { style: "color: hsl(280, 80%, 60%, 0.4)" }, obj.toString(true)];
           }
           if (obj instanceof CrDataSet) {
             return ["div", { style: "color: hsl(280, 80%, 60%, 0.4)" }, obj.toString()];
@@ -84,27 +84,32 @@ export let load_console_formatter_BANG_ = () => {
         },
         body: (obj, config) => {
           if (obj instanceof CrDataList) {
-            return ["div", { style: "color: hsl(280, 80%, 60%)" }, "[]"].concat(
-              obj.toArray().map((x) => {
-                return ["div", { style: "margin-left: 8px; display: inline-block;" }, embedObject(x)];
+            return ["div", { style: "color: hsl(280, 80%, 60%)" }].concat(
+              obj.toArray().map((x, idx) => {
+                return [
+                  "div",
+                  { style: "margin-left: 8px; display: flex;" },
+                  ["span", { style: "font-family: monospace; margin-right: 8px; color: hsl(280,80%,90%); flex-shrink: 0;" }, idx],
+                  embedObject(x),
+                ];
               }) as any[]
             );
           }
           if (obj instanceof CrDataSet) {
-            let ret: any[] = ["div", { style: "color: hsl(280, 80%, 60%)" }, "#{}"];
+            let ret: any[] = ["div", { style: "color: hsl(280, 80%, 60%)" }];
             for (let x of obj.value.values()) {
               ret.push(["div", { style: "margin-left: 8px; display: inline-block;" }, embedObject(x)]);
             }
             return ret;
           }
           if (obj instanceof CrDataMap) {
-            let ret: any[] = ["div", { style: "color: hsl(280, 80%, 60%)" }, "{}"];
+            let ret: any[] = ["div", { style: "color: hsl(280, 80%, 60%)" }];
             obj.turnSingleMap();
             for (let [k, v] of toPairs(obj.chain.value)) {
               ret.push([
                 "div",
-                { style: "margin-left: 8px;" },
-                ["div", { style: "margin-left: 8px; display: inline-block;" }, embedObject(k)],
+                { style: "margin-left: 8px; display: flex;" },
+                ["div", { style: "margin-left: 8px; flex-shrink: 0; display: inline-block;" }, embedObject(k)],
                 ["div", { style: "margin-left: 8px; display: inline-block;" }, embedObject(v)],
               ]);
             }

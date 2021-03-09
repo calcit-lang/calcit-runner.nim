@@ -61,6 +61,38 @@ export class CrDataRecur {
   }
 }
 
+export let isNestedCrData = (x: CrDataValue): boolean => {
+  if (x instanceof CrDataList) {
+    return x.len() > 0;
+  }
+  if (x instanceof CrDataMap) {
+    return x.len() > 0;
+  }
+  if (x instanceof CrDataRecord) {
+    return x.fields.length > 0;
+  }
+  if (x instanceof CrDataSet) {
+    return false;
+  }
+  return false;
+};
+
+export let tipNestedCrData = (x: CrDataValue): string => {
+  if (x instanceof CrDataList) {
+    return "'[]...";
+  }
+  if (x instanceof CrDataMap) {
+    return "'{}...";
+  }
+  if (x instanceof CrDataRecord) {
+    return "'%{}...";
+  }
+  if (x instanceof CrDataSet) {
+    return "'#{}...";
+  }
+  return x.toString();
+};
+
 export class CrDataAtom {
   value: CrDataValue;
   path: string;
@@ -156,13 +188,17 @@ export class CrDataList {
       return new CrDataList(ternaryTree.slice(this.value, from, to));
     }
   }
-  toString() {
+  toString(shorter = false): string {
     let result = "";
     for (let item of this.items()) {
       if (result !== "") {
         result = `${result}, `;
       }
-      result = `${result}${toString(item, true)}`;
+      if (shorter && isNestedCrData(item)) {
+        result = `${result}${tipNestedCrData(item)}`;
+      } else {
+        result = `${result}${toString(item, true)}`;
+      }
     }
     return `(${result})`;
   }
@@ -311,13 +347,20 @@ export class CrDataMap {
     this.turnSingleMap();
     return new CrDataMap(dissocMap(this.chain.value, k));
   }
-  toString() {
+  toString(shorter = false) {
     let itemsCode = "";
     for (let [k, v] of this.pairs()) {
       if (itemsCode !== "") {
         itemsCode = `${itemsCode}, `;
       }
-      itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
+
+      if (shorter) {
+        let keyPart = isNestedCrData(k) ? tipNestedCrData(k) : toString(k, true);
+        let valuePart = isNestedCrData(v) ? tipNestedCrData(v) : toString(k, true);
+        itemsCode = `${itemsCode}${keyPart} ${valuePart}`;
+      } else {
+        itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
+      }
     }
     return `{${itemsCode}}`;
   }
