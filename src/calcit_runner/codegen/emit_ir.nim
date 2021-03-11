@@ -47,15 +47,18 @@ proc dumpCode(xs: CirruData): JsonNode =
     }
   of crDataSymbol:
     var resolvedData =
-      if xs.resolved.isSome():
-        let resolved = xs.resolved.get()
+      if xs.resolved.kind == resolvedDef:
+        let resolved = xs.resolved
         %* {
+          "kind": $xs.resolved.kind,
           "ns": resolved.ns,
           "def": resolved.def,
           "nsInStr": resolved.nsInStr
         }
       else:
-        newJNull()
+        %* {
+          "kind": $xs.resolved.kind,
+        }
     %* {
       "kind": "symbol",
       "val": xs.symbolVal,
