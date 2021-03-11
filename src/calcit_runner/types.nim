@@ -56,7 +56,21 @@ type
 
   FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
 
-  ResolvedPath* = tuple[ns: string, def: string, nsInStr: bool]
+  ResolvedPathKind* = enum
+    notResolved,
+    resolvedLocal,
+    resolvedSyntax,
+    resolvedDef,
+
+  ResolvedPath* = object
+    case kind*: ResolvedPathKind
+    of notResolved: discard
+    of resolvedLocal: discard
+    of resolvedSyntax: discard
+    of resolvedDef:
+      def*: string
+      ns*: string
+      nsInStr*: bool
 
   CirruData* = object
     case kind*: CirruDataKind
@@ -89,7 +103,7 @@ type
     of crDataSymbol:
       symbolVal*: string
       ns*: string
-      resolved*: Option[ResolvedPath]
+      resolved*: ResolvedPath
     of crDataRecur:
       recurArgs*: seq[CirruData]
     of crDataAtom:

@@ -57,9 +57,11 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
   # echo "interpret symbol: ", sym
   if sym.kind != crDataSymbol:
     raiseEvalError("Expects a symbol", sym)
+  elif sym.resolved.kind == resolvedSyntax:
+    raiseEvalError("not supposed to interpret a syntax symbol", sym)
 
-  if sym.resolved.isSome:
-    let path = sym.resolved.get
+  elif sym.resolved.kind == resolvedDef:
+    let path = sym.resolved
 
     var v = programData[path.ns].defs[path.def]
     if v.kind == crDataThunk:
@@ -67,6 +69,7 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
         v = interpret(v.thunkCode[], v.thunkScope, v.thunkNs)
       programData[path.ns].defs[path.def] = v
     return v
+  # else: kind=notResolved
 
   # TODO looped twice, could be faster
   if scope.contains(sym.symbolVal):
@@ -78,8 +81,8 @@ proc interpretSymbol(sym: CirruData, scope: CirruDataScope, ns: string): CirruDa
 
   let loadedSym = preprocess(sym, toHashset[string](@[]), ns)
   echo "[Warn] load unprocessed variable: ", sym
-  if loadedSym.resolved.isSome:
-    let path = loadedSym.resolved.get
+  if loadedSym.resolved.kind == resolvedDef:
+    let path = loadedSym.resolved
     return programData[path.ns].defs[path.def]
 
   raiseEvalError(fmt"Symbol not initialized or recognized: {sym.symbolVal}", sym)
@@ -227,45 +230,46 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         case importTarget.kind:
         of importNs:
           if importTarget.nsInStr: # js module, do not process inside current program
-            sym.resolved = some((importTarget.ns, defPart, true))
+            sym.resolved = ResolvedPath(kind: resolvedDef, def: defPart, ns: importTarget.ns, nsInStr: true)
           else:
             preprocessSymbolByPath(importTarget.ns, defPart)
-            sym.resolved = some((importTarget.ns, defPart, false))
+            sym.resolved = ResolvedPath(kind: resolvedDef, def: defPart, ns: importTarget.ns, nsInStr: false)
           return sym
         of importDef:
           raiseEvalError(fmt"Unknown ns ${sym.symbolVal}", sym)
       elif nsPart == "js":
-        sym.resolved = some(("js", defPart, false))
+        sym.resolved = ResolvedPath(kind: resolvedDef, def: defPart, ns: "js", nsInStr: false)
         return sym # js specific operators
       else:
         raiseEvalError("no such ns: " & nsPart, sym)
     elif code.symbolVal.len == 0:
       raiseEvalError("Empty token is not valid", code)
     elif code.symbolVal[0] == '.':
-      return code # only for code generation
+      var sym = code
+      sym.resolved = ResolvedPath(kind: resolvedSyntax)
+      return sym # only for code generation
     else:
+      var sym = code
 
       if localDefs.contains(code.symbolVal):
-        return code
+        sym.resolved = ResolvedPath(kind: resolvedLocal)
+        return sym
       elif code.symbolVal == "&" or code.symbolVal == "~" or code.symbolVal == "~@" or code.symbolVal == "eval":
-        return code
+        sym.resolved = ResolvedPath(kind: resolvedSyntax)
+        return sym
       else:
-        var sym = code
-
         let coreDefs = programData[coreNs].defs
         if coreDefs.contains(sym.symbolVal):
-          sym.ns = coreNs
-          sym.resolved = some((coreNs, sym.symbolVal, false))
+          sym.resolved = ResolvedPath(kind: resolvedDef, ns: coreNs, def: sym.symbolVal, nsInStr: false)
           return sym
         elif hasNsAndDef(coreNs, sym.symbolVal):
           preprocessSymbolByPath(coreNs, sym.symbolVal)
-          sym.ns = coreNs
-          sym.resolved = some((coreNs, sym.symbolVal, false))
+          sym.resolved = ResolvedPath(kind: resolvedDef, ns: coreNs, def: sym.symbolVal, nsInStr: false)
           return sym
 
         elif hasNsAndDef(sym.ns, sym.symbolVal):
           preprocessSymbolByPath(sym.ns, sym.symbolVal)
-          sym.resolved = some((sym.ns, sym.symbolVal, false))
+          sym.resolved = ResolvedPath(kind: resolvedDef, ns: sym.ns, def: sym.symbolVal, nsInStr: false)
           return sym
         elif sym.ns.startsWith("calcit."):
           raiseEvalError(fmt"Cannot find symbol in core lib: {sym}", sym)
@@ -276,10 +280,10 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
             case importTarget.kind:
             of importDef:
               if importTarget.nsInStr:
-                sym.resolved = some((importTarget.ns, importTarget.def, true))
+                sym.resolved = ResolvedPath(kind: resolvedDef, ns: importTarget.ns, def: importTarget.def, nsInStr: true)
               else:
                 preprocessSymbolByPath(importTarget.ns, importTarget.def)
-                sym.resolved = some((importTarget.ns, importTarget.def, false))
+                sym.resolved = ResolvedPath(kind: resolvedDef, ns: importTarget.ns, def: importTarget.def, nsInStr: false)
               return sym
             of importNs:
               raiseEvalError(fmt"Unknown def ${sym.symbolVal}", sym)
@@ -296,12 +300,12 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
     if code.listVal.len == 0:
       return code
     else:
-      let head = code.listVal[0]
+      var head = code.listVal[0]
       let originalValue = preprocess(head, localDefs, ns)
       var value = originalValue
 
-      if value.kind == crDataSymbol and value.resolved.isSome:
-        let path = value.resolved.get
+      if value.kind == crDataSymbol and value.resolved.kind == resolvedDef:
+        let path = value.resolved
 
         if path.ns == "js" or path.nsInStr:
           value = CirruData(kind: crDataProc, procVal: placeholderFunc) # a faked function
@@ -342,19 +346,21 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
       of crDataSyntax:
         if head.kind != crDataSymbol:
           raiseEvalError("Expected syntax head", code)
+        head.resolved = ResolvedPath(kind: resolvedDef, ns: coreNs, def: head.symbolVal, nsInStr: false)
+        let args = code[1..^1]
         case head.symbolVal
         of ";", "quote-replace":
           return code
         of "defn", "defmacro":
-          return processDefn(code, localDefs, preprocessHelper, ns)
+          return processDefn(head, args, localDefs, preprocessHelper, ns)
         of "&let":
-          return processNativeLet(code, localDefs, preprocessHelper, ns)
+          return processNativeLet(head, args, localDefs, preprocessHelper, ns)
         of "if", "assert", "do":
-          return processAll(code, localDefs, preprocessHelper, ns)
+          return processAll(head, args, localDefs, preprocessHelper, ns)
         of "quote", "eval":
-          return processQuote(code, localDefs, preprocessHelper, ns)
+          return processQuote(head, args, localDefs, preprocessHelper, ns)
         of "defatom":
-          return processDefAtom(code, localDefs, preprocessHelper, ns)
+          return processDefAtom(head, args, localDefs, preprocessHelper, ns)
         else:
           raiseEvalError(fmt"Unknown syntax: ${head}", code)
 

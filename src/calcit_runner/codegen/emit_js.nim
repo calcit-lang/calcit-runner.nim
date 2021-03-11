@@ -154,9 +154,9 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       let nsPart = xs.symbolVal.split("/")[0]
       # TODO ditry code
       if nsPart != "js":
-        if xs.resolved.isNone():
+        if xs.resolved.kind != resolvedDef:
           raiseEvalError("Expected symbol with ns being resolved", xs)
-        let resolved = xs.resolved.get()
+        let resolved = xs.resolved
         if implicitImports.contains(nsPart):
           let prev = implicitImports[nsPart]
           if prev.justNs.not or prev.ns != resolved.ns:
@@ -167,11 +167,11 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       return xs.symbolVal.escapeVar()
     elif builtInJsProc.contains(xs.symbolVal):
       return varPrefix & xs.symbolVal.escapeVar()
-    elif localDefs.contains(xs.symbolVal):
+    elif xs.resolved.kind == resolvedLocal or localDefs.contains(xs.symbolVal):
       return xs.symbolVal.escapeVar()
-    elif xs.resolved.isSome():
+    elif xs.resolved.kind == resolvedDef:
       # TODO ditry code
-      let resolved = xs.resolved.get()
+      let resolved = xs.resolved
       if implicitImports.contains(xs.symbolVal):
         let prev = implicitImports[xs.symbolVal]
         if prev.ns != resolved.ns:
@@ -179,12 +179,10 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Conflicted implicit imports", xs)
       else:
         implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false, nsInStr: resolved.nsInStr)
-      if xs.ns == coreNs:
+      if xs.resolved.ns == coreNs:
         return varPrefix & xs.symbolVal.escapeVar()
       else:
         return xs.symbolVal.escapeVar()
-    elif localdefs.contains(xs.symbolVal):
-      return xs.symbolVal.escapeVar()
     elif xs.ns == coreNs:
       # local variales inside calcit.core also uses this ns
       echo "[Warn] detected variable inside core not resolved"
