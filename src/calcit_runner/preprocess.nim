@@ -64,7 +64,6 @@ proc processNativeLet*(head: CirruData, args: seq[CirruData], localDefs: Hashset
     raiseEvalError("Expects pair len =2 in &let", pair)
 
   var defName = pair[0]
-  defName.resolved = ResolvedPath(kind: resolvedLocal)
   let detail = pair[1]
 
   let newPair = CirruData(kind: crDataList, listVal: initCrVirtualList(@[
@@ -74,8 +73,10 @@ proc processNativeLet*(head: CirruData, args: seq[CirruData], localDefs: Hashset
 
   if defName.kind != crDataSymbol:
     raiseEvalError("Expects a symbol in &let:", args)
-
-  if defName.symbolVal != "&":
+  if defName.symbolVal == "&":
+    defName.resolved = ResolvedPath(kind: resolvedSyntax)
+  else:
+    defName.resolved = ResolvedPath(kind: resolvedLocal)
     newDefs.incl(defName.symbolVal)
 
   ys = ys.append newPair
