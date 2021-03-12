@@ -48,9 +48,7 @@ proc hasNsPart(x: string): bool =
 
 proc escapeVar(name: string): string =
   if name.hasNsPart():
-    raise newException(ValueError, "Invalid variable name with `/`, use `escapeNsVar` instead")
-  if name.hasNsPart():
-    raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+    raise newException(ValueError, "Invalid variable name `" & name & "`, use `escapeNsVar` instead")
 
   if name == "if": return "_IF_"
   if name == "do": return "_DO_"
@@ -89,9 +87,9 @@ proc escapeNs(name: string): string =
   # use `$` to tell namespace from normal variables, thus able to use same token like clj
   "$" & name.escapeVar()
 
-proc escapeNsVar(name: string): string =
+proc escapeNsVar(name: string, ns: string): string =
   if not name.hasNsPart():
-    raise newException(ValueError, "Invalid variable name, lack of namespace part")
+    raise newException(ValueError, "Invalid variable name `" & name & "`, lack of namespace part")
   let pieces = name.split("/")
   if pieces.len != 2:
     raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
@@ -101,9 +99,9 @@ proc escapeNsVar(name: string): string =
     return defPart
   elif defPart == "@":
     # TODO special syntax for js, using module directly, need a better solution
-    return nsPart.escapeNs()
+    return ns.escapeNs()
   else:
-    return nsPart.escapeNs() & "." & defPart.escapeVar()
+    return ns.escapeNs() & "." & defPart.escapeVar()
 
 # handle recursion
 proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
@@ -152,24 +150,20 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     if xs.symbolVal.hasNsPart():
       let nsPart = xs.symbolVal.split("/")[0]
       if nsPart == "js":
-        return xs.symbolVal.escapeNsVar()
+        return xs.symbolVal.escapeNsVar("js")
       else:
         # TODO ditry code
         if xs.resolved.kind != resolvedDef:
           raiseEvalError("Expected symbol with ns being resolved", xs)
         let resolved = xs.resolved
-        if collectedImports.contains(nsPart):
-          let prev = collectedImports[nsPart]
-          if not prev.justNs:
-            echo "Previous import: ", prev
-            raiseEvalError("Conflicted ns import, existed js variable", xs)
-          if prev.ns != resolved.ns:
-            echo "Previous import: ", prev
-            echo "Current import: ", resolved
+        if collectedImports.contains(resolved.ns):
+          let prev = collectedImports[resolved.ns]
+          if (not prev.justNs) or prev.ns != resolved.ns:
+            echo "conflicted imports: ", prev, resolved
             raiseEvalError("Conflicted implicit ns import", xs)
         else:
-          collectedImports[nsPart] = (ns: resolved.ns, justNs: true, nsInStr: resolved.nsInStr)
-        return xs.symbolVal.escapeNsVar()
+          collectedImports[resolved.ns] = (ns: resolved.ns, justNs: true, nsInStr: resolved.nsInStr)
+        return xs.symbolVal.escapeNsVar(resolved.ns)
     elif builtInJsProc.contains(xs.symbolVal):
       return varPrefix & xs.symbolVal.escapeVar()
     elif xs.resolved.kind == resolvedLocal or localDefs.contains(xs.symbolVal):
@@ -362,7 +356,8 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         if body.len != 1: raiseEvalError("expected 1 argument", xs)
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
-        return fmt"(typeof {item.symbolVal.escapeVar} !== 'undefined')"
+        let target = item.toJsCode(ns, localDefs)
+        return "(typeof {" & target & "} !== 'undefined')"
       of "new":
         if xs.listVal.len < 2:
           raiseEvalError("`new` takes at least an object constructor", xs)
@@ -644,7 +639,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
         # echo "implicit import ", defNs, "/", def, " in ", ns
         if item.justNs:
           let importTarget = if item.nsInStr: item.ns.escape() else: item.ns.toJsImportName()
-          importCode = importCode & fmt"{cLine}import * as {def.escapeNs} from {importTarget};{cLine}"
+          importCode = importCode & fmt"{cLine}import * as {item.ns.escapeNs} from {importTarget};{cLine}"
         else:
           let importTarget = item.ns.toJsImportName()
           importCode = importCode & fmt"{cLine}import {cCurlyL}{def.escapeVar}{cCurlyR} from {importTarget};{cLine}"
