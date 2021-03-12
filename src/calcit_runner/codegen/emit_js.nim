@@ -27,8 +27,8 @@ const cDbQuote = "\""
 var firstCompilation = true # track if it's the first compilation
 
 # TODO mutable way of collect things
-type ImplicitImportItem = tuple[ns: string, justNs: bool, nsInStr: bool]
-var implicitImports: Table[string, ImplicitImportItem]
+type CollectedImportItem = tuple[ns: string, justNs: bool, nsInStr: bool]
+var collectedImports: Table[string, CollectedImportItem]
 
 proc toJsImportName(ns: string): string =
   if mjsMode:
@@ -46,7 +46,9 @@ proc hasNsPart(x: string): bool =
   let trySlashPos = x.find('/')
   return trySlashPos >= 1 and trySlashPos < x.len - 1
 
-proc escapeVarName(name: string): string =
+proc escapeVar(name: string): string =
+  if name.hasNsPart():
+    raise newException(ValueError, "Invalid variable name with `/`, use `escapeNsVar` instead")
   if name.hasNsPart():
     raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
 
@@ -83,28 +85,25 @@ proc escapeVarName(name: string): string =
   .replace("#", "_SHA_")
   .replace("\\", "_BSL_")
 
-# handle mutual recursion
-proc escapeNs(name: string): string
-
-proc escapeVar(name: string): string =
-  if name.hasNsPart():
-    let pieces = name.split("/")
-    if pieces.len != 2:
-      raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
-    let nsPart = pieces[0]
-    let defPart = pieces[1]
-    if nsPart == "js":
-      return defPart
-    elif defPart == "@":
-      # TODO special syntax for js, using module directly, need a better solution
-      return nsPart.escapeNs()
-    else:
-      return nsPart.escapeNs() & "." & defPart.escapeVar()
-  return escapeVarName(name)
-
 proc escapeNs(name: string): string =
   # use `$` to tell namespace from normal variables, thus able to use same token like clj
   "$" & name.escapeVar()
+
+proc escapeNsVar(name: string): string =
+  if not name.hasNsPart():
+    raise newException(ValueError, "Invalid variable name, lack of namespace part")
+  let pieces = name.split("/")
+  if pieces.len != 2:
+    raiseEvalError("Expected format of ns/def", CirruData(kind: crDataString, stringVal: name))
+  let nsPart = pieces[0]
+  let defPart = pieces[1]
+  if nsPart == "js":
+    return defPart
+  elif defPart == "@":
+    # TODO special syntax for js, using module directly, need a better solution
+    return nsPart.escapeNs()
+  else:
+    return nsPart.escapeNs() & "." & defPart.escapeVar()
 
 # handle recursion
 proc genJsFunc(name: string, args: CrVirtualList[CirruData], body: seq[CirruData], ns: string, exported: bool, outerDefs: HashSet[string]): string
@@ -152,19 +151,25 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
   of crDataSymbol:
     if xs.symbolVal.hasNsPart():
       let nsPart = xs.symbolVal.split("/")[0]
-      # TODO ditry code
-      if nsPart != "js":
+      if nsPart == "js":
+        return xs.symbolVal.escapeNsVar()
+      else:
+        # TODO ditry code
         if xs.resolved.kind != resolvedDef:
           raiseEvalError("Expected symbol with ns being resolved", xs)
         let resolved = xs.resolved
-        if implicitImports.contains(nsPart):
-          let prev = implicitImports[nsPart]
-          if prev.justNs.not or prev.ns != resolved.ns:
-            echo implicitImports, " ", xs
+        if collectedImports.contains(nsPart):
+          let prev = collectedImports[nsPart]
+          if not prev.justNs:
+            echo "Previous import: ", prev
+            raiseEvalError("Conflicted ns import, existed js variable", xs)
+          if prev.ns != resolved.ns:
+            echo "Previous import: ", prev
+            echo "Current import: ", resolved
             raiseEvalError("Conflicted implicit ns import", xs)
         else:
-          implicitImports[nsPart] = (ns: resolved.ns, justNs: true, nsInStr: resolved.nsInStr)
-      return xs.symbolVal.escapeVar()
+          collectedImports[nsPart] = (ns: resolved.ns, justNs: true, nsInStr: resolved.nsInStr)
+        return xs.symbolVal.escapeNsVar()
     elif builtInJsProc.contains(xs.symbolVal):
       return varPrefix & xs.symbolVal.escapeVar()
     elif xs.resolved.kind == resolvedLocal or localDefs.contains(xs.symbolVal):
@@ -172,13 +177,13 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     elif xs.resolved.kind == resolvedDef:
       # TODO ditry code
       let resolved = xs.resolved
-      if implicitImports.contains(xs.symbolVal):
-        let prev = implicitImports[xs.symbolVal]
+      if collectedImports.contains(xs.symbolVal):
+        let prev = collectedImports[xs.symbolVal]
         if prev.ns != resolved.ns:
-          echo implicitImports, " ", xs
+          echo collectedImports, " ", xs
           raiseEvalError("Conflicted implicit imports", xs)
       else:
-        implicitImports[xs.symbolVal] = (ns: resolved.ns, justNs: false, nsInStr: resolved.nsInStr)
+        collectedImports[xs.symbolVal] = (ns: resolved.ns, justNs: false, nsInStr: resolved.nsInStr)
       if xs.resolved.ns == coreNs:
         return varPrefix & xs.symbolVal.escapeVar()
       else:
@@ -191,13 +196,13 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       raiseEvalError("Unpexpected ns at symbol", xs)
     elif xs.ns != ns: # probably via macro
       # TODO ditry code collecting imports
-      if implicitImports.contains(xs.symbolVal):
-        let prev = implicitImports[xs.symbolVal]
+      if collectedImports.contains(xs.symbolVal):
+        let prev = collectedImports[xs.symbolVal]
         if prev.ns != xs.ns:
-          echo implicitImports, " ", xs
+          echo collectedImports, " ", xs
           raiseEvalError("Conflicted implicit imports, probably via macro", xs)
       else:
-        implicitImports[xs.symbolVal] = (ns: xs.ns, justNs: false, nsInStr: false)
+        collectedImports[xs.symbolVal] = (ns: xs.ns, justNs: false, nsInStr: false)
       return xs.symbolVal.escapeVar()
     elif xs.ns == ns:
       echo "[Warn] detected unresolved variable ", xs, " in ", ns
@@ -256,7 +261,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           if defName.kind != crDataSymbol:
             raiseEvalError("Expected symbol behind let", pair)
           # TODO `let` inside expressions makes syntax error
-          let left = escapeVarName(defName.symbolVal)
+          let left = escapeVar(defName.symbolVal)
           let right = exprCode.toJsCode(ns, scopedDefs)
 
           defsCode = defsCode & "let " & left & " = " & right & ";\n"
@@ -568,7 +573,7 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
   for ns, file in programData:
 
     # side-effects, reset tracking state
-    implicitImports = initTable[string, ImplicitImportItem]()
+    collectedImports = initTable[string, CollectedImportItem]()
 
     if not firstCompilation:
       let appPkgName = entryNs.split('.')[0]
@@ -633,9 +638,9 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
       else:
         echo "[Warn] strange case for generating a definition ", $f.kind
 
-    if implicitImports.len > 0 and file.ns.isSome():
-      # echo "imports: ", implicitImports
-      for def, item in implicitImports:
+    if collectedImports.len > 0 and file.ns.isSome():
+      # echo "imports: ", collectedImports
+      for def, item in collectedImports:
         # echo "implicit import ", defNs, "/", def, " in ", ns
         if item.justNs:
           let importTarget = if item.nsInStr: item.ns.escape() else: item.ns.toJsImportName()
