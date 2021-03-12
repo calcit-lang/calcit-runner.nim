@@ -299,80 +299,80 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
   of crDataList:
     if code.listVal.len == 0:
       return code
-    else:
-      var head = code.listVal[0]
-      let originalValue = preprocess(head, localDefs, ns)
-      var value = originalValue
 
-      if value.kind == crDataSymbol and value.resolved.kind == resolvedDef:
-        let path = value.resolved
+    var head = code.listVal[0]
+    let originalValue = preprocess(head, localDefs, ns)
+    var value = originalValue
 
-        if path.ns == "js" or path.nsInStr:
-          value = CirruData(kind: crDataProc, procVal: placeholderFunc) # a faked function
-        else:
-          value = programData[path.ns].defs[path.def]
+    if value.kind == crDataSymbol and value.resolved.kind == resolvedDef:
+      let path = value.resolved
 
-          # force extracting thunk of functions
-          if value.kind == crDataThunk:
-            while value.kind == crDataThunk:
-              value = interpret(value.thunkCode[], value.thunkScope, value.thunkNs)
-            programData[path.ns].defs[path.def] = value
-
-      # echo "run into: ", code, " ", value
-
-      case value.kind
-      of crDataProc, crDataFn:
-        var xs = initCrVirtualList[CirruData](@[originalValue])
-        for child in code.listVal.rest:
-          xs = xs.append preprocess(child, localDefs, ns)
-        return CirruData(kind: crDataList, listVal: xs)
-      of crDataKeyword:
-        if code.listVal.len != 2: raiseEvalError("Expected keyword call of length 2", code)
-        var xs = initCrVirtualList[CirruData](@[
-          CirruData(kind: crDataSymbol, symbolVal: "get", ns: ns),
-          code.listVal[1],
-          code.listVal[0],
-        ])
-        return preprocess(CirruData(kind: crDataList, listVal: xs), localDefs, ns)
-      of crDataMacro:
-        let xs = code[1..^1]
-        pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initCrVirtualList(value.macroCode)), args: xs))
-
-        let quoted = evaluteMacroData(value, xs, interpret, ns)
-        popDefStack()
-        # echo "\nMacro ->: ", code
-        # echo   "expanded: ", quoted
-        return preprocess(quoted, localDefs, ns)
-      of crDataSyntax:
-        if head.kind != crDataSymbol:
-          raiseEvalError("Expected syntax head", code)
-        head.resolved = ResolvedPath(kind: resolvedDef, ns: coreNs, def: head.symbolVal, nsInStr: false)
-        let args = code[1..^1]
-        case head.symbolVal
-        of ";", "quote-replace":
-          return code
-        of "defn", "defmacro":
-          return processDefn(head, args, localDefs, preprocessHelper, ns)
-        of "&let":
-          return processNativeLet(head, args, localDefs, preprocessHelper, ns)
-        of "if", "assert", "do":
-          return processAll(head, args, localDefs, preprocessHelper, ns)
-        of "quote", "eval":
-          return processQuote(head, args, localDefs, preprocessHelper, ns)
-        of "defatom":
-          return processDefAtom(head, args, localDefs, preprocessHelper, ns)
-        else:
-          raiseEvalError(fmt"Unknown syntax: ${head}", code)
-
-        return code
-      of crDataThunk:
-        raiseEvalError("thunk should have been extracted", code)
+      if path.ns == "js" or path.nsInStr:
+        value = CirruData(kind: crDataProc, procVal: placeholderFunc) # a faked function
       else:
-        # could be dynamically passed functions
-        var xs = initCrVirtualList[CirruData](@[originalValue])
-        for child in code.listVal.rest:
-          xs = xs.append preprocess(child, localDefs, ns)
-        return CirruData(kind: crDataList, listVal: xs)
+        value = programData[path.ns].defs[path.def]
+
+        # force extracting thunk of functions
+        if value.kind == crDataThunk:
+          while value.kind == crDataThunk:
+            value = interpret(value.thunkCode[], value.thunkScope, value.thunkNs)
+          programData[path.ns].defs[path.def] = value
+
+    # echo "run into: ", code, " ", value
+
+    case value.kind
+    of crDataProc, crDataFn:
+      var xs = initCrVirtualList[CirruData](@[originalValue])
+      for child in code.listVal.rest:
+        xs = xs.append preprocess(child, localDefs, ns)
+      return CirruData(kind: crDataList, listVal: xs)
+    of crDataKeyword:
+      if code.listVal.len != 2: raiseEvalError("Expected keyword call of length 2", code)
+      var xs = initCrVirtualList[CirruData](@[
+        CirruData(kind: crDataSymbol, symbolVal: "get", ns: ns),
+        code.listVal[1],
+        code.listVal[0],
+      ])
+      return preprocess(CirruData(kind: crDataList, listVal: xs), localDefs, ns)
+    of crDataMacro:
+      let xs = code[1..^1]
+      pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initCrVirtualList(value.macroCode)), args: xs))
+
+      let quoted = evaluteMacroData(value, xs, interpret, ns)
+      popDefStack()
+      # echo "\nMacro ->: ", code
+      # echo   "expanded: ", quoted
+      return preprocess(quoted, localDefs, ns)
+    of crDataSyntax:
+      if head.kind != crDataSymbol:
+        raiseEvalError("Expected syntax head", code)
+      head.resolved = ResolvedPath(kind: resolvedDef, ns: coreNs, def: head.symbolVal, nsInStr: false)
+      let args = code[1..^1]
+      case head.symbolVal
+      of ";", "quote-replace":
+        return code
+      of "defn", "defmacro":
+        return processDefn(head, args, localDefs, preprocessHelper, ns)
+      of "&let":
+        return processNativeLet(head, args, localDefs, preprocessHelper, ns)
+      of "if", "assert", "do":
+        return processAll(head, args, localDefs, preprocessHelper, ns)
+      of "quote", "eval":
+        return processQuote(head, args, localDefs, preprocessHelper, ns)
+      of "defatom":
+        return processDefAtom(head, args, localDefs, preprocessHelper, ns)
+      else:
+        raiseEvalError(fmt"Unknown syntax: ${head}", code)
+
+      return code
+    of crDataThunk:
+      raiseEvalError("thunk should have been extracted", code)
+    else:
+      # could be dynamically passed functions
+      var xs = initCrVirtualList[CirruData](@[originalValue])
+      for child in code.listVal.rest:
+        xs = xs.append preprocess(child, localDefs, ns)
+      return CirruData(kind: crDataList, listVal: xs)
   of crDataNumber, crDataString, crDataNil, crDataBool, crDataKeyword, crDataTernary:
     return code
   else:
