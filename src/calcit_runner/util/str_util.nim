@@ -106,3 +106,7 @@ proc matchesJsVar*(xs: string): bool =
         continue
     return false
   return true
+
+proc hasNsPart*(x: string): bool =
+  let trySlashPos = x.find('/')
+  return trySlashPos >= 1 and trySlashPos < x.len - 1

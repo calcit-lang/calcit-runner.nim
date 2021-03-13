@@ -42,10 +42,6 @@ proc toJsFileName(ns: string): string =
   else:
     ns & ".js"
 
-proc hasNsPart(x: string): bool =
-  let trySlashPos = x.find('/')
-  return trySlashPos >= 1 and trySlashPos < x.len - 1
-
 proc escapeVar(name: string): string =
   if name.hasNsPart():
     raise newException(ValueError, "Invalid variable name `" & name & "`, use `escapeNsVar` instead")

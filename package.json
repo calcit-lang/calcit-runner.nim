@@ -3,7 +3,7 @@
   "version": "0.2.97",
   "main": "./lib/calcit.procs.js",
   "devDependencies": {
-    "@types/node": "^14.14.33",
+    "@types/node": "^14.14.34",
     "typescript": "^4.2.3",
     "vite": "^2.0.5",
     "webpack": "^5.25.0",
@@ -16,6 +16,6 @@
   "dependencies": {
     "@calcit/ternary-tree": "0.0.12",
     "@cirru/parser.ts": "^0.0.1",
-    "@cirru/writer.ts": "^0.1.2"
+    "@cirru/writer.ts": "^0.1.3"
   }
 }
