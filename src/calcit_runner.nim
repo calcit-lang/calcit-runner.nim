@@ -213,6 +213,9 @@ proc reloadProgram(snapshotFile: string): void =
   programCode[coreNs] = previousCoreSource
   var pieces = codeConfigs.reloadFn.split('/')
 
+  # also notice that programData is not being cleared during reload
+  # which leads to dirty caches inside progam. might cause future bugs
+
   if jsMode or irMode:
     emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
   else:

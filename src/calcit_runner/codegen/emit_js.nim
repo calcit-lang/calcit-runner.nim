@@ -15,6 +15,7 @@ import ../types
 import ../compiler_configs
 import ../util/errors
 import ../util/str_util
+import ../util/set_util
 import ../codegen/special_calls
 import ../codegen/gen_code
 import ../data/virtual_list
@@ -25,6 +26,9 @@ const cCurlyR = "}"
 const cDbQuote = "\""
 
 var firstCompilation = true # track if it's the first compilation
+
+# caches program data for detecting incremental changes of libs
+var previousProgramCaches: Table[string, HashSet[string]]
 
 # TODO mutable way of collect things
 type CollectedImportItem = tuple[ns: string, justNs: bool, nsInStr: bool]
@@ -565,12 +569,16 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
 
     # side-effects, reset tracking state
     collectedImports = initTable[string, CollectedImportItem]()
+    let defsInCurrent = getTableKeys[CirruData](file.defs)
 
     if not firstCompilation:
       let appPkgName = entryNs.split('.')[0]
       let pkgName = ns.split('.')[0]
       if appPkgName != pkgName:
-        continue # since libraries do not have to be re-compiled
+        if previousProgramCaches.contains(ns) and (previousProgramCaches[ns] == defsInCurrent):
+          continue # since libraries do not have to be re-compiled
+    # remember defs of each ns for comparing
+    previousProgramCaches[ns] = defsInCurrent
 
     # reset index each file
     resetJsGenSymIndex()
