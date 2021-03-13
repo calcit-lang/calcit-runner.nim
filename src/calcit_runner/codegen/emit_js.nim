@@ -169,8 +169,11 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
     elif xs.resolved.kind == resolvedLocal or localDefs.contains(xs.symbolVal):
       return xs.symbolVal.escapeVar()
     elif xs.resolved.kind == resolvedDef:
-      # TODO ditry code
+      if xs.resolved.ns == coreNs:
+        # functions under core uses built $calcit module entry
+        return varPrefix & xs.symbolVal.escapeVar()
       let resolved = xs.resolved
+      # TODO ditry code
       if collectedImports.contains(xs.symbolVal):
         let prev = collectedImports[xs.symbolVal]
         if prev.ns != resolved.ns:
@@ -178,10 +181,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("Conflicted implicit imports", xs)
       else:
         collectedImports[xs.symbolVal] = (ns: resolved.ns, justNs: false, nsInStr: resolved.nsInStr)
-      if xs.resolved.ns == coreNs:
-        return varPrefix & xs.symbolVal.escapeVar()
-      else:
-        return xs.symbolVal.escapeVar()
+      return xs.symbolVal.escapeVar()
     elif xs.ns == coreNs:
       # local variales inside calcit.core also uses this ns
       echo "[Warn] detected variable inside core not resolved"
