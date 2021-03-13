@@ -357,7 +357,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         let item = body[0]
         if item.kind != crDataSymbol: raiseEvalError("expected a symbol", xs)
         let target = item.toJsCode(ns, localDefs)
-        return "(typeof {" & target & "} !== 'undefined')"
+        return "(typeof " & target & " !== 'undefined')"
       of "new":
         if xs.listVal.len < 2:
           raiseEvalError("`new` takes at least an object constructor", xs)
