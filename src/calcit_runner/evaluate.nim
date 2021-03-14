@@ -18,6 +18,7 @@ import ./compiler_configs
 
 import ./util/errors
 import ./util/stack
+import ./util/str_util
 import ./eval/arguments
 import ./eval/expression
 import ./codegen/special_calls
@@ -217,7 +218,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
   # echo "\nPreprocess: ", code
   case code.kind
   of crDataSymbol:
-    if code.symbolVal.contains("/") and code.symbolVal[0] != '/' and code.symbolVal[^1] != '/':
+    if code.symbolVal.hasNsPart():
       var sym = code
       let pieces = sym.symbolVal.split('/')
       if pieces.len != 2:

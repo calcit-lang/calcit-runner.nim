@@ -1045,6 +1045,12 @@ export let to_js_data = (x: CrDataValue, addColon: boolean = false): any => {
     }
     return x.value;
   }
+  if (x instanceof CrDataSymbol) {
+    if (addColon) {
+      return `:${x.value}`;
+    }
+    return Symbol(x.value);
+  }
   if (x instanceof CrDataList) {
     var result: any[] = [];
     for (let item of x.items()) {

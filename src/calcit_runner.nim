@@ -109,10 +109,12 @@ proc emitCode(initFn, reloadFn: string): void =
   try:
     preprocessSymbolByPath(initPair[0], initPair[1])
     preprocessSymbolByPath(reloadPair[0], reloadPair[1])
+
+    if irMode:
+      emitIR(programData, initFn, reloadFn)
+
     if jsMode:
       emitJs(programData, initPair[0])
-    elif irMode:
-      emitIR(programData, initFn, reloadFn)
     else:
       raise newException(ValueError, "Unknown mode")
   except CirruEvalError as e:
@@ -207,9 +209,12 @@ proc reloadProgram(snapshotFile: string): void =
     programCode[fileNs] = file
   echo "clearing data under package: ", codeConfigs.pkg
   clearProgramDefs(programData, codeConfigs.pkg)
-  genSymIndex = 0 # make it a litter stabler
+  genSymIndex = 0 # make it a litter more stable
   programCode[coreNs] = previousCoreSource
   var pieces = codeConfigs.reloadFn.split('/')
+
+  # also notice that programData is not being cleared during reload
+  # which leads to dirty caches inside progam. might cause future bugs
 
   if jsMode or irMode:
     emitCode(codeConfigs.initFn, codeConfigs.reloadFn)

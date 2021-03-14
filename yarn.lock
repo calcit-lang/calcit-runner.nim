@@ -12,10 +12,10 @@
   resolved "https://registry.yarnpkg.com/@cirru/parser.ts/-/parser.ts-0.0.1.tgz#0870b051bd9f56626759ec22d7a0d5c51b19fe9c"
   integrity sha512-FlUWZ2VqIUK/5cG926CVw9fQ7IGQzRDz8NL2Zc1lK2NyvOltAyZEDxxj/ztWjGOOnetVtM5mDx8rsbsr/SLYhg==
 
-"@cirru/writer.ts@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@cirru/writer.ts/-/writer.ts-0.1.2.tgz#1fa667c2fbdcf083901654b771ed40879d2998e1"
-  integrity sha512-TU1uNk6ei+qsaEY7w9kHyGrAoAYkfDjZu5XyHUjb4i4UvAC+c5EHeA6rVPQL7IhIeFJeFgrnBNb7LizduzWpgA==
+"@cirru/writer.ts@^0.1.3":
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/@cirru/writer.ts/-/writer.ts-0.1.3.tgz#5f54bdecaa20ba3dab16cbe6da711854138a9c0a"
+  integrity sha512-vJnhmhm7we5UfQIwmZfQpF3bAFbVybzT6LbmkbQHxgijaQg3gPfNVsnSIa3g3KpmWVtvkzEx+nUy5aMwsJiV1A==
 
 "@discoveryjs/json-ext@^0.5.0":
   version "0.5.2"
@@ -48,10 +48,10 @@
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.7.tgz#98a993516c859eb0d5c4c8f098317a9ea68db9ad"
   integrity sha512-cxWFQVseBm6O9Gbw1IWb8r6OS4OhSt3hPZLkFApLjM8TEXROBuQGLAH2i2gZpcXdLBIrpXuTDhH7Vbm1iXmNGA==
 
-"@types/node@*", "@types/node@^14.14.33":
-  version "14.14.33"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.33.tgz#9e4f8c64345522e4e8ce77b334a8aaa64e2b6c78"
-  integrity sha512-oJqcTrgPUF29oUP8AsUqbXGJNuPutsetaa9kTQAQce5Lx5dTYWV02ScBiT/k1BX/Z7pKeqedmvp39Wu4zR7N7g==
+"@types/node@*", "@types/node@^14.14.34":
+  version "14.14.34"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.34.tgz#07935194fc049069a1c56c0c274265abeddf88da"
+  integrity sha512-dBPaxocOK6UVyvhbnpFIj2W+S+1cBTkHQbFQfeeJhoKFbzYcVUGHvddeWPSucKATb3F0+pgDq0i6ghEaZjsugA==
 
 "@webassemblyjs/ast@1.11.0":
   version "1.11.0"
@@ -663,9 +663,9 @@ resolve@^1.19.0, resolve@^1.9.0:
     path-parse "^1.0.6"
 
 rollup@^2.38.5:
-  version "2.41.1"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.41.1.tgz#c7c7ada42b13be505facd516f13fb697c24c1116"
-  integrity sha512-nepLFAW5W71/MWpS2Yr7r31eS7HRfYg2RXnxb6ehqN9zY42yACxKtEfb4xq8SmNfUohAzGMcyl6jkwdLOAiUbg==
+  version "2.41.2"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.41.2.tgz#b7db5cb7c21c2d524e8b26ef39c7e9808a290c7e"
+  integrity sha512-6u8fJJXJx6fmvKrAC9DHYZgONvSkz8S9b/VFBjoQ6dkKdHyPpPbpqiNl2Bao9XBzDHpq672X6sGZ9G1ZBqAHMg==
   optionalDependencies:
     fsevents "~2.3.1"
 
