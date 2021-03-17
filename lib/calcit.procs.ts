@@ -1517,6 +1517,24 @@ export let write_cirru = (data: CrDataList, useInline: boolean): string => {
 };
 
 export let write_cirru_edn = (data: CrDataValue, useInline: boolean): string => {
+  if (data == null) {
+    return "\ndo nil" + "\n";
+  }
+  if (typeof data === "string") {
+    return "\ndo " + to_cirru_edn(data) + "\n";
+  }
+  if (typeof data == "boolean") {
+    return "\ndo " + to_cirru_edn(data) + "\n";
+  }
+  if (typeof data == "string") {
+    return "\ndo " + to_cirru_edn(data) + "\n";
+  }
+  if (data instanceof CrDataSymbol) {
+    return "\ndo " + to_cirru_edn(data) + "\n";
+  }
+  if (data instanceof CrDataKeyword) {
+    return "\ndo " + to_cirru_edn(data) + "\n";
+  }
   return writeCirruCode([to_cirru_edn(data)], { useInline: useInline });
 };
 
