@@ -118,6 +118,12 @@
               assert= "|[] 'a"
                 trim $ write-cirru-edn $ [] 'a
 
+              assert= "|do nil"
+                trim $ write-cirru-edn nil
+
+              assert= "|do 's"
+                trim $ write-cirru-edn 's
+
         |test-char $ quote
           fn ()
             log-title "|Test char"
