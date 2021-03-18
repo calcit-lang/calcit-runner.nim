@@ -333,7 +333,7 @@ proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
     raiseEvalError("Expected a macro in the expression", code)
 
   let xs = code[1..^1]
-  let quoted = evaluteMacroData(value, xs, interpret, ns)
+  let quoted = evaluateMacroData(value, xs, interpret, ns)
 
   return quoted
 
@@ -350,7 +350,7 @@ proc nativeMacroexpandAll(args: seq[CirruData], interpret: FnInterpret, scope: C
     raiseEvalError("Expected a macro in the expression", code)
 
   let xs = code[1..^1]
-  let quoted = evaluteMacroData(value, xs, interpret, ns)
+  let quoted = evaluateMacroData(value, xs, interpret, ns)
 
   return preprocess(quoted, HashSet[string](), ns)
 
@@ -1004,7 +1004,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       of crDataProc:
         acc = f.procVal(@[acc, item], interpret, scope, ns)
       of crDataFn:
-        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+        acc = evaluateFnData(f, @[acc, item], interpret, ns)
       else:
         raiseEvalError("Unexpected f to call in foldl", args)
     return acc
@@ -1015,7 +1015,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       of crDataProc:
         acc = f.procVal(@[acc, item], interpret, scope, ns)
       of crDataFn:
-        acc = evaluteFnData(f, @[acc, item], interpret, ns)
+        acc = evaluateFnData(f, @[acc, item], interpret, ns)
       else:
         raiseEvalError("Unexpected f to call in foldl", args)
     return acc
@@ -1151,7 +1151,7 @@ proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     of crDataProc:
       discard listener.procVal(@[v, oldValue], interpret, scope, ns)
     of crDataFn:
-      discard evaluteFnData(listener, @[v, oldValue], interpret, ns)
+      discard evaluateFnData(listener, @[v, oldValue], interpret, ns)
     else:
       raiseEvalError("Unexpected f to call as a listener", args)
 
@@ -1295,7 +1295,7 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   if args[1].kind != crDataList: raiseEvalError("sort expects a list", args)
   var xs = args[1].listVal.toSeq()
   xs.sort(proc(a, b: CirruData): int =
-    let ret = evaluteFnData(args[0], @[a, b], interpret, ns)
+    let ret = evaluateFnData(args[0], @[a, b], interpret, ns)
     if ret.kind != crDataNumber: raiseEvalError("expects a number returned as comparator", ret)
     echo "result:", a, " ", b, " ", ret
     return ret.numberVal.int

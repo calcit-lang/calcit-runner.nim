@@ -163,6 +163,24 @@
               assert= (f1 :a :b) ([] :a :b nil)
               assert= (f1 :a :b :c) ([] :a :b :c)
 
+        |test-try $ quote
+          fn ()
+            log-title "|Testing try"
+            assert= :true
+              try
+                do (echo "|inside try") :true
+                fn (x)
+
+            assert= :false
+              try
+                do (echo "|inside false try") (raise "|error intented") :true
+                fn (x)
+                  do
+                    echo "|Caught error"
+                    , :false
+
+            echo "|Finished testing try"
+
         |reload! $ quote
           defn reload! () nil
 
@@ -193,6 +211,8 @@
             test-macro/main!
 
             test-arguments
+
+            test-try
 
             inside-nim:
               test-gynienic/main!

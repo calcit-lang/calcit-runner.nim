@@ -44,7 +44,7 @@ proc finishTask*(taskId: int, args: seq[CirruData]): void =
   if f.kind != crDataFn and f.kind != crDataProc:
     raiseEvalError("expects a function callback for task", f)
 
-  discard evaluteFnData(f, args, interpret, task.ns)
+  discard evaluateFnData(f, args, interpret, task.ns)
   eventCalls.del(taskId)
 
 proc timeoutCallTask*(info: TimeoutTaskOptions) {.thread.} =

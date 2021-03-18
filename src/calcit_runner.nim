@@ -53,7 +53,7 @@ proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): 
   pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
 
   let args = if dropArg: @[] else: @[data]
-  let ret = evaluteFnData(entry, args, interpret, ns)
+  let ret = evaluateFnData(entry, args, interpret, ns)
   popDefStack()
   return ret
 
