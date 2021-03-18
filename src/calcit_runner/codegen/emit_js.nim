@@ -346,6 +346,13 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
           raiseEvalError("expected a single argument", body.toSeq())
         let message: string = body[0].toJsCode(ns, localDefs)
         return makeFnWrapper("throw new Error(" & message & ")")
+      of "try":
+        if body.len != 2:
+          raiseEvalError("expected 2 argument", body.toSeq())
+        let code = body[0].toJsCode(ns, localDefs)
+        let errVar = jsGenSym("errMsg")
+        let handler = body[1].toJsCode(ns, localDefs)
+        return makeFnWrapper("try {\nreturn " & code & "\n} catch (" & errVar & ") {\nreturn (" & handler & ")(" & errVar & ".toString())\n}")
       of "echo", "println":
         # not core syntax, but treat as macro for better debugging experience
         let args = xs.listVal.slice(1, xs.listVal.len)

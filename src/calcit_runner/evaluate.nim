@@ -146,7 +146,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     # echo "HEAD: ", head, " ", xs
     pushDefStack(head, CirruData(kind: crDataList, listVal: initCrVirtualList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
-    let ret = evaluteFnData(value, args, interpret, ns)
+    let ret = evaluateFnData(value, args, interpret, ns)
     popDefStack()
 
     return ret
@@ -339,7 +339,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
       let xs = code[1..^1]
       pushDefStack(StackInfo(ns: head.ns, def: head.symbolVal, code: CirruData(kind: crDataList, listVal: initCrVirtualList(value.macroCode)), args: xs))
 
-      let quoted = evaluteMacroData(value, xs, interpret, ns)
+      let quoted = evaluateMacroData(value, xs, interpret, ns)
       popDefStack()
       # echo "\nMacro ->: ", code
       # echo   "expanded: ", quoted
@@ -356,7 +356,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         return processDefn(head, args, localDefs, preprocessHelper, ns)
       of "&let":
         return processNativeLet(head, args, localDefs, preprocessHelper, ns)
-      of "if", "assert", "do":
+      of "if", "assert", "do", "try":
         return processAll(head, args, localDefs, preprocessHelper, ns)
       of "quote", "eval":
         return processQuote(head, args, localDefs, preprocessHelper, ns)

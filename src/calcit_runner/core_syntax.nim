@@ -12,6 +12,7 @@ import ./types
 import ./util/errors
 import ./eval/atoms
 import ./eval/expression
+import ./eval/arguments
 
 proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len < 2):
@@ -112,6 +113,18 @@ proc nativeDefAtom(exprList: seq[CirruData], interpret: FnInterpret, scope: Cirr
     setAtomByPath(name.ns, name.symbolVal, value)
   CirruData(kind: crDataAtom, atomNs: name.ns, atomDef: name.symbolVal)
 
+proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if exprList.len != 2:
+    raiseEvalError("assert expects 2 arguments", exprList)
+  try:
+    result = interpret(exprList[0], scope, ns)
+  except:
+    let f = interpret(exprList[1], scope, ns)
+    if f.kind != crDataFn:
+      raiseEvalError("try operator expects second argument to be function", exprList)
+    let msg = getCurrentExceptionMsg()
+    return evaluateFnData(f, @[CirruData(kind: crDataString, stringVal: msg)], interpret, ns)
+
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
@@ -122,3 +135,4 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnI
   programData[coreNs].defs["&let"] = CirruData(kind: crDataSyntax, syntaxVal: nativeLet)
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
   programData[coreNs].defs["defatom"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefAtom)
+  programData[coreNs].defs["try"] = CirruData(kind: crDataSyntax, syntaxVal: nativeTry)
