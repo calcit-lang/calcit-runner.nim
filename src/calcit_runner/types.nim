@@ -151,34 +151,27 @@ proc `$`*(xs: seq[CirruData]): string
 proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string
 
 proc fromListToString(children: seq[CirruData], symbolDetail: bool): string =
-  return "(" & children.mapIt(toString(it, true, symbolDetail)).join(" ") & ")"
+  return "([] " & children.mapIt(toString(it, true, symbolDetail)).join(" ") & ")"
 
 proc fromSetToString(children: HashSet[CirruData], symbolDetail: bool): string =
-  return "#{" & children.mapIt(toString(it, true, symbolDetail)).join(" ") & "}"
+  return "(#{} " & children.mapIt(toString(it, true, symbolDetail)).join(" ") & ")"
 
 proc fromMapToString(children: TernaryTreeMap[CirruData, CirruData], symbolDetail: bool): string =
   let size = children.len()
   if size > 100:
-    return "{...(100)...}"
-  var tableStr = "{"
-  var counted = 0
+    return "({} 100+...)"
+  var tableStr = "({}"
   for k, child in pairs(children):
-    tableStr = tableStr & toString(k, true, symbolDetail) & " " & toString(child, true, symbolDetail)
-    counted = counted + 1
-    if counted < children.len:
-      tableStr = tableStr & ", "
-  tableStr = tableStr & "}"
-  return tableStr
+    tableStr = tableStr & " (" &
+               toString(k, true, symbolDetail) & " " &
+               toString(child, true, symbolDetail) & ")"
+  return tableStr & ")"
 
 proc fromRecordToString(name: string, fields: seq[string], values: seq[CirruData], symbolDetail: bool): string =
-  result = "%{" & name
+  result = "(%{} " & name
   for idx, fieldName in fields:
-    if idx == 0:
-      result &= " "
-    else:
-      result &= ", "
-    result &= fieldName & " " & toString(values[idx], true, symbolDetail)
-  result &= " }"
+    result &= " (" & fieldName & " " & toString(values[idx], true, symbolDetail) & ")"
+  result &= ")"
 
 # based on https://github.com/nim-lang/Nim/blob/version-1-4/lib/pure/strutils.nim#L2322
 # strutils.escape turns Chinese into longer something "\xE6\xB1\x89",

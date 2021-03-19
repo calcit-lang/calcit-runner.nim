@@ -92,7 +92,7 @@
 
             inside-nim:
 
-              assert= "|{:c (3), :a 1, :b |2, :d {(1 2) 3}}"
+              assert= "|({} (:c ([] 3)) (:a 1) (:b |2) (:d ({} (([] 1 2) 3))))"
                 pr-str $ {}
                   :a 1
                   :b |2
@@ -105,7 +105,7 @@
                 edn-demo "|%{} Person (age 23)\n  name |Chen"
               assert=
                 pr-str $ %{} Person (:name |Chen) (:age 23)
-                , "|%{Person age 23, name |Chen }"
+                , "|(%{} Person (age 23) (name |Chen))"
               assert= edn-demo
                 trim $ write-cirru-edn $ %{} Person (:name |Chen) (:age 23)
 

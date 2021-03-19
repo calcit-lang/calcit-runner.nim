@@ -191,16 +191,13 @@ export class CrDataList {
   toString(shorter = false): string {
     let result = "";
     for (let item of this.items()) {
-      if (result !== "") {
-        result = `${result}, `;
-      }
       if (shorter && isNestedCrData(item)) {
-        result = `${result}${tipNestedCrData(item)}`;
+        result = ` ${result}${tipNestedCrData(item)}`;
       } else {
-        result = `${result}${toString(item, true)}`;
+        result = ` ${result}${toString(item, true)}`;
       }
     }
-    return `(${result})`;
+    return `([]${result}`;
   }
   isEmpty() {
     return this.len() === 0;
@@ -350,19 +347,15 @@ export class CrDataMap {
   toString(shorter = false) {
     let itemsCode = "";
     for (let [k, v] of this.pairs()) {
-      if (itemsCode !== "") {
-        itemsCode = `${itemsCode}, `;
-      }
-
       if (shorter) {
         let keyPart = isNestedCrData(k) ? tipNestedCrData(k) : toString(k, true);
         let valuePart = isNestedCrData(v) ? tipNestedCrData(v) : toString(k, true);
-        itemsCode = `${itemsCode}${keyPart} ${valuePart}`;
+        itemsCode = ` (${itemsCode}${keyPart} ${valuePart})`;
       } else {
-        itemsCode = `${itemsCode}${toString(k, true)} ${toString(v, true)}`;
+        itemsCode = ` (${itemsCode}${toString(k, true)} ${toString(v, true)})`;
       }
     }
-    return `{${itemsCode}}`;
+    return `({}${itemsCode})`;
   }
   isEmpty() {
     let cursor = this.chain;
@@ -488,16 +481,11 @@ export class CrDataRecord {
     // TODO
   }
   toString(): string {
-    let ret = "%{" + this.name;
+    let ret = "(%{} " + this.name;
     for (let idx in this.fields) {
-      if (idx === "0") {
-        ret += " ";
-      } else {
-        ret += ", ";
-      }
-      ret += this.fields[idx] + " " + toString(this.values[idx], true);
+      ret += " (" + this.fields[idx] + " " + toString(this.values[idx], true) + ")";
     }
-    return ret + " }";
+    return ret + ")";
   }
 }
 
@@ -759,11 +747,8 @@ export class CrDataSet {
   toString() {
     let itemsCode = "";
     this.value.forEach((child, idx) => {
-      if (itemsCode !== "") {
-        itemsCode = `${itemsCode} `;
-      }
-      itemsCode = `${itemsCode}${toString(child, true)}`;
+      itemsCode = ` ${itemsCode}${toString(child, true)}`;
     });
-    return `#{${itemsCode}}`;
+    return `(#{}${itemsCode})`;
   }
 }
