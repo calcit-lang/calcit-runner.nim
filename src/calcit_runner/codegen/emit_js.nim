@@ -342,10 +342,18 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
         return "/* Unpexpected quote-replace " & $xs & " */"
       of "raise":
         # not core syntax, but treat as macro for better debugging experience
-        if body.len != 1:
-          raiseEvalError("expected a single argument", body.toSeq())
+        if body.len < 1 or body.len > 2:
+          raiseEvalError("expected 1~2 arguments", body.toSeq())
         let message: string = body[0].toJsCode(ns, localDefs)
-        return makeFnWrapper("throw new Error(" & message & ")")
+        var data = "null"
+        if body.len >= 2:
+          data = body[1].toJsCode(ns, localDefs)
+        let errVar = jsGenSym("err")
+        return makeFnWrapper(
+          "let " & errVar & " = new Error(" & message & ");\n" &
+          errVar & ".data = " & data & ";\n" &
+          "throw " & errVar & ";"
+        )
       of "try":
         if body.len != 2:
           raiseEvalError("expected 2 argument", body.toSeq())

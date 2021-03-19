@@ -316,10 +316,6 @@ export let _AND_str = (x: CrDataValue): string => {
   return `${x}`;
 };
 
-export let raise = (x: string): void => {
-  throw new Error(x);
-};
-
 export let contains_QUES_ = (xs: CrDataValue, x: CrDataValue): boolean => {
   if (typeof xs === "string") {
     if (typeof x != "number") {

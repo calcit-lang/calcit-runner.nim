@@ -169,14 +169,16 @@
             assert= :true
               try
                 do (echo "|inside try") :true
-                fn (x)
+                fn (error)
 
             assert= :false
               try
-                do (echo "|inside false try") (raise "|error intented") :true
-                fn (x)
+                do (echo "|inside false try")
+                  raise "|error intented" ([] :demo)
+                  , :true
+                fn (error)
                   do
-                    echo "|Caught error"
+                    echo "|Caught error:" error
                     , :false
 
             echo "|Finished testing try"

@@ -118,12 +118,24 @@ proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     raiseEvalError("assert expects 2 arguments", exprList)
   try:
     result = interpret(exprList[0], scope, ns)
+  except CirruEvalError as e:
+    let f = interpret(exprList[1], scope, ns)
+    if f.kind != crDataFn:
+      raiseEvalError("try operator expects second argument to be function", exprList)
+    let error = CirruData(kind: crDataRecord, recordName: "Error",
+      recordFields: @["message", "data"],
+      recordValues: @[CirruData(kind: crDataString, stringVal: e.msg), e.data]
+    )
+    return evaluateFnData(f, @[error], interpret, ns)
   except:
     let f = interpret(exprList[1], scope, ns)
     if f.kind != crDataFn:
       raiseEvalError("try operator expects second argument to be function", exprList)
-    let msg = getCurrentExceptionMsg()
-    return evaluateFnData(f, @[CirruData(kind: crDataString, stringVal: msg)], interpret, ns)
+    let error = CirruData(kind: crDataRecord, recordName: "Error",
+      recordFields: @["message", "data"],
+      recordValues: @[CirruData(kind: crDataString, stringVal: getCurrentExceptionMsg()), CirruData(kind: crDataNil)]
+    )
+    return evaluateFnData(f, @[error], interpret, ns)
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)

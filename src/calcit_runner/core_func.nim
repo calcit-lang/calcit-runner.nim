@@ -234,11 +234,14 @@ proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
     raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
 proc nativeRaise(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("Expected 1 argument1 in native raise", args)
+  if args.len <= 1 or args.len > 2: raiseEvalError("Expected 1~2 arguments in native raise", args)
   let a = args[0]
   if a.kind != crDataString:
     raiseEvalError("Expect message in string", a)
-  raiseEvalError(a.stringVal, args)
+  var data = CirruData(kind: crDataNil)
+  if args.len >= 2:
+    data = args[1]
+  raiseEvalErrorData(a.stringVal, args, data)
 
 proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("type gets 1 argument", args)
