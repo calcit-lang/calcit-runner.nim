@@ -6,6 +6,7 @@ import options
 
 import cirru_edn
 import cirru_parser
+import ternary_tree
 
 import ./types
 import ./data
@@ -13,6 +14,7 @@ import ./data/to_cirru
 import ./data/to_edn
 import ./util/errors
 import ./util/color_echo
+import ./data/virtual_list
 
 proc getSourceNode(v: CirruEdnValue, ns: string, scope: Option[CirruDataScope] = none(CirruDataScope)): CirruData =
   if v.kind != crEdnQuotedCirru:
@@ -224,16 +226,17 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
     raiseEvalError("Expects :require", requireNode)
   let requireList = requireArea[1..^1]
 
-  for importDec in requireList:
-    if importDec.kind != crDataList:
+  for importDecNode in requireList:
+    if importDecNode.kind != crDataList:
       raiseEvalError("Expects import rule in list", exprNode)
-    if importDec.len != 4:
-      raiseEvalError("Expects import rule in length 4", exprNode)
+    var importDec = importDecNode.listVal
+    if importDec.len > 0 and importDec[0].kind == crDataSymbol and importDec[0].symbolVal == "[]":
+      importDec = importDec.slice(1, importDec.len)
     let vectorSymbol = importDec[0]
-    if vectorSymbol.kind != crDataSymbol or vectorSymbol.symbolVal != "[]":
-      raiseEvalError("Expects [] in import rule", importDec)
+    if importDec.len != 3:
+      raiseEvalError("Expects import rule in length 3", exprNode)
 
-    let nsPart = importDec[1]
+    let nsPart = importDec[0]
     var nsName: string
     var nsInStr = false
     case nsPart.kind
@@ -245,25 +248,25 @@ proc extractNsInfo*(exprNode: CirruData): Table[string, ImportInfo] =
     else:
       raiseEvalError("Expects ns field in symbol/string", importDec)
 
-    let importOp = importDec[2]
+    let importOp = importDec[1]
     if not importOp.isKeyword:
       raiseEvalError("Expects import op in keyword", importOp)
     case importOp.keywordVal:
     of "as":
-      let aliasName = importDec[3]
+      let aliasName = importDec[2]
       if aliasName.kind != crDataSymbol:
         raiseEvalError("Expects alias name in symbol", aliasName)
       dict[aliasName.symbolVal] = ImportInfo(kind: importNs, ns: nsName, nsInStr: nsInStr)
     of "refer":
-      let defsList = importDec[3]
-      if defsList.kind != crDataList:
-        raiseEvalError("Expects a list of defs", defsList)
+      var defsNode = importDec[2]
+      if defsNode.kind != crDataList:
+        raiseEvalError("Expects a list of defs", defsNode)
+      var defsList = defsNode.listVal
+      if defsList.len > 0 and defsList[0].kind == crDataSymbol and defsList[0].symbolVal == "[]":
+        defsList = defsList.slice(1, defsList.len)
       if defsList.len < 1:
         raiseEvalError("Import declaration too short", defsList)
-      let vectorSymbol = defsList[0]
-      if not vectorSymbol.isSymbol:
-        raiseEvalError("Expects [] in import rule", defsList)
-      for defName in defsList[1..^1]:
+      for defName in defsList:
         if defName.kind != crDataSymbol:
           raiseEvalError("Expects a def string to refer", defName)
         dict[defName.symbolVal] = ImportInfo(kind: importDef, ns: nsName, nsInStr: nsInStr, def: defName.symbolVal)

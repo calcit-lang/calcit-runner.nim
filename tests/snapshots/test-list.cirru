@@ -6,7 +6,7 @@
     |test-list.main $ {}
       :ns $ quote
         ns test-list.main $ :require
-          [] util.core :refer $ [] log-title inside-nim:
+          util.core :refer $ log-title inside-nim:
       :defs $ {}
 
         |test-list $ quote

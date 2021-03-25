@@ -24,7 +24,7 @@
           [] test-ternary.main :as test-ternary
           [] test-js.main :as test-js
           [] test-record.main :as test-record
-          [] util.core :refer $ [] log-title inside-nim: inside-js:
+          util.core :refer $ log-title inside-nim: inside-js:
       :defs $ {}
         |test-keyword $ quote
           defn test-keyword ()
