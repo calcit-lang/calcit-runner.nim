@@ -1,7 +1,7 @@
 
 # Package
 
-version       = "0.2.104"
+version       = "0.2.105"
 author        = "jiyinyiyong"
 description   = "Script runner for Cirru"
 license       = "MIT"

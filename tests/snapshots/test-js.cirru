@@ -5,7 +5,7 @@
     |test-js.main $ {}
       :ns $ quote
         ns test-js.main $ :require
-          [] |os :as os
+          |os :as os
       :defs $ {}
 
         |log-title $ quote
