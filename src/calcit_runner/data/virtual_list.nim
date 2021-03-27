@@ -1,5 +1,6 @@
 
 import algorithm
+import sequtils
 
 import ternary_tree
 
@@ -165,9 +166,9 @@ proc toSeq*[T](list: CrVirtualList[T]): seq[T] =
 
 proc map*[T](list: CrVirtualList[T], f: proc (x: T): T): CrVirtualList[T] =
   if list.kind == vListSeq:
-    initCrVirtualList(list.seqData.map(f))
+    initCrVirtualList(list.seqData[list.start..<list.ending].map(f))
   else:
-    initCrVirtualList(list.treeData.map(f))
+    initCrVirtualList(list.treeData.mapValues(f))
 
 proc identical*[T](xs: CrVirtualList[T], ys: CrVirtualList[T]): bool =
   cast[pointer](xs) == cast[pointer](ys)

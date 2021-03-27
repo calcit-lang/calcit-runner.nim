@@ -253,12 +253,12 @@ export class CrDataList {
     ys.turnListMode();
     return new CrDataList(ternaryTree.concat(this.value, ys.value));
   }
-  map(f: (v: CrDataValue) => CrDataValue) {
-    let result: Array<CrDataValue> = [];
-    for (let item of this.items()) {
-      result.push(f(item));
+  map(f: (v: CrDataValue) => CrDataValue): CrDataList {
+    if (this.arrayMode) {
+      return new CrDataList(this.arrayValue.slice(this.arrayStart, this.arrayEnd).map(f));
+    } else {
+      return new CrDataList(ternaryTree.listMapValues(this.value, f));
     }
-    return new CrDataList(result);
   }
   toArray(): CrDataValue[] {
     if (this.arrayMode) {

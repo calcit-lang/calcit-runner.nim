@@ -1126,6 +1126,24 @@ proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     value[exprList[i shl 1]] = exprList[i shl 1 + 1]
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
+proc nativeListMap(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 2:
+    raiseEvalError("&list-map expects 2 arguments", args)
+  let f = args[0]
+  let xs = args[1]
+  if xs.kind != crDataList:
+    raiseEvalError("&list-map expects a list", args)
+  if f.kind != crDataFn and f.kind != crDataProc:
+    raiseEvalError("&list-map expects a function", args)
+  # calling function in Nim for performance, kind of dirty
+  let ret = xs.listVal.map(proc(x: CirruData): CirruData =
+    if f.kind == crDataFn:
+      evaluateFnData(f, @[x], interpret, ns)
+    else:
+      f.procVal(@[x], interpret, scope, ns)
+  )
+  return CirruData(kind: crDataList, listVal: ret)
+
 proc nativeDeref(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if args.len != 1: raiseEvalError("deref expects 1 argument", args)
   let a = args[0]
@@ -1167,7 +1185,7 @@ proc nativeAddWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   let k = args[1]
   if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
   let f = args[2]
-  if f.kind != crDataFn and a.kind != crDataProc: raiseEvalError("expects an function for add-watch", args)
+  if f.kind != crDataFn and a.kind != crDataProc: raiseEvalError("expects a function for add-watch", args)
   addAtomWatcher(a.atomNs, a.atomDef, k.keywordVal, f)
 
 proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
@@ -1522,6 +1540,7 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["split-lines"] = CirruData(kind: crDataProc, procVal: nativeSplitLines)
   programData[coreNs].defs["to-pairs"] = CirruData(kind: crDataProc, procVal: nativeToPairs)
   programData[coreNs].defs["&{}"] = CirruData(kind: crDataProc, procVal: nativeMap)
+  programData[coreNs].defs["&list-map"] = CirruData(kind: crDataProc, procVal: nativeListMap)
   programData[coreNs].defs["deref"] = CirruData(kind: crDataProc, procVal: nativeDeref)
   programData[coreNs].defs["reset!"] = CirruData(kind: crDataProc, procVal: nativeResetBang)
   programData[coreNs].defs["add-watch"] = CirruData(kind: crDataProc, procVal: nativeAddWatch)

@@ -119,6 +119,21 @@ export let _AND__MAP_ = (...xs: CrDataValue[]): CrDataMap => {
   return new CrDataMap(initTernaryTreeMap(dict));
 };
 
+export let _AND_list_map = (...xs: CrDataValue[]): CrDataList => {
+  if (xs.length != 2) {
+    throw new Error("&list-map expected 2 arguments");
+  }
+  if (typeof xs[0] !== "function") {
+    throw new Error("&list-map expected a function");
+  }
+  let f = xs[0];
+  if (!(xs[1] instanceof CrDataList)) {
+    throw new Error("&list-map expected a list");
+  }
+  //Array.prototype.map proviced 3 arguments, only one is needed
+  return xs[1].map((x) => f(x));
+};
+
 export let defatom = (path: string, x: CrDataValue): CrDataValue => {
   let v = new CrDataAtom(x, path);
   atomsRegistry.set(path, v);
@@ -1571,3 +1586,6 @@ export let gensym = unavailableProc;
 export let macroexpand = unavailableProc;
 export let macroexpand_all = unavailableProc;
 export let _AND_get_calcit_running_mode = unavailableProc;
+
+// already handled in code emitter
+export let raise = unavailableProc;
