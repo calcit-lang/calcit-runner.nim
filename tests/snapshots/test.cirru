@@ -149,9 +149,16 @@
         |test-fn $ quote
           fn ()
             log-title "|Testing fn"
+
             &let
               empty-f $ fn ()
               assert= nil (empty-f)
+
+            &let
+              coll-f $ fn (& xs) xs
+              assert=
+                [] 1 2 3 4 5
+                coll-f 1 & ([] 2 3 4) 5
 
         |test-arguments $ quote
           fn ()
