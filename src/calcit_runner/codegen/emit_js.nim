@@ -424,6 +424,7 @@ proc genArgsCode(body: CrVirtualList[CirruData], ns: string, localDefs: HashSet[
         result = result & ", "
       if spreading:
         result = result & fmt"...{varPrefix}listToArray(" & x.toJsCode(ns, localDefs) & ")"
+        spreading = false
       else:
         result = result & x.toJsCode(ns, localDefs)
 

@@ -156,9 +156,7 @@
           defn map (f xs)
             cond
               (list? xs)
-                reduce
-                  fn (acc x) $ append acc (f x)
-                  , ([]) xs
+                &list-map f xs
               (set? xs)
                 reduce
                   fn (acc x) $ include acc (f x)
