@@ -227,7 +227,7 @@
                 macroexpand $ quote $ with-log $ + 1 2
                 quote $ &let
                   v__1 $ + 1 2
-                  echo (quote $ + 1 2) |=> v__1
+                  echo (format-to-lisp (quote $ + 1 2)) |=> v__1
                   , v__1
 
             assert=

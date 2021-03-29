@@ -168,6 +168,14 @@
             assert-detect not $ blank? "| 1"
             assert-detect not $ blank? "|1 "
 
+        |test-lisp-style $ quote
+          fn ()
+            log-title "|Test lisp style"
+
+            assert=
+              format-to-lisp $ quote (defn f1 (x) (+ x y))
+              , "|(defn f1 (x) (+ x y))"
+
         |main! $ quote
           defn main! ()
             log-title "|Testing str"
@@ -188,6 +196,8 @@
             test-re
 
             test-whitespace
+
+            test-lisp-style
 
             do true
 
