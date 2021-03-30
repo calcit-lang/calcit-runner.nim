@@ -163,6 +163,6 @@ proc evaluateMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: 
   of crDataList, crDataSymbol, crDataNumber, crDataString, crDataMap, crDataBool, crDataTernary, crDataKeyword, crDataNil:
     discard
   else:
-    raiseEvalError("expects a list or a liternal from defmacro, but got: " & $quoted.kind, quoted)
+    raiseEvalError("expects a list or a literal from defmacro, but got: " & $quoted.kind, quoted)
 
   return quoted

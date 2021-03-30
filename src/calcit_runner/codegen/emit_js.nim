@@ -129,6 +129,27 @@ let preferredJsProc = toHashSet([
   "starts-with?",
 ])
 
+proc quoteToJs(xs: CirruData, varPrefix: string): string =
+  case xs.kind
+  of crDataSymbol:
+    return "new " & varPrefix & "CrDataSymbol(" & escapeCirruStr($xs) & ")"
+  of crDataString:
+    return escapeCirruStr($xs)
+  of crDataBool:
+    return $xs
+  of crDataNumber:
+    return $xs
+  of crDataNil:
+    return "null"
+  of crDataList:
+    let toJsStr = proc (s: CirruData): string =
+      quoteToJs(s, varPrefix)
+    return "new " & varPrefix & "CrDataList([" & xs.listVal.toSeq.map(toJsStr).join(", ") & "])"
+  of crDataKeyword:
+    return varPrefix & "kwd(" & escapeCirruStr(xs.keywordVal) & ")"
+  else:
+    raise newException(ValueError, "Unpexpected data in quote for js: " & $xs)
+
 proc makeLetWithBind(left: string, right: string, body: string): string =
   "(function __let__(" & left & "){\n" &
     body &
@@ -312,7 +333,7 @@ proc toJsCode(xs: CirruData, ns: string, localDefs: HashSet[string]): string =
       of "quote":
         if body.len < 1:
           raiseEvalError("Unpexpected empty body", xs)
-        return "new " & varPrefix & "CrDataSymbol(" & ($body[0]).escapeCirruStr() & ")"
+        return quoteToJs(body[0], varPrefix)
       of "defatom":
         if body.len != 2:
           raiseEvalError("defatom expects 2 nodes", xs)

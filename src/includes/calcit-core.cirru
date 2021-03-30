@@ -905,7 +905,7 @@
               quote-replace
                 &let
                   ~v ~x
-                  echo (quote ~x) |=> ~v
+                  echo (format-to-lisp (quote ~x)) |=> ~v
                   ~ v
 
         |{,} $ quote
@@ -960,7 +960,7 @@
                     ~args-value $ [] ~@xs
                     ~v $ ~f & ~args-value
                   echo "|call:"
-                    quote ('call-with-log ~f ~@xs)
+                    format-to-lisp $ quote (call-with-log ~f ~@xs)
                     , |=> ~v
                   echo "|f:   " ~f
                   echo "|args:" ~args-value
@@ -1041,3 +1041,13 @@
 
         |not= $ quote
           def not= /=
+
+        |format-to-lisp $ quote
+          defn format-to-list (xs)
+            case-default (type-of xs) (&str xs)
+              :list $ str "|(" (join-str "| " (map format-to-lisp xs)) "|)"
+              :symbol (turn-string xs)
+              :string (escape xs)
+              :number (&str xs)
+              :bool (&str xs)
+              :keyword (&str)
