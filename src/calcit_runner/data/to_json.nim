@@ -60,7 +60,6 @@ proc toJson*(x: CirruData, keywordColon: bool = false): JsonNode =
   of crDataSymbol:
     return JsonNode(kind: JString, str: x.symbolVal)
 
-  of crDataProc: return JsonNode(kind: JNull)
   of crDataFn: return JsonNode(kind: JNull)
   of crDataMacro: return JsonNode(kind: JNull)
   of crDataSyntax: return JsonNode(kind: JNull)

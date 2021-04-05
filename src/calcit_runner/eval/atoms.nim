@@ -28,7 +28,7 @@ proc setAtomByPath*(ns: string, def: string, value: CirruData) =
     atomsTable[ns][def].value = value
 
 proc addAtomWatcher*(ns: string, def: string, k: string, f: CirruData) =
-  if f.kind != crDataFn and f.kind != crDataProc:
+  if f.kind != crDataFn:
     raise newException(ValueError, "expects an function for add-watch")
   if atomsTable.contains(ns).not:
     raise newException(ValueError, "no such atom")

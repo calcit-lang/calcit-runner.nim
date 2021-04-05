@@ -54,7 +54,7 @@ proc toEdn*(x: CirruData): CirruEdnValue =
 
   of crDataTernary: return CirruEdnValue(kind: crEdnString, stringVal: $x.ternaryVal)
 
-  of crDataProc, crDataFn, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
+  of crDataFn, crDataMacro, crDataSyntax, crDataRecur, crDataAtom:
     return CirruEdnValue(kind: crEdnString, stringVal: "<<" & $x.kind & ">>\n" & $x)
 
   of crDataThunk:

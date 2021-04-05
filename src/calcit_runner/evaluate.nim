@@ -93,7 +93,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     raiseEvalError("Expected non-empty ns", xs)
 
   case xs.kind
-  of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataProc, crDataFn, crDataTernary:
+  of crDataNil, crDataString, crDataKeyword, crDataNumber, crDataBool, crDataFn, crDataTernary:
     return xs
   of crDataSymbol:
     return interpretSymbol(xs, scope, ns)
@@ -127,17 +127,6 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     raiseEvalError("Bool is not a function", xs)
   of crDataNil:
     raiseEvalError("nil is not a function", xs)
-
-  of crDataProc:
-    let f = value.procVal
-    let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
-
-    # echo "HEAD: ", head, " ", xs
-    # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
-    pushDefStack(head, CirruData(kind: crDataNil), args)
-    let ret = f(args)
-    popDefStack()
-    return ret
 
   of crDataFn:
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
@@ -191,7 +180,7 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
     if programCode[ns].defs.hasKey(def).not:
       raise newException(ValueError, "No such definition under " & ns & ": " & def)
     var code = programCode[ns].defs[def]
-    programData[ns].defs[def] = CirruData(kind: crDataProc, procVal: placeholderFunc)
+    programData[ns].defs[def] = CirruData(kind: crDatafn, fnVal: placeholderFunc)
     pushDefStack(StackInfo(ns: ns, def: def, code: code, args: @[]))
     code = preprocess(code, toHashset[string](@[]), ns)
     popDefStack()
@@ -308,7 +297,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
       let path = value.resolved
 
       if path.ns == "js" or path.nsInStr:
-        value = CirruData(kind: crDataProc, procVal: placeholderFunc) # a faked function
+        value = CirruData(kind: crDataFn, fnVal: placeholderFunc) # a faked function
       else:
         value = programData[path.ns].defs[path.def]
 
@@ -321,7 +310,7 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
     # echo "run into: ", code, " ", value
 
     case value.kind
-    of crDataProc, crDataFn:
+    of crDataFn:
       var xs = initCrVirtualList[CirruData](@[originalValue])
       for child in code.listVal.rest:
         xs = xs.append preprocess(child, localDefs, ns)

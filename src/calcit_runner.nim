@@ -32,11 +32,11 @@ export CirruData, CirruDataKind, `==`
 const coreSource = staticRead"./includes/calcit-core.cirru"
 
 # slots for dynamic registering GUI functions
-var onLoadPluginProcs: Table[string, ProcInData]
+var onLoadPluginProcs: Table[string, FnInData]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
 
-proc registerCoreProc*(procName: string, f: ProcInData) =
+proc registerCoreProc*(procName: string, f: FnInData) =
   onLoadPluginProcs[procName] = f
 
 proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): CirruData =
@@ -115,7 +115,8 @@ proc emitCode(initFn, reloadFn: string): void =
     if jsMode:
       emitJs(programData, initPair[0])
     else:
-      raise newException(ValueError, "Unknown mode")
+      if not irMode:
+        raise newException(ValueError, "Unknown mode")
   except CirruEvalError as e:
     displayErrorMessage(e.msg & " " & $e.code)
     raise e
@@ -173,7 +174,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
 
   # register temp functions
   for procName, tempProc in onLoadPluginProcs:
-    programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
+    programData[coreNs].defs[procName] = CirruData(kind: crDataFn, fnVal: tempProc)
 
   if jsMode or irMode:
     emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
