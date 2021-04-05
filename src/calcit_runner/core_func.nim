@@ -35,9 +35,6 @@ import ./data/to_edn
 import ./data/to_cirru
 import ./data/to_writer
 
-import ./evaluate
-import ./eval/arguments
-import ./eval/expression
 import ./eval/atoms
 
 import ./core/record_funcs
@@ -45,7 +42,7 @@ import ./core/record_funcs
 # init generator for rand
 randomize()
 
-proc nativeAdd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAdd(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native add", args)
   let a = args[0]
   let b = args[1]
@@ -55,7 +52,7 @@ proc nativeAdd(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   if b.kind != crDataNumber: raiseEvalError("Required number for adding", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal + b.numberVal)
 
-proc nativeMinus(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMinus(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native minus", args)
   let a = args[0]
   let b = args[1]
@@ -65,7 +62,7 @@ proc nativeMinus(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if b.kind != crDataNumber: raiseEvalError("Required number for minus", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal - b.numberVal)
 
-proc nativeMultiply(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMultiply(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native multiply", args)
   let a = args[0]
   let b = args[1]
@@ -75,7 +72,7 @@ proc nativeMultiply(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if b.kind != crDataNumber: raiseEvalError("Required number for multiply", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal * b.numberVal)
 
-proc nativeDivide(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDivide(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native divide", args)
   let a = args[0]
   let b = args[1]
@@ -86,7 +83,7 @@ proc nativeDivide(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   if b.numberVal == 0.0: raiseEvalError("Cannot divide by 0", args)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal / b.numberVal)
 
-proc nativeMod(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMod(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native mod", args)
   let a = args[0]
   let b = args[1]
@@ -94,7 +91,7 @@ proc nativeMod(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   if b.kind != crDataNumber: raiseEvalError("Required number for mod", b)
   return CirruData(kind: crDataNumber, numberVal: a.numberVal.mod(b.numberVal))
 
-proc nativeLessThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeLessThan(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native <", args)
   let a = args[0]
   let b = args[1]
@@ -109,7 +106,7 @@ proc nativeLessThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   else:
     raiseEvalError("Cannot compare type " & $a.kind, args)
 
-proc nativeGreaterThan(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGreaterThan(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native >", args)
   let a = args[0]
   let b = args[1]
@@ -125,19 +122,19 @@ proc nativeGreaterThan(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
     raiseEvalError("Cannot compare type " & $a.kind, args)
 
 # should be working for all data types
-proc nativeEqual(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeEqual(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in native =", args)
   let a = args[0]
   let b = args[1]
   return CirruData(kind: crDataBool, boolVal: a == b)
 
-proc nativeNot(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeNot(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("Expected 1 arguments in native not", args)
   let a = args[0]
   if a.kind != crDataBool: raiseEvalError("Required bool for not", a)
   return CirruData(kind: crDataBool, boolVal: not a.boolVal)
 
-proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeCount(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("Expected 1 arguments in native count", args)
   let a = args[0]
   case a.kind
@@ -156,7 +153,7 @@ proc nativeCount(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("Cannot count data of type: " & $a.kind, a)
 
-proc nativeNth(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeNth(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in nth", args)
   let a = args[0]
   let b = args[1]
@@ -188,7 +185,7 @@ proc nativeNth(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   else:
     raiseEvalError("Cannot read nth from data of " & $a.kind, a)
 
-proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGet(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("Expected 2 arguments in &get", args)
   let a = args[0]
   let b = args[1]
@@ -204,13 +201,13 @@ proc nativeGet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   of crDataNil:
     raiseEvalError("&get does not work on `nil`, need to use `get`", a)
   of crDataList:
-    return nativeNth(args, interpret, scope, ns)
+    return nativeNth(args)
   of crDataString:
-    return nativeNth(args, interpret, scope, ns)
+    return nativeNth(args)
   else:
     raiseEvalError("Cannot &get from data of " & $a.kind, a)
 
-proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRest(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("Expected 1 arguments in native rest", args)
   let a = args[0]
   case a.kind
@@ -233,7 +230,7 @@ proc nativeRest(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   else:
     raiseEvalError(fmt"Cannot rest from data of this type: {a.kind}", a)
 
-proc nativeRaise(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRaise(args: seq[CirruData]): CirruData =
   if args.len <= 1 or args.len > 2: raiseEvalError("Expected 1~2 arguments in native raise", args)
   let a = args[0]
   if a.kind != crDataString:
@@ -243,7 +240,7 @@ proc nativeRaise(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     data = args[1]
   raiseEvalErrorData(a.stringVal, args, data)
 
-proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTypeOf(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("type gets 1 argument", args)
   let v = args[0]
   case v.kind
@@ -267,7 +264,7 @@ proc nativeTypeOf(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     # TODO better extract thunk in such cases
     of crDataThunk: CirruData(kind: crDataKeyword, keywordVal: loadKeyword("thunk"))
 
-proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReadFile(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("Required 1 argument for file name!", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
@@ -280,7 +277,7 @@ proc nativeReadFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   except IOError as e:
     raiseEvalError(fmt"Failed to read file, {e.msg}", args)
 
-proc nativeWriteFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeWriteFile(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("Required 2 arguments for writing a file", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
@@ -295,7 +292,7 @@ proc nativeWriteFile(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   echo "Wrote to file " & fileName.stringVal
   return CirruData(kind: crDataNil)
 
-proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeParseJson(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("parse-json requires a string", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
@@ -309,7 +306,7 @@ proc nativeParseJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     echo "Failed to parse JSON", content
     raiseEvalError("Failed to parse file", args[0])
 
-proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeStringifyJson(args: seq[CirruData]): CirruData =
   if args.len < 1 or args.len > 2:
     raiseEvalError("format-json requires 1~2 argument", CirruData(kind: crDataList, listVal: initCrVirtualList(args)))
 
@@ -323,49 +320,15 @@ proc nativeStringifyJson(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   jsonString.toUgly args[0].toJson(addColon)
   return CirruData(kind: crDataString, stringVal: jsonString)
 
-proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("macroexpand requires 1 argument", args)
-
-  let code = args[0]
-  # echo "macroexpanding: ", code
-  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
-    raiseEvalError(fmt"Unexpected structure from macroexpand", code)
-
-  let value = interpret(code[0], scope, ns)
-  if value.kind != crDataMacro:
-    raiseEvalError("Expected a macro in the expression", code)
-
-  let xs = code[1..^1]
-  let quoted = evaluateMacroData(value, xs, interpret, ns)
-
-  return quoted
-
-proc nativeMacroexpandAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
-  if args.len != 1: raiseEvalError("macroexpand-all requires 1 argument", args)
-
-  let code = args[0]
-  # echo "macroexpanding: ", code
-  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
-    raiseEvalError(fmt"Unexpected structure from macroexpand-all", code)
-
-  let value = interpret(code[0], scope, ns)
-  if value.kind != crDataMacro:
-    raiseEvalError("Expected a macro in the expression", code)
-
-  let xs = code[1..^1]
-  let quoted = evaluateMacroData(value, xs, interpret, ns)
-
-  return preprocess(quoted, HashSet[string](), ns)
-
-proc nativePrint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativePrint(args: seq[CirruData]): CirruData =
   stdout.write args.map(`$`).join(" ")
   stdout.flushFile
   return CirruData(kind: crDataNil)
 
-proc nativePrStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativePrStr(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataString, stringVal: args.mapIt(it.toString(true, true)).join(" "))
 
-proc nativePrepend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativePrepend(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("prepend requires 2 args", args)
   let base = args[0]
@@ -374,7 +337,7 @@ proc nativePrepend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     raiseEvalError("prepend requires a list", args)
   return CirruData(kind: crDataList, listVal: base.listVal.prepend(item))
 
-proc nativeAppend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAppend(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("append requires 2 args", args)
   let base = args[0]
@@ -383,7 +346,7 @@ proc nativeAppend(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     raiseEvalError("append requires a list", args)
   return CirruData(kind: crDataList, listVal: base.listVal.append(item))
 
-proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFirst(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("first requires 1 args", args)
   let base = args[0]
@@ -409,7 +372,7 @@ proc nativeFirst(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("first requires a list but got " & $base.kind, args)
 
-proc nativeEmptyQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeEmptyQuestion(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("empty? requires 1 args", args)
   let base = args[0]
@@ -427,7 +390,7 @@ proc nativeEmptyQuestion(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   else:
     raiseEvalError("Cannot detect empty", args)
 
-proc nativeLast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeLast(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("last requires 1 args", args)
   let base = args[0]
@@ -448,7 +411,7 @@ proc nativeLast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   else:
     raiseEvalError("last requires a list", args)
 
-proc nativeButlast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeButlast(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("butlast requires 1 args", args)
   let base = args[0]
@@ -463,7 +426,7 @@ proc nativeButlast(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   else:
     raiseEvalError("butlast requires a list", args)
 
-proc nativeReverse(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReverse(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("reverse requires 1 args", args)
   let base = args[0]
@@ -478,7 +441,7 @@ proc nativeReverse(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   else:
     raiseEvalError("reverse requires a list", args)
 
-proc nativeIdenticalQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeIdenticalQuestion(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("identical expects 2 args", args)
   let a = args[0]
@@ -510,7 +473,7 @@ proc nativeIdenticalQuestion(args: seq[CirruData], interpret: FnInterpret, scope
     # TODO hard to detect
     return CirruData(kind: crDataBool, boolVal: false)
 
-proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSlice(args: seq[CirruData]): CirruData =
   if args.len < 2:
     raiseEvalError("slice requires 2~3 args", args)
   let base = args[0]
@@ -539,7 +502,7 @@ proc nativeSlice(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("slice requires a list", (args))
 
-proc nativeConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeConcat(args: seq[CirruData]): CirruData =
   var xs: seq[TernaryTreeList[CirruData]]
   for item in args:
     if item.isNil:
@@ -551,7 +514,7 @@ proc nativeConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
       xs.add item.listVal.treeData
   return CirruData(kind: crDataList, listVal: initCrVirtualList(initTernaryTreeList(xs.len, 0, xs)))
 
-proc nativeFormatTernaryTree(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFormatTernaryTree(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("format-ternary-tree requires 1 arg", args)
   let item = args[0]
@@ -565,7 +528,7 @@ proc nativeFormatTernaryTree(args: seq[CirruData], interpret: FnInterpret, scope
   else:
     return CirruData(kind: crDataString, stringVal: $item)
 
-proc nativeMerge(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMerge(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("merge requires 2 args", args)
   let base = args[0]
@@ -605,7 +568,7 @@ proc nativeMerge(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
 
   raiseEvalError("merge requires map or record", args)
 
-proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMergeNonNil(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("merge-non-nil requires 2 args", args)
   let base = args[0]
@@ -626,7 +589,7 @@ proc nativeMergeNonNil(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   return CirruData(kind: crDataMap, mapVal: base.mapVal.mergeSkip(another.mapVal, CirruData(kind: crDataNil)))
 
 # contains? to detect structual existence, keys, indexes, and then includes? to detect value existence
-proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeContainsQuestion(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("contains? expected 2 args", args)
   let base = args[0]
@@ -657,7 +620,7 @@ proc nativeContainsQuestion(args: seq[CirruData], interpret: FnInterpret, scope:
   else:
     raiseEvalError("`contains?` expected a structure", args)
 
-proc nativeIncludesQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeIncludesQuestion(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("`includes?` requires 2 args", args)
   let base = args[0]
@@ -682,7 +645,7 @@ proc nativeIncludesQuestion(args: seq[CirruData], interpret: FnInterpret, scope:
   else:
     raiseEvalError("`includes?` expected a structure", args)
 
-proc nativeAssocBefore(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAssocBefore(args: seq[CirruData]): CirruData =
   if args.len != 3:
     raiseEvalError("assoc-before requires 3 args", args)
   let base = args[0]
@@ -694,7 +657,7 @@ proc nativeAssocBefore(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
     raiseEvalError("assoc-before requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocBefore(key.numberVal.int, item))
 
-proc nativeAssocAfter(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAssocAfter(args: seq[CirruData]): CirruData =
   if args.len != 3:
     raiseEvalError("assoc-after requires 3 args", args)
   let base = args[0]
@@ -706,7 +669,7 @@ proc nativeAssocAfter(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     raiseEvalError("assoc-after requires a number index", args)
   return CirruData(kind: crDataList, listVal: base.listVal.assocAfter(key.numberVal.int, item))
 
-proc nativeAssoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAssoc(args: seq[CirruData]): CirruData =
   if args.len != 3:
     raiseEvalError("assoc requires 3 arg", args)
 
@@ -734,7 +697,7 @@ proc nativeAssoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("assoc expects a list or a map", args)
 
-proc nativeDissoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDissoc(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("dissoc requires 2 arg", args)
 
@@ -753,7 +716,7 @@ proc nativeDissoc(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
   else:
     raiseEvalError("assoc expects a list or a map", args)
 
-proc nativeTurnKeyword(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnKeyword(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("turn-keyword requires 1 arg", (args))
   let x = args[0]
@@ -767,21 +730,21 @@ proc nativeTurnKeyword(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   else:
     raiseEvalError("Cannot turn into keyword", (args))
 
-proc nativeTurnSymbol(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnSymbol(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("turn-symbol requires 1 arg", (args))
   let x = args[0]
   case x.kind
   of crDataKeyword:
-    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: ns)
+    return CirruData(kind: crDataSymbol, symbolVal: x.keywordVal, ns: "calcit.gen") # TODO fake ns
   of crDataString:
-    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: ns)
+    return CirruData(kind: crDataSymbol, symbolVal: x.stringVal, ns: "calcit.gen") # TODO fake ns
   of crDataSymbol:
     return x
   else:
     raiseEvalError("Cannot turn into symbol", (args))
 
-proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTurnString(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("turn-string requires 1 arg", (args))
   let x = args[0]
@@ -799,7 +762,7 @@ proc nativeTurnString(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   else:
     raiseEvalError("Cannot turn into string", (args))
 
-proc nativeRange(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRange(args: seq[CirruData]): CirruData =
   var base = 0.0
   var bound = 1.0
   var step = 1.0
@@ -823,12 +786,12 @@ proc nativeRange(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     base = base + step
   return CirruData(kind: crDataList, listVal: initCrVirtualList(ys))
 
-proc nativeStr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeStr(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("&str requires 1 arg", args)
   return CirruData(kind: crDataString, stringVal: $args[0])
 
-proc nativeEscape(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeEscape(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("escape requires 1 arg", args)
   let item = args[0]
@@ -836,14 +799,14 @@ proc nativeEscape(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
     raiseEvalError("escape expects a string", args)
   return CirruData(kind: crDataString, stringVal: item.stringVal.escapeCirruStr)
 
-proc nativeStrConcat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeStrConcat(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("&str-concat expects 2 args", args)
   let s1 = $args[0]
   let s2 = $args[1]
   return CirruData(kind: crDataString, stringVal: s1 & s2)
 
-proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeParseCirruEdn(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("parse-cirru-edn requires a string", args)
 
@@ -851,9 +814,9 @@ proc nativeParseCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   if content.kind != crDataString:
     raiseEvalError("parse-cirru-edn requires a string", content)
   let ednData = parseCirruEdn(content.stringVal)
-  return ednData.ednToCirruData(ns, some(scope))
+  return ednData.ednToCirruData("calcit.gen", none(CirruDataScope)) # TODO fake ns
 
-proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeParseCirru(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("parse-cirru requires a string", args)
   let content = args[0]
@@ -863,7 +826,7 @@ proc nativeParseCirru(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   let raw = parseCirru(content.stringVal)
   return raw.toCirruNodesData()
 
-proc nativeWriteCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeWriteCirruEdn(args: seq[CirruData]): CirruData =
   if args.len != 1 and args.len != 2:
     raiseEvalError("write-cirru-edn requires 1~2 arguments", args)
   let data = args[0]
@@ -874,7 +837,7 @@ proc nativeWriteCirruEdn(args: seq[CirruData], interpret: FnInterpret, scope: Ci
     inlineMode = args[1].boolVal
   return CirruData(kind: crDataString, stringVal: data.toEdn().formatToCirru(inlineMode))
 
-proc nativeWriteCirru(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeWriteCirru(args: seq[CirruData]): CirruData =
   if args.len != 1 and args.len != 2:
     raiseEvalError("write-cirru requires 1~2 arguments", args)
   let data = args[0]
@@ -890,37 +853,37 @@ proc nativeWriteCirru(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
       raiseEvalError("write-cirru expected a list of lists", args)
   return CirruData(kind: crDataString, stringVal: data.toWriterNode().writeCirruCode((useInline: inlineMode)))
 
-proc nativeSqrt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSqrt(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("sqrt requires 1 arg", args)
   let item = args[0]
   if not item.isNumber: raiseEvalError("sqrt expects a number", args)
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.sqrt)
 
-proc nativeSin(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSin(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("sin requires 1 arg", args)
   let item = args[0]
   if not item.isNumber: raiseEvalError("sin expects a number", args)
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.sin)
 
-proc nativeCos(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeCos(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("cos requires 1 arg", args)
   let item = args[0]
   if not item.isNumber: raiseEvalError("cos expects a number", args)
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.cos)
 
-proc nativeFloor(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFloor(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("floor requires 1 arg", args)
   let item = args[0]
   if not item.isNumber: raiseEvalError("floor expects a number", args)
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.floor)
 
-proc nativeCeil(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeCeil(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("ceil requires 1 arg", args)
   let item = args[0]
   if not item.isNumber: raiseEvalError("ceil expects a number", args)
   return CirruData(kind: crDataNumber, numberVal: item.numberVal.ceil)
 
-proc nativeRound(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRound(args: seq[CirruData]): CirruData =
   if args.len < 1: raiseEvalError("round requires 1 arg", args)
   let item = args[0]
   if item.kind == crDataNumber:
@@ -936,7 +899,7 @@ proc nativeRound(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("round expects a number", args)
 
-proc nativePow(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativePow(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("pow requires 2 arg", args)
   let base = args[0]
   let times = args[1]
@@ -944,10 +907,10 @@ proc nativePow(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSco
   if not times.isNumber: raiseEvalError("pow expects a number as times", args)
   return CirruData(kind: crDataNumber, numberVal: base.numberVal.pow(times.numberVal))
 
-proc nativeHashSet(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeHashSet(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataSet, setVal: args.toHashSet)
 
-proc nativeInclude(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeInclude(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("include requires 2 arg", args)
   let base = args[0]
   let item = args[1]
@@ -956,7 +919,7 @@ proc nativeInclude(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   newSet.incl(item)
   return CirruData(kind: crDataSet, setVal: newSet)
 
-proc nativeExclude(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeExclude(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("exclude requires 2 arg", args)
   let base = args[0]
   let item = args[1]
@@ -965,7 +928,7 @@ proc nativeExclude(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   newSet.excl(item)
   return CirruData(kind: crDataSet, setVal: newSet)
 
-proc nativeDifference(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDifference(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("difference requires 2 arg", args)
   let base = args[0]
   let item = args[1]
@@ -973,7 +936,7 @@ proc nativeDifference(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   if item.kind != crDataSet: raiseEvalError("difference expects a set in second arg", item)
   return CirruData(kind: crDataSet, setVal: base.setVal.difference(item.setVal))
 
-proc nativeUnion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeUnion(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("union requires 2 arg", args)
   let base = args[0]
   let item = args[1]
@@ -981,7 +944,7 @@ proc nativeUnion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   if item.kind != crDataSet: raiseEvalError("union expects a set in second arg", item)
   return CirruData(kind: crDataSet, setVal: base.setVal.union(item.setVal))
 
-proc nativeIntersection(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeIntersection(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("intersection requires 2 arg", args)
   let base = args[0]
   let item = args[1]
@@ -989,10 +952,10 @@ proc nativeIntersection(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   if item.kind != crDataSet: raiseEvalError("intersection expects a set in second arg", item)
   return CirruData(kind: crDataSet, setVal: base.setVal.intersection(item.setVal))
 
-proc nativeRecur(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRecur(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataRecur, recurArgs: args)
 
-proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFoldl(args: seq[CirruData]): CirruData =
   if args.len != 3: raiseEvalError("foldl requires 3 arg", args)
   let f = args[0]
   if f.kind != crDataProc and f.kind != crDataFn: raiseEvalError("Expects f to be a proc or a function", args)
@@ -1005,7 +968,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     for item in xs.listVal:
       case f.kind
       of crDataProc:
-        acc = f.procVal(@[acc, item], interpret, scope, ns)
+        acc = f.procVal(@[acc, item])
       of crDataFn:
         acc = f.fnVal(@[acc, item])
       else:
@@ -1016,7 +979,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       # reused code above...
       case f.kind
       of crDataProc:
-        acc = f.procVal(@[acc, item], interpret, scope, ns)
+        acc = f.procVal(@[acc, item])
       of crDataFn:
         acc = f.fnVal(@[acc, item])
       else:
@@ -1025,7 +988,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
   else:
     raiseEvalError("Expects xs to be a list but got " & $xs.kind, args)
 
-proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRand(args: seq[CirruData]): CirruData =
   case args.len
   of 0:
     return CirruData(kind: crDataNumber, numberVal: rand(100.0))
@@ -1043,7 +1006,7 @@ proc nativeRand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   else:
     raiseEvalError("rand expects 0~2 arguments", args)
 
-proc nativeRandInt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRandInt(args: seq[CirruData]): CirruData =
   case args.len
   of 0:
     return CirruData(kind: crDataNumber, numberVal: rand(100).float)
@@ -1061,7 +1024,7 @@ proc nativeRandInt(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   else:
     raiseEvalError("rand-int expects 0~2 arguments", args)
 
-proc nativeReplace(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReplace(args: seq[CirruData]): CirruData =
   if args.len != 3: raiseEvalError("replace expects 3 arguments", args)
   let base = args[0]
   let target = args[1]
@@ -1071,7 +1034,7 @@ proc nativeReplace(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   if to.kind != crDataString: raiseEvalError("replace expects a string", args)
   return CirruData(kind: crDataString, stringVal: base.stringVal.replace(target.stringVal, to.stringVal))
 
-proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSplit(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("replace expects 3 arguments", args)
   let base = args[0]
   let target = args[1]
@@ -1087,7 +1050,7 @@ proc nativeSplit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
 
-proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSplitLines(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("replace expects 1 argument", args)
   let base = args[0]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
@@ -1096,7 +1059,7 @@ proc nativeSplitLines(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     list = list.append CirruData(kind: crDataString, stringVal: item)
   return CirruData(kind: crDataList, listVal: list)
 
-proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeToPairs(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("to-pairs expects a map for argument", args)
   let base = args[0]
   case base.kind
@@ -1118,7 +1081,7 @@ proc nativeToPairs(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   else:
     raiseEvalError("to-pairs expects a map", args)
 
-proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeMap(exprList: seq[CirruData]): CirruData =
   if (exprList.len mod 2) != 0:
     raiseEvalError("&{} expects even number of arguments", exprList)
   var value = initTable[CirruData, CirruData]()
@@ -1126,7 +1089,7 @@ proc nativeMap(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     value[exprList[i shl 1]] = exprList[i shl 1 + 1]
   return CirruData(kind: crDataMap, mapVal: initTernaryTreeMap(value))
 
-proc nativeListMap(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeListMap(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("&list-map expects 2 arguments", args)
   let f = args[0]
@@ -1140,11 +1103,11 @@ proc nativeListMap(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
     if f.kind == crDataFn:
       f.fnVal(@[x])
     else:
-      f.procVal(@[x], interpret, scope, ns)
+      f.procVal(@[x])
   )
   return CirruData(kind: crDataList, listVal: ret)
 
-proc nativeDeref(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDeref(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("deref expects 1 argument", args)
   let a = args[0]
   if a.kind != crDataAtom: raiseEvalError("expects an atom to deref", args)
@@ -1153,7 +1116,7 @@ proc nativeDeref(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     raiseEvalError("found no value for such atom", args)
   attempt.get.value
 
-proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeResetBang(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("reset! expects 2 arguments", args)
   let a = args[0]
   if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
@@ -1170,7 +1133,7 @@ proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   for k, listener in attempt.get.watchers:
     case listener.kind
     of crDataProc:
-      discard listener.procVal(@[v, oldValue], interpret, scope, ns)
+      discard listener.procVal(@[v, oldValue])
     of crDataFn:
       discard listener.fnVal(@[v, oldValue])
     else:
@@ -1178,7 +1141,7 @@ proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
 
   return CirruData(kind: crDataNil)
 
-proc nativeAddWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeAddWatch(args: seq[CirruData]): CirruData =
   if args.len != 3: raiseEvalError("reset! expects 3 arguments", args)
   let a = args[0]
   if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
@@ -1188,7 +1151,7 @@ proc nativeAddWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if f.kind != crDataFn and a.kind != crDataProc: raiseEvalError("expects a function for add-watch", args)
   addAtomWatcher(a.atomNs, a.atomDef, k.keywordVal, f)
 
-proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRemoveWatch(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("reset! expects 2 arguments", args)
   let a = args[0]
   if a.kind != crDataAtom: raiseEvalError("expects an atom to reset!", args)
@@ -1196,7 +1159,7 @@ proc nativeRemoveWatch(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if k.kind != crDataKeyword: raiseEvalError("expects an keyword for add-watch", args)
   removeAtomWatcher(a.atomNs, a.atomDef, k.keywordVal)
 
-proc nativeSubstr(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSubstr(args: seq[CirruData]): CirruData =
   if args.len < 2: raiseEvalError("substr expects 2~3 arguments", args)
   let origin = args[0]
   if origin.kind != crDataString: raiseEvalError("expects a string for substr", args)
@@ -1214,7 +1177,7 @@ proc nativeSubstr(args: seq[CirruData], interpret: FnInterpret, scope: CirruData
 
   return CirruData(kind: crDataString, stringVal: origin.stringVal[startIdx.numberVal.int..<endPos])
 
-proc nativeStrFind(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeStrFind(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("str-find expects 2 arguments", args)
   let origin = args[0]
   if origin.kind != crDataString: raiseEvalError("str-find expects string", args)
@@ -1222,7 +1185,7 @@ proc nativeStrFind(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   if target.kind != crDataString: raiseEvalError("str-find expects string", args)
   return CirruData(kind: crDataNumber, numberVal: origin.stringVal.find(target.stringVal).float)
 
-proc nativeParseFloat(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeParseFloat(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("parse-float expects 1 argument", args)
   let origin = args[0]
   if origin.kind != crDataString: raiseEvalError("parse-float expects string", args)
@@ -1231,7 +1194,7 @@ proc nativeParseFloat(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
     return CirruData(kind: crDataNil)
   return CirruData(kind: crDataNumber, numberVal: v)
 
-proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTrim(args: seq[CirruData]): CirruData =
   if args.len < 1 or args.len > 2: raiseEvalError("trim expects 1~2 arguments", args)
   var spaceChars: set[char] = {' ', '\n'}
   let origin = args[0]
@@ -1243,33 +1206,34 @@ proc nativeTrim(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
       spaceChars.incl(x)
   return CirruData(kind: crDataString, stringVal: origin.stringVal.strip(chars = spaceChars))
 
-proc nativeList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeList(args: seq[CirruData]): CirruData =
   CirruData(kind: crDataList, listVal: initCrVirtualList(args))
 
-proc nativeGensym(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGensym(args: seq[CirruData]): CirruData =
   genSymIndex = genSymIndex + 1
+  let fakeNs = "calcit.gen" # TODO faked ns
   case args.len
   of 0:
-    return CirruData(kind: crDataSymbol, ns: ns, symbolVal: "G__" & $genSymIndex)
+    return CirruData(kind: crDataSymbol, ns: fakeNs, symbolVal: "G__" & $genSymIndex)
   of 1:
     let item = args[0]
     case item.kind
     of crDataSymbol:
-      return CirruData(kind: crDataSymbol, ns: ns, symbolVal: item.symbolVal & "__" & $genSymIndex)
+      return CirruData(kind: crDataSymbol, ns: fakeNs, symbolVal: item.symbolVal & "__" & $genSymIndex)
     of crDataString:
-      return CirruData(kind: crDataSymbol, ns: ns, symbolVal: item.stringVal & "__" & $genSymIndex)
+      return CirruData(kind: crDataSymbol, ns: fakeNs, symbolVal: item.stringVal & "__" & $genSymIndex)
     else:
       raiseEvalError("gensym expects a symbol or a string", args)
   else:
     raiseEvalError("gensym expects 0~1 argument", args)
 
 # this should only be used for testing macros internally
-proc nativeResetGensymIndexBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeResetGensymIndexBang(args: seq[CirruData]): CirruData =
   genSymIndex = 0
   CirruData(kind: crDataNil)
 
 # TODO nanoid has outdated file structure, should change in future
-proc nativeGenerateIdBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGenerateIdBang(args: seq[CirruData]): CirruData =
   if args.len == 0:
     return CirruData(kind: crDataString, stringVal: generate())
   elif args.len == 1:
@@ -1286,7 +1250,7 @@ proc nativeGenerateIdBang(args: seq[CirruData], interpret: FnInterpret, scope: C
   else:
     raiseEvalError("nanoid! takes 0~2 arguments", args)
 
-proc nativeParseTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeParseTime(args: seq[CirruData]): CirruData =
   if args.len < 1: raiseEvalError("parse-time requires string", args)
   if args[0].kind != crDataString: raiseEvalError("parse-time requires string", args)
   var format = "yyyy-MM-dd"
@@ -1295,22 +1259,22 @@ proc nativeParseTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     format = args[1].stringVal
   CirruData(kind: crDataNumber, numberVal: parse(args[0].stringVal, format.initTimeFormat).toTime.toUnixFloat)
 
-proc nativeFormatTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFormatTime(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("format-time expects 2 arguments", args)
   if args[0].kind != crDataNumber: raiseEvalError("format-time use number as time", args)
   if args[1].kind != crDataString: raiseEvalError("format-time use a string format", args)
   CirruData(kind: crDataString, stringVal: args[0].numberVal.fromUnixFloat.format(args[1].stringVal))
 
-proc nativeNowBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeNowBang(args: seq[CirruData]): CirruData =
   CirruData(kind: crDataNumber, numberVal: now().toTime.toUnixFloat)
 
-proc nativeFormatNumber(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeFormatNumber(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("format-number expects 2 arguments", args)
   if args[0].kind != crDataNumber: raiseEvalError("format-number expects number", args)
   if args[1].kind != crDataNumber: raiseEvalError("format-number expects length", args)
   CirruData(kind: crDataString, stringVal: args[0].numberVal.formatBiggestFloat(ffDecimal, args[1].numberVal.int))
 
-proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSort(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("sort expects 2 arguments", args)
   if args[0].kind != crDataFn: raiseEvalError("sort expects a function", args)
   if args[1].kind != crDataList: raiseEvalError("sort expects a list", args)
@@ -1323,7 +1287,7 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   )
   CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
-proc nativeDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDualBalancedTernary(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("dual-balanced-ternary expects 2 arguments", args)
   if args[0].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
   if args[1].kind != crDataNumber: raiseEvalError("creating ternary expects numbers", args)
@@ -1332,7 +1296,7 @@ proc nativeDualBalancedTernary(args: seq[CirruData], interpret: FnInterpret, sco
     ternaryVal: createDualBalancedTernary(args[0].numberVal, args[1].numberVal)
   )
 
-proc nativeDbtToPoint(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDbtToPoint(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("dbt->point expects 1 argument", args)
   if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
   let v = args[0].ternaryVal.toFloat()
@@ -1342,20 +1306,20 @@ proc nativeDbtToPoint(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
   ]
   CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
-proc nativeQuit(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeQuit(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("quit expects 1 argument", args)
   if args[0].kind != crDataNumber: raiseEvalError("quit expects a number", args)
   quit(args[0].numberVal.int)
 
-proc nativeGetEnv(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGetEnv(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("get-env expects 1 argument", args)
   if args[0].kind != crDataString: raiseEvalError("get-env expects a string", args)
   CirruData(kind: crDataString, stringVal: getEnv(args[0].stringVal))
 
-proc nativeCpuTime(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeCpuTime(args: seq[CirruData]): CirruData =
   CirruData(kind: crDataNumber, numberVal: cpuTime()) # cpuTime returns in seconds
 
-proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGetCharCode(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("get-char-code expects 1 argument", args)
   if args[0].kind != crDataString: raiseEvalError("get-char-code expects a string", args)
   if args[0].stringVal.runeLen != 1: raiseEvalError("get-char-code expects a string of a character", args)
@@ -1363,7 +1327,7 @@ proc nativeGetCharCode(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
 
 # TODO Performance, creating regular expressions dynamically is slow.
 # adding specific data type for regex may help in caching. not decided yet
-proc nativeReMatches(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReMatches(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("re-matches expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-matches expects a string for regex", args)
@@ -1371,7 +1335,7 @@ proc nativeReMatches(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
   if operand.kind != crDataString: raiseEvalError("re-matches expects a string operand", args)
   return CirruData(kind: crDataBool, boolVal: operand.stringVal.match(re(regex.stringVal)))
 
-proc nativeReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReFindIndex(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("re-find-index expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-find-index expects a string for regex", args)
@@ -1379,7 +1343,7 @@ proc nativeReFindIndex(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
   if operand.kind != crDataString: raiseEvalError("re-find-index expects a string operand", args)
   return CirruData(kind: crDataNumber, numberVal: operand.stringVal.find(re(regex.stringVal)).float)
 
-proc nativeReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeReFindAll(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("re-find expects 2 arguments", args)
   let regex = args[0]
   if regex.kind != crDataString: raiseEvalError("re-find expects a string for regex", args)
@@ -1391,14 +1355,14 @@ proc nativeReFindAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     xs.add CirruData(kind: crDataString, stringVal: y)
   return CirruData(kind: crDataList, listVal: initCrVirtualList(xs))
 
-proc nativeDisplayStack(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDisplayStack(args: seq[CirruData]): CirruData =
   if args.len < 1: raiseEvalError("display stack expects 1 argument", args)
   echo "Display stack: " & $args[0]
   displayStack()
   return CirruData(kind: crDataNil)
 
 # "dbt" stands for dual-balanced-ternary
-proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDbtDigits(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("dbt-digits expects 1 argument", args)
   if args[0].kind != crDataTernary: raiseEvalError("expects ternary value", args)
   let dbtValue = args[0].ternaryVal
@@ -1422,17 +1386,17 @@ proc nativeDbtDigits(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     ])))
   return CirruData(kind: crDataList, listVal: xs)
 
-proc nativeGetCalcitBackend(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGetCalcitBackend(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("nim"))
 
-proc nativeGetCalcitRunningMode*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeGetCalcitRunningMode*(args: seq[CirruData]): CirruData =
   if jsMode:
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("js"))
   if irMode:
     return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("ir"))
   return CirruData(kind: crDataKeyword, keywordVal: loadKeyword("eval"))
 
-proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeSetToList(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("set->list expects 1 argument", args)
   let x = args[0]
@@ -1443,7 +1407,7 @@ proc nativeSetToList(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     acc.add y
   CirruData(kind: crDataList, listVal: initCrVirtualList(acc))
 
-proc nativeBlankQuestion(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeBlankQuestion(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("blank? expects 1 argument", args)
   let x = args[0]
@@ -1454,7 +1418,7 @@ proc nativeBlankQuestion(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   else:
     raiseEvalError("Expected string for blank?", args)
 
-proc nativeCompareString(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeCompareString(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("compare-string expects 2 arguments", args)
   let left = args[0]
@@ -1464,7 +1428,7 @@ proc nativeCompareString(args: seq[CirruData], interpret: FnInterpret, scope: Ci
   return CirruData(kind: crDataNumber, numberVal: cmp(left.stringVal, right.stringVal).float)
 
 # injecting functions to calcit.core directly
-proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInterpret): void =
+proc loadCoreDefs*(programData: var Table[string, ProgramFile]): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataProc, procVal: nativeAdd)
   programData[coreNs].defs["&-"] = CirruData(kind: crDataProc, procVal: nativeMinus)
   programData[coreNs].defs["&*"] = CirruData(kind: crDataProc, procVal: nativeMultiply)
@@ -1484,8 +1448,6 @@ proc loadCoreDefs*(programData: var Table[string, ProgramFile], interpret: FnInt
   programData[coreNs].defs["write-file"] = CirruData(kind: crDataProc, procVal: nativeWriteFile)
   programData[coreNs].defs["parse-json"] = CirruData(kind: crDataProc, procVal: nativeParseJson)
   programData[coreNs].defs["stringify-json"] = CirruData(kind: crDataProc, procVal: nativeStringifyJson)
-  programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataProc, procVal: nativeMacroexpand)
-  programData[coreNs].defs["macroexpand-all"] = CirruData(kind: crDataProc, procVal: nativeMacroexpandAll)
   programData[coreNs].defs["print"] = CirruData(kind: crDataProc, procVal: nativePrint)
   programData[coreNs].defs["pr-str"] = CirruData(kind: crDataProc, procVal: nativePrStr)
   programData[coreNs].defs["prepend"] = CirruData(kind: crDataProc, procVal: nativePrepend)

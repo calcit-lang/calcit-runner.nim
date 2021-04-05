@@ -135,7 +135,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     # echo "HEAD: ", head, " ", xs
     # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
     pushDefStack(head, CirruData(kind: crDataNil), args)
-    let ret = f(args, interpret, scope, ns)
+    let ret = f(args)
     popDefStack()
     return ret
 
@@ -174,7 +174,7 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
   else:
     raiseEvalError(fmt"Unknown head({head.kind}) for calling", xs)
 
-proc placeholderFunc(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc placeholderFunc(args: seq[CirruData]): CirruData =
   echo "[Warn] placeholder function for preprocessing"
   return CirruData(kind: crDataNil)
 
@@ -355,14 +355,14 @@ proc preprocess*(code: CirruData, localDefs: Hashset[string], ns: string): Cirru
         return processDefn(head, args, localDefs, preprocessHelper, ns)
       of "&let":
         return processNativeLet(head, args, localDefs, preprocessHelper, ns)
-      of "if", "assert", "do", "try":
+      of "if", "assert", "do", "try", "macroexpand", "macroexpand-all":
         return processAll(head, args, localDefs, preprocessHelper, ns)
       of "quote", "eval":
         return processQuote(head, args, localDefs, preprocessHelper, ns)
       of "defatom":
         return processDefAtom(head, args, localDefs, preprocessHelper, ns)
       else:
-        raiseEvalError(fmt"Unknown syntax: ${head}", code)
+        raiseEvalError(fmt"Unknown syntax: {head}", code)
 
       return code
     of crDataThunk:

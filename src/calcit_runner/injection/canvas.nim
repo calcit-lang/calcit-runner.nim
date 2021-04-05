@@ -7,7 +7,7 @@ import ../types
 import ../util/errors
 import ../data/to_edn
 
-proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeInitCanvas*(args: seq[CirruData]): CirruData =
   if args.len == 0:
     initCanvas("DEMO", 400, 400)
   else:
@@ -25,14 +25,14 @@ proc nativeInitCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: Cirr
       initCanvas(title.stringVal, width.numberVal.int, height.numberVal.int)
   return CirruData(kind: crDataBool, boolVal: true)
 
-proc nativeDrawCanvas*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDrawCanvas*(args: seq[CirruData]): CirruData =
   if args.len != 1: raiseEvalError("Expects 1 argument", args)
   let data = args[0]
   renderCanvas(data.toEdn)
 
   return CirruData(kind: crDataBool, boolVal: true)
 
-proc nativeDrawErrorMessage*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeDrawErrorMessage*(args: seq[CirruData]): CirruData =
   if args.len < 1 or args[0].kind != crDataString: raiseEvalError("Expects a string message", args)
   renderCanvas(genCrEdnMap(
     genCrEdnKeyword("type"), genCrEdn("text"),

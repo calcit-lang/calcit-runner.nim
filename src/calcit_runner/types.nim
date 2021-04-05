@@ -86,7 +86,7 @@ type
       # `ref string` was used, but it breaks compiler and breaks js backend
       keywordVal*: string
     of crDataProc:
-      procVal*: FnInData
+      procVal*: ProcInData
     of crDataFn:
       fnName*: string
       fnArgs*: CrVirtualList[CirruData]

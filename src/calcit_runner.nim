@@ -32,11 +32,11 @@ export CirruData, CirruDataKind, `==`
 const coreSource = staticRead"./includes/calcit-core.cirru"
 
 # slots for dynamic registering GUI functions
-var onLoadPluginProcs: Table[string, FnInData]
+var onLoadPluginProcs: Table[string, ProcInData]
 
 var codeConfigs = CodeConfigs(initFn: "app.main/main!", reloadFn: "app.main/reload!", pkg: "app")
 
-proc registerCoreProc*(procName: string, f: FnInData) =
+proc registerCoreProc*(procName: string, f: ProcInData) =
   onLoadPluginProcs[procName] = f
 
 proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): CirruData =
@@ -166,8 +166,8 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
-  loadCoreDefs(programData, interpret)
-  loadCoreSyntax(programData, interpret)
+  loadCoreDefs(programData)
+  loadCoreSyntax(programData)
 
   loadCoreFuncs(programCode)
 
@@ -243,8 +243,8 @@ proc evalSnippet*(code: string): CirruData =
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
-  loadCoreDefs(programData, interpret)
-  loadCoreSyntax(programData, interpret)
+  loadCoreDefs(programData)
+  loadCoreSyntax(programData)
   loadCoreFuncs(programCode)
 
   programCode["app.main"] = FileSource()

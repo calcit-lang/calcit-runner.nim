@@ -60,6 +60,7 @@ proc toEdn*(x: CirruData): CirruEdnValue =
   of crDataThunk:
     raiseEvalError("must calculate thunk before converting", x)
 
+# TODO scope is probably redundant
 proc ednToCirruData*(xs: CirruEdnValue, ns: string, scope: Option[CirruDataScope]): CirruData =
   case xs.kind
   of crEdnNil: CirruData(kind: crDataNil)
