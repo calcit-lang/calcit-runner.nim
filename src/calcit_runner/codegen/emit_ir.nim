@@ -68,7 +68,6 @@ proc dumpCode(xs: CirruData): JsonNode =
   of crDataFn:
     %* {
       "kind": "fn",
-      "ns": xs.fnNs,
       "name": xs.fnName,
       "args": dumpCode(xs.fnArgs),
       "code": dumpCode(xs.fnCode),

@@ -1007,7 +1007,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       of crDataProc:
         acc = f.procVal(@[acc, item], interpret, scope, ns)
       of crDataFn:
-        acc = evaluateFnData(f, @[acc, item], interpret, ns)
+        acc = f.fnVal(@[acc, item])
       else:
         raiseEvalError("Unexpected f to call in foldl", args)
     return acc
@@ -1018,7 +1018,7 @@ proc nativeFoldl(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
       of crDataProc:
         acc = f.procVal(@[acc, item], interpret, scope, ns)
       of crDataFn:
-        acc = evaluateFnData(f, @[acc, item], interpret, ns)
+        acc = f.fnVal(@[acc, item])
       else:
         raiseEvalError("Unexpected f to call in foldl", args)
     return acc
@@ -1138,7 +1138,7 @@ proc nativeListMap(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
   # calling function in Nim for performance, kind of dirty
   let ret = xs.listVal.map(proc(x: CirruData): CirruData =
     if f.kind == crDataFn:
-      evaluateFnData(f, @[x], interpret, ns)
+      f.fnVal(@[x])
     else:
       f.procVal(@[x], interpret, scope, ns)
   )
@@ -1172,7 +1172,7 @@ proc nativeResetBang(args: seq[CirruData], interpret: FnInterpret, scope: CirruD
     of crDataProc:
       discard listener.procVal(@[v, oldValue], interpret, scope, ns)
     of crDataFn:
-      discard evaluateFnData(listener, @[v, oldValue], interpret, ns)
+      discard listener.fnVal(@[v, oldValue])
     else:
       raiseEvalError("Unexpected f to call as a listener", args)
 
@@ -1316,7 +1316,7 @@ proc nativeSort(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataSc
   if args[1].kind != crDataList: raiseEvalError("sort expects a list", args)
   var xs = args[1].listVal.toSeq()
   xs.sort(proc(a, b: CirruData): int =
-    let ret = evaluateFnData(args[0], @[a, b], interpret, ns)
+    let ret = args[0].fnVal(@[a, b])
     if ret.kind != crDataNumber: raiseEvalError("expects a number returned as comparator", ret)
     echo "result:", a, " ", b, " ", ret
     return ret.numberVal.int

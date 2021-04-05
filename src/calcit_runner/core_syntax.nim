@@ -50,7 +50,27 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if fnName.kind != crDataSymbol: raiseEvalError("Expects fnName to be string", exprList)
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
-  return CirruData(kind: crDataFn, fnNs: ns, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
+
+  let fnCode = exprList[2..^1]
+
+  let callFn = proc(args: seq[CirruData]): CirruData =
+    let innerScope = scope.merge(processArguments(argsList.listVal, args))
+    var ret = CirruData(kind: crDataNil)
+    for child in fnCode:
+      ret = interpret(child, innerScope, ns)
+
+    while ret.isRecur:
+      let loopScope = scope.merge(processArguments(argsList.listVal, ret.recurArgs))
+      for child in fnCode:
+        ret = interpret(child, loopScope, ns)
+
+    return ret
+
+  return CirruData(
+    kind: crDataFn, fnName: fnName.symbolVal,
+    fnArgs: argsList.listVal, fnCode: fnCode,
+    fnVal: callFn
+  )
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var letScope = scope
@@ -126,7 +146,7 @@ proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       recordFields: @["message", "data"],
       recordValues: @[CirruData(kind: crDataString, stringVal: e.msg), e.data]
     )
-    return evaluateFnData(f, @[error], interpret, ns)
+    return f.fnVal(@[error])
   except:
     let f = interpret(exprList[1], scope, ns)
     if f.kind != crDataFn:
@@ -135,7 +155,7 @@ proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       recordFields: @["message", "data"],
       recordValues: @[CirruData(kind: crDataString, stringVal: getCurrentExceptionMsg()), CirruData(kind: crDataNil)]
     )
-    return evaluateFnData(f, @[error], interpret, ns)
+    return f.fnVal(@[error])
 
 proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)

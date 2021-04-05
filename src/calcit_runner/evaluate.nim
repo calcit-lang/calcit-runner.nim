@@ -140,13 +140,12 @@ proc interpret*(xs: CirruData, scope: CirruDataScope, ns: string): CirruData =
     return ret
 
   of crDataFn:
-    # let fnPath = value.fnNs & "/" & value.fnName
     let args = spreadFuncArgs(xs[1..^1], interpret, scope, ns)
 
     # echo "HEAD: ", head, " ", xs
     pushDefStack(head, CirruData(kind: crDataList, listVal: initCrVirtualList(value.fnCode)), args)
     # echo "calling: ", CirruData(kind: crDataList, listVal: initCrVirtualList(args)), " ", xs
-    let ret = evaluateFnData(value, args, interpret, ns)
+    let ret = value.fnVal(args)
     popDefStack()
 
     return ret

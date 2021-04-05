@@ -54,6 +54,9 @@ type
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
+  ProcInData* = proc(exprList: seq[CirruData]): CirruData
+
+  # TODO replace with ProcInData
   FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
 
   ResolvedPathKind* = enum
@@ -86,10 +89,9 @@ type
       procVal*: FnInData
     of crDataFn:
       fnName*: string
-      fnScope*: CirruDataScope
       fnArgs*: CrVirtualList[CirruData]
       fnCode*: seq[CirruData]
-      fnNs*: string
+      fnVal*: ProcInData
     of crDataMacro:
       macroName*: string
       macroArgs*: CrVirtualList[CirruData]
@@ -301,7 +303,7 @@ proc hash*(value: CirruData): Hash =
       result = hash("fn:")
       result = result !& hash(value.fnArgs)
       result = result !& hash(value.fnCode)
-      result = result !& hash(value.fnScope)
+      # TODO need faster and more reliable hash
       result = !$ result
     of crDataSyntax:
       result = hash("syntax:")
@@ -381,7 +383,7 @@ proc `==`*(x, y: CirruData): bool =
     of crDataProc:
       return x.procVal == y.procVal
     of crDataFn:
-      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnScope == y.fnScope
+      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnVal == y.fnVal
     of crDataMacro:
       return x.macroArgs == y.macroArgs and x.macroCode == y.macroCode
     of crDataSyntax:

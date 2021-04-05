@@ -20,7 +20,6 @@ import calcit_runner/util/errors
 import calcit_runner/loader
 import calcit_runner/util/stack
 import calcit_runner/evaluate
-import calcit_runner/eval/arguments
 import calcit_runner/codegen/gen_code
 import calcit_runner/codegen/emit_js
 import calcit_runner/codegen/emit_ir
@@ -53,7 +52,7 @@ proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): 
   pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
 
   let args = if dropArg: @[] else: @[data]
-  let ret = evaluateFnData(entry, args, interpret, ns)
+  let ret = entry.fnVal(args)
   popDefStack()
   return ret
 

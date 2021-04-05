@@ -6,8 +6,6 @@ import ternary_tree
 
 import ../types
 import ../util/errors
-import ../eval/arguments
-import ../evaluate
 
 type EventTaskParams* = tuple[id: int, params: seq[CirruData]]
 type EventTaskCallback* = tuple[ns: string, cb: CirruData]
@@ -44,7 +42,7 @@ proc finishTask*(taskId: int, args: seq[CirruData]): void =
   if f.kind != crDataFn and f.kind != crDataProc:
     raiseEvalError("expects a function callback for task", f)
 
-  discard evaluateFnData(f, args, interpret, task.ns)
+  discard f.fnVal(args)
   eventCalls.del(taskId)
 
 proc timeoutCallTask*(info: TimeoutTaskOptions) {.thread.} =
