@@ -20,7 +20,6 @@ import calcit_runner/util/errors
 import calcit_runner/loader
 import calcit_runner/util/stack
 import calcit_runner/evaluate
-import calcit_runner/eval/arguments
 import calcit_runner/codegen/gen_code
 import calcit_runner/codegen/emit_js
 import calcit_runner/codegen/emit_ir
@@ -53,7 +52,7 @@ proc evaluateDefCode(ns: string, def: string, data: CirruData, dropArg: bool ): 
   pushDefStack StackInfo(ns: ns, def: def, code: mainCode)
 
   let args = if dropArg: @[] else: @[data]
-  let ret = evaluateFnData(entry, args, interpret, ns)
+  let ret = entry.fnVal(args)
   popDefStack()
   return ret
 
@@ -116,7 +115,8 @@ proc emitCode(initFn, reloadFn: string): void =
     if jsMode:
       emitJs(programData, initPair[0])
     else:
-      raise newException(ValueError, "Unknown mode")
+      if not irMode:
+        raise newException(ValueError, "Unknown mode")
   except CirruEvalError as e:
     displayErrorMessage(e.msg & " " & $e.code)
     raise e
@@ -167,14 +167,14 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
-  loadCoreDefs(programData, interpret)
-  loadCoreSyntax(programData, interpret)
+  loadCoreDefs(programData)
+  loadCoreSyntax(programData)
 
   loadCoreFuncs(programCode)
 
   # register temp functions
   for procName, tempProc in onLoadPluginProcs:
-    programData[coreNs].defs[procName] = CirruData(kind: crDataProc, procVal: tempProc)
+    programData[coreNs].defs[procName] = CirruData(kind: crDataFn, fnVal: tempProc)
 
   if jsMode or irMode:
     emitCode(codeConfigs.initFn, codeConfigs.reloadFn)
@@ -244,8 +244,8 @@ proc evalSnippet*(code: string): CirruData =
   programCode[coreNs] = FileSource()
   programData[coreNs] = ProgramFile()
 
-  loadCoreDefs(programData, interpret)
-  loadCoreSyntax(programData, interpret)
+  loadCoreDefs(programData)
+  loadCoreSyntax(programData)
   loadCoreFuncs(programCode)
 
   programCode["app.main"] = FileSource()

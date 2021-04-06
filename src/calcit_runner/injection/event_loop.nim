@@ -6,8 +6,6 @@ import ternary_tree
 
 import ../types
 import ../util/errors
-import ../eval/arguments
-import ../evaluate
 
 type EventTaskParams* = tuple[id: int, params: seq[CirruData]]
 type EventTaskCallback* = tuple[ns: string, cb: CirruData]
@@ -26,7 +24,7 @@ var eventCallerId = 0
 var eventLoopTasks: Table[int, Thread[TimeoutTaskOptions]]
 
 proc addTask*(f: CirruData, ns: string): int =
-  if f.kind != crDataFn and f.kind != crDataProc:
+  if f.kind != crDataFn:
     raiseEvalError("expects a function callback for task", f)
 
   var taskId = eventCallerId
@@ -41,10 +39,10 @@ proc finishTask*(taskId: int, args: seq[CirruData]): void =
     raiseEvalError("no callback found", CirruData(kind: crDataString, stringVal: $taskId))
   let task = eventCalls[taskId]
   let f = task.cb
-  if f.kind != crDataFn and f.kind != crDataProc:
+  if f.kind != crDataFn:
     raiseEvalError("expects a function callback for task", f)
 
-  discard evaluateFnData(f, args, interpret, task.ns)
+  discard f.fnVal(args)
   eventCalls.del(taskId)
 
 proc timeoutCallTask*(info: TimeoutTaskOptions) {.thread.} =
@@ -67,7 +65,7 @@ proc nativeTimeoutCall*(args: seq[CirruData], interpret: FnInterpret, scope: Cir
   let duration = args[0]
   if duration.kind != crDataNumber: raiseEvalError("expects number value for timeout", args)
   let cb = args[1]
-  if cb.kind != crDataFn and cb.kind != crDataProc: raiseEvalError("expects func value for timeout-call", args)
+  if cb.kind != crDataFn: raiseEvalError("expects func value for timeout-call", args)
 
   let taskId = setupTimeoutTask(duration.numberVal.int, cb, ns)
 

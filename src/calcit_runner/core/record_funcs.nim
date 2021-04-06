@@ -11,7 +11,7 @@ import ../types
 import ../data
 import ../util/errors
 
-proc nativeNewRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeNewRecord*(args: seq[CirruData]): CirruData =
   if args.len < 2:
     raiseEvalError("new-record expected >2 arguments", args)
   let name = args[0].getString()
@@ -32,7 +32,7 @@ proc nativeNewRecord*(args: seq[CirruData], interpret: FnInterpret, scope: Cirru
 
   return CirruData(kind: crDataRecord, recordName: name, recordFields: fields, recordValues: values)
 
-proc nativeRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeRecord*(args: seq[CirruData]): CirruData =
   if args.len < 2:
     raiseEvalError("&%{} expected >2 arguments", args)
   if args.len.mod(2) != 1:
@@ -60,7 +60,7 @@ proc nativeRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       raiseEvalError("expected field name `" & fields[idx] & "` but got `" & p.k & "`",args)
   return CirruData(kind: crDataRecord, recordName: prototype.recordName, recordFields: fields, recordValues: values)
 
-proc getRecordName*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc getRecordName*(args: seq[CirruData]): CirruData =
   if args.len < 2:
     raiseEvalError("get-record-name expected 1 argument", args)
   let base = args[0]
@@ -68,7 +68,7 @@ proc getRecordName*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDa
     raiseEvalError("get-record-name expected a record", args)
   return CirruData(kind: crDataSymbol, symbolVal: base.recordName)
 
-proc makeRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc makeRecord*(args: seq[CirruData]): CirruData =
   if args.len < 2:
     raiseEvalError("make-record expected 2 arguments", args)
   let prototype = args[0]
@@ -109,7 +109,7 @@ proc makeRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataS
     raiseEvalError("Cannot create record from this value " & $data, args)
 
 
-proc turnMap*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc turnMap*(args: seq[CirruData]): CirruData =
   if args.len != 1:
     raiseEvalError("turn-map expected 1 argument", args)
   case args[0].kind:
@@ -124,7 +124,7 @@ proc turnMap*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScop
   else:
     raiseEvalError("turn-map expected record", args)
 
-proc relevantRecord*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc relevantRecord*(args: seq[CirruData]): CirruData =
   if args.len != 2:
     raiseEvalError("turn-map expected 2 arguments", args)
   let a = args[0]

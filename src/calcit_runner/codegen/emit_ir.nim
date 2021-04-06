@@ -41,10 +41,6 @@ proc dumpCode(xs: CirruData): JsonNode =
     %* {
       "kind": "keyword", "val": xs.keywordVal,
     }
-  of crDataProc:
-    %* {
-      "kind": "proc",
-    }
   of crDataSymbol:
     var resolvedData =
       if xs.resolved.kind == resolvedDef:
@@ -66,13 +62,19 @@ proc dumpCode(xs: CirruData): JsonNode =
       "resolved": resolvedData
     }
   of crDataFn:
-    %* {
-      "kind": "fn",
-      "ns": xs.fnNs,
-      "name": xs.fnName,
-      "args": dumpCode(xs.fnArgs),
-      "code": dumpCode(xs.fnCode),
-    }
+    if xs.fnBuiltin:
+      %* {
+        "kind": "fn",
+        "name": xs.fnName,
+        "builtin": true,
+      }
+    else:
+      %* {
+        "kind": "fn",
+        "name": xs.fnName,
+        "args": dumpCode(xs.fnArgs),
+        "code": dumpCode(xs.fnCode),
+      }
   of crDataThunk:
     dumpCode(xs.thunkCode[])
   of crDataList:

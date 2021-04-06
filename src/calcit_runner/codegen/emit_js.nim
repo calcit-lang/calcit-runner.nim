@@ -656,10 +656,11 @@ proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
       let f = file.defs[def]
 
       case f.kind
-      of crDataProc:
-        defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
       of crDataFn:
-        defsCode = defsCode & genJsFunc(def, f.fnArgs, f.fnCode, ns, true, defNames)
+        if f.fnBuiltin:
+          defsCode = defsCode & fmt"{cLine}var {def.escapeVar} = $calcit_procs.{def.escapeVar};{cLine}"
+        else:
+          defsCode = defsCode & genJsFunc(def, f.fnArgs, f.fnCode, ns, true, defNames)
       of crDataThunk:
         # TODO need topological sorting for accuracy
         # values are called directly, put them after fns

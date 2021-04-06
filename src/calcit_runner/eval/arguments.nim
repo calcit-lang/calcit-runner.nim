@@ -129,21 +129,6 @@ proc processArguments*(definedArgs: CrVirtualList[CirruData], passedArgs: seq[Ci
     )
     return argsScope
 
-proc evaluateFnData*(fnValue: CirruData, args: seq[CirruData], interpret: FnInterpret, ns: string): CirruData =
-  if fnValue.kind != crDataFn: raiseEvalError("Expects a funtion", fnValue)
-
-  let innerScope = fnValue.fnScope.merge(processArguments(fnValue.fnArgs, args))
-  var ret = CirruData(kind: crDataNil)
-  for child in fnValue.fnCode:
-    ret = interpret(child, innerScope, fnValue.fnNs)
-
-  while ret.isRecur:
-    let loopScope = fnValue.fnScope.merge(processArguments(fnValue.fnArgs, ret.recurArgs))
-    for child in fnValue.fnCode:
-      ret = interpret(child, loopScope, fnValue.fnNs)
-
-  return ret
-
 proc evaluateMacroData*(macroValue: CirruData, args: seq[CirruData], interpret: FnInterpret, ns: string): CirruData =
   if macroValue.kind != crDataMacro: raiseEvalError("Expects a macro", macroValue)
 

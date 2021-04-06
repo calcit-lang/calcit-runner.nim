@@ -2,8 +2,8 @@
 import strformat
 import system
 import tables
-import hashes
 import options
+import sets
 
 import ternary_tree
 
@@ -13,6 +13,7 @@ import ./util/errors
 import ./eval/atoms
 import ./eval/expression
 import ./eval/arguments
+import ./evaluate
 
 proc nativeIf*(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   if (exprList.len < 2):
@@ -50,7 +51,27 @@ proc nativeDefn(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDa
   if fnName.kind != crDataSymbol: raiseEvalError("Expects fnName to be string", exprList)
   let argsList = exprList[1]
   if argsList.kind != crDataList: raiseEvalError("Expects args to be list", exprList)
-  return CirruData(kind: crDataFn, fnNs: ns, fnName: fnName.symbolVal, fnArgs: argsList.listVal, fnCode: exprList[2..^1], fnScope: scope)
+
+  let fnCode = exprList[2..^1]
+
+  let callFn = proc(args: seq[CirruData]): CirruData =
+    let innerScope = scope.merge(processArguments(argsList.listVal, args))
+    var ret = CirruData(kind: crDataNil)
+    for child in fnCode:
+      ret = interpret(child, innerScope, ns)
+
+    while ret.isRecur:
+      let loopScope = scope.merge(processArguments(argsList.listVal, ret.recurArgs))
+      for child in fnCode:
+        ret = interpret(child, loopScope, ns)
+
+    return ret
+
+  return CirruData(
+    kind: crDataFn, fnName: fnName.symbolVal,
+    fnArgs: argsList.listVal, fnCode: fnCode,
+    fnVal: callFn
+  )
 
 proc nativeLet(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
   var letScope = scope
@@ -126,7 +147,7 @@ proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       recordFields: @["message", "data"],
       recordValues: @[CirruData(kind: crDataString, stringVal: e.msg), e.data]
     )
-    return evaluateFnData(f, @[error], interpret, ns)
+    return f.fnVal(@[error])
   except:
     let f = interpret(exprList[1], scope, ns)
     if f.kind != crDataFn:
@@ -135,9 +156,43 @@ proc nativeTry(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDat
       recordFields: @["message", "data"],
       recordValues: @[CirruData(kind: crDataString, stringVal: getCurrentExceptionMsg()), CirruData(kind: crDataNil)]
     )
-    return evaluateFnData(f, @[error], interpret, ns)
+    return f.fnVal(@[error])
 
-proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnInterpret) =
+proc nativeMacroexpand(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("macroexpand requires 1 argument", args)
+
+  let code = interpret(args[0], scope, ns)
+  # echo "macroexpanding: ", code
+  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
+    raiseEvalError(fmt"Unexpected structure from macroexpand", code)
+
+  let value = interpret(code[0], scope, ns)
+  if value.kind != crDataMacro:
+    raiseEvalError("Expected a macro in the expression", code)
+
+  let xs = code[1..^1]
+  let quoted = evaluateMacroData(value, xs, interpret, ns)
+
+  return quoted
+
+proc nativeMacroexpandAll(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+  if args.len != 1: raiseEvalError("macroexpand-all requires 1 argument", args)
+
+  let code = interpret(args[0], scope, ns)
+  # echo "macroexpanding: ", code
+  if code.isList.not or code.len == 0 or checkExprStructure(code).not:
+    raiseEvalError(fmt"Unexpected structure from macroexpand-all", code)
+
+  let value = interpret(code[0], scope, ns)
+  if value.kind != crDataMacro:
+    raiseEvalError("Expected a macro in the expression", code)
+
+  let xs = code[1..^1]
+  let quoted = evaluateMacroData(value, xs, interpret, ns)
+
+  return preprocess(quoted, HashSet[string](), ns)
+
+proc loadCoreSyntax*(programData: var Table[string, ProgramFile]) =
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
   programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment)
@@ -148,3 +203,5 @@ proc loadCoreSyntax*(programData: var Table[string, ProgramFile], interpret: FnI
   programData[coreNs].defs["quote"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuote)
   programData[coreNs].defs["defatom"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefAtom)
   programData[coreNs].defs["try"] = CirruData(kind: crDataSyntax, syntaxVal: nativeTry)
+  programData[coreNs].defs["macroexpand"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMacroexpand)
+  programData[coreNs].defs["macroexpand-all"] = CirruData(kind: crDataSyntax, syntaxVal: nativeMacroexpandAll)

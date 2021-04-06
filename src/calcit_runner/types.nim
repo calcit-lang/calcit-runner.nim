@@ -41,7 +41,6 @@ type
     crDataList,
     crDataSet,
     crDataMap,
-    crDataProc,
     crDataFn,
     crDataMacro,
     crDataSymbol,
@@ -54,7 +53,8 @@ type
 
   FnInterpret* = proc(expr: CirruData, scope: CirruDataScope, ns: string): CirruData
 
-  FnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
+  FnInData* = proc(exprList: seq[CirruData]): CirruData
+  MacroFnInData* = proc(exprList: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData
 
   ResolvedPathKind* = enum
     notResolved,
@@ -82,21 +82,19 @@ type
       # TODO Clojure reused memory of keywords, need something similar
       # `ref string` was used, but it breaks compiler and breaks js backend
       keywordVal*: string
-    of crDataProc:
-      procVal*: FnInData
     of crDataFn:
       fnName*: string
-      fnScope*: CirruDataScope
       fnArgs*: CrVirtualList[CirruData]
       fnCode*: seq[CirruData]
-      fnNs*: string
+      fnVal*: FnInData
+      fnBuiltin*: bool # fn provided by Nim or js, not fnCode
     of crDataMacro:
       macroName*: string
       macroArgs*: CrVirtualList[CirruData]
       macroCode*: seq[CirruData]
       macroNs*: string
     of crDataSyntax:
-      syntaxVal*: FnInData
+      syntaxVal*: MacroFnInData
     of crDataList: listVal*: CrVirtualList[CirruData]
     of crDataSet: setVal*: HashSet[CirruData]
     of crDataMap: mapVal*: TernaryTreeMap[CirruData, CirruData]
@@ -221,7 +219,6 @@ proc toString*(val: CirruData, stringDetail: bool, symbolDetail: bool): string =
     of crDataRecord: fromRecordToString(val.recordName, val.recordFields, val.recordValues, symbolDetail)
     of crDataNil: "nil"
     of crDataKeyword: ":" & val.keywordVal
-    of crDataProc: "(:&proc)"
     of crDataFn:
       "(:&function " & val.fnName & " " & $val.fnArgs.toSeq & " " & $val.fnCode & ")"
     of crDataMacro:
@@ -293,15 +290,12 @@ proc hash*(value: CirruData): Hash =
       return hash("bool:" & $(value.boolVal))
     of crDataKeyword:
       return hash("keyword:" & value.keywordVal)
-    of crDataProc:
-      result = hash("proc:")
-      result = result !& hash(value.procVal)
-      result = !$ result
     of crDataFn:
       result = hash("fn:")
       result = result !& hash(value.fnArgs)
       result = result !& hash(value.fnCode)
-      result = result !& hash(value.fnScope)
+      result = result !& hash(value.fnVal)
+      # TODO need faster and more reliable hash
       result = !$ result
     of crDataSyntax:
       result = hash("syntax:")
@@ -378,10 +372,8 @@ proc `==`*(x, y: CirruData): bool =
       return x.numberVal == y.numberVal
     of crDataKeyword:
       return x.keywordVal == y.keywordVal
-    of crDataProc:
-      return x.procVal == y.procVal
     of crDataFn:
-      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnScope == y.fnScope
+      return x.fnArgs == y.fnArgs and x.fnCode == y.fnCode and x.fnVal == y.fnVal
     of crDataMacro:
       return x.macroArgs == y.macroArgs and x.macroCode == y.macroCode
     of crDataSyntax:
