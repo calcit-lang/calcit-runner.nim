@@ -8,7 +8,7 @@ import ../types
 import ../util/errors
 
 type EventTaskParams* = tuple[id: int, params: seq[CirruData]]
-type EventTaskCallback* = tuple[ns: string, cb: CirruData]
+type EventTaskCallback* = CirruData
 type TimeoutTaskOptions = tuple[id: int, duration: int]
 
 var eventsChan*: Channel[EventTaskParams]
@@ -23,22 +23,21 @@ var eventCallerId = 0
 # might cause "illegal storage access" when threads are too many. temp fix is --gc:orc
 var eventLoopTasks: Table[int, Thread[TimeoutTaskOptions]]
 
-proc addTask*(f: CirruData, ns: string): int =
+proc addTask*(f: CirruData): int =
   if f.kind != crDataFn:
     raiseEvalError("expects a function callback for task", f)
 
   var taskId = eventCallerId
   eventCallerId = eventCallerId + 1
 
-  eventCalls[taskId] = (ns, f)
+  eventCalls[taskId] = f
 
   return taskId
 
 proc finishTask*(taskId: int, args: seq[CirruData]): void =
   if eventCalls.contains(taskId).not:
     raiseEvalError("no callback found", CirruData(kind: crDataString, stringVal: $taskId))
-  let task = eventCalls[taskId]
-  let f = task.cb
+  let f = eventCalls[taskId]
   if f.kind != crDataFn:
     raiseEvalError("expects a function callback for task", f)
 
@@ -50,8 +49,8 @@ proc timeoutCallTask*(info: TimeoutTaskOptions) {.thread.} =
 
   eventsChan.send((info.id, @[]))
 
-proc setupTimeoutTask*(duration: int, f: CirruData, ns: string): int =
-  let taskId = addTask(f, ns)
+proc setupTimeoutTask*(duration: int, f: CirruData): int =
+  let taskId = addTask(f)
   var mem: Thread[TimeoutTaskOptions]
   eventLoopTasks[taskId] = mem
 
@@ -60,13 +59,13 @@ proc setupTimeoutTask*(duration: int, f: CirruData, ns: string): int =
 
   return taskId
 
-proc nativeTimeoutCall*(args: seq[CirruData], interpret: FnInterpret, scope: CirruDataScope, ns: string): CirruData =
+proc nativeTimeoutCall*(args: seq[CirruData]): CirruData =
   if args.len != 2: raiseEvalError("timeout-call expects 2 arguments", args)
   let duration = args[0]
   if duration.kind != crDataNumber: raiseEvalError("expects number value for timeout", args)
   let cb = args[1]
   if cb.kind != crDataFn: raiseEvalError("expects func value for timeout-call", args)
 
-  let taskId = setupTimeoutTask(duration.numberVal.int, cb, ns)
+  let taskId = setupTimeoutTask(duration.numberVal.int, cb)
 
   return CirruData(kind: crDataNumber, numberVal: taskId.float)

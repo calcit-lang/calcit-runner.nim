@@ -25,3 +25,8 @@ jobs:
         && ln -s ../../ node_modules/@calcit/procs
         && cp -v example/main.js js-out/
         && target=node yarn webpack && node js-out/bundle.js
+
+    - name: "try installing"
+      run: >
+        nimble install --threads:on -y
+        && cr_once -e:'> 2 1'
