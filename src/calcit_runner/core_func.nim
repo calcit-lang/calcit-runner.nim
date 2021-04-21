@@ -1030,7 +1030,7 @@ proc nativeReplace(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataString, stringVal: base.stringVal.replace(target.stringVal, to.stringVal))
 
 proc nativeSplit(args: seq[CirruData]): CirruData =
-  if args.len != 2: raiseEvalError("replace expects 3 arguments", args)
+  if args.len != 2: raiseEvalError("replace expects 2 arguments", args)
   let base = args[0]
   let target = args[1]
   if base.kind != crDataString: raiseEvalError("replace expects a string", args)
