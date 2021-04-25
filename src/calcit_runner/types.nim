@@ -123,7 +123,7 @@ type
 
   RefCirruData* = ref CirruData
 
-type ProgramFile* = object
+type ProgramEvaledData* = object
   ns*: Option[Table[string, ImportInfo]]
   defs*: Table[string, CirruData]
   states*: Table[string, CirruData]

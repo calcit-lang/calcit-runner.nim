@@ -82,7 +82,7 @@ proc dumpCode(xs: CirruData): JsonNode =
   else:
     %*("...TODO")
 
-proc emitIR*(programData: Table[string, ProgramFile], initFn, reloadFn: string): void =
+proc emitIR*(programData: Table[string, ProgramEvaledData], initFn, reloadFn: string): void =
   var files = newJObject()
   for ns, file in programData:
 

@@ -1,5 +1,13 @@
 
-Calcit Runner
+
+This project has been written in Rust, check [calcit_runner.rs](https://github.com/calcit-lang/calcit_runner.rs).
+----
+
+Rust as a stronger type system, which offers a more solid base for building a language.
+
+-----
+
+[Migrated] Calcit Runner
 ----
 
 > An interpreter runtime for Calcit snapshot file.

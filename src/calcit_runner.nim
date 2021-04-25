@@ -165,7 +165,7 @@ proc runProgram*(snapshotFile: string, initFn: Option[string] = none(string)): C
   programData.clear()
 
   programCode[coreNs] = FileSource()
-  programData[coreNs] = ProgramFile()
+  programData[coreNs] = ProgramEvaledData()
 
   loadCoreDefs(programData)
   loadCoreSyntax(programData)
@@ -204,12 +204,13 @@ proc runEventListener*(event: CirruEdnValue) =
 
 proc reloadProgram(snapshotFile: string): void =
   let previousCoreSource = programCode[coreNs]
+  # TODO future versions should to partial updates
   let snapshotInfo = loadSnapshot(snapshotFile)
   for fileNs, file in snapshotInfo.files:
     programCode[fileNs] = file
   echo "clearing data under package: ", codeConfigs.pkg
   clearProgramDefs(programData, codeConfigs.pkg)
-  genSymIndex = 0 # make it a litter more stable
+  genSymIndex = 0 # make it a litte more stable
   programCode[coreNs] = previousCoreSource
   var pieces = codeConfigs.reloadFn.split('/')
 
@@ -242,14 +243,14 @@ proc handleFileChange*(snapshotFile: string, incrementFile: string): void =
 proc evalSnippet*(code: string): CirruData =
 
   programCode[coreNs] = FileSource()
-  programData[coreNs] = ProgramFile()
+  programData[coreNs] = ProgramEvaledData()
 
   loadCoreDefs(programData)
   loadCoreSyntax(programData)
   loadCoreFuncs(programCode)
 
   programCode["app.main"] = FileSource()
-  programData["app.main"] = ProgramFile()
+  programData["app.main"] = ProgramEvaledData()
 
   let lines = parseEvalMain(code, "app.main")
   if lines.kind != crDatalist:

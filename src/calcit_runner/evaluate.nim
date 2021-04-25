@@ -24,7 +24,7 @@ import ./eval/expression
 import ./codegen/special_calls
 
 var programCode*: Table[string, FileSource]
-var programData*: Table[string, ProgramFile]
+var programData*: Table[string, ProgramEvaledData]
 
 proc hasNsAndDef(ns: string, def: string): bool =
   if not programCode.hasKey(ns):
@@ -33,7 +33,7 @@ proc hasNsAndDef(ns: string, def: string): bool =
     return false
   return true
 
-proc clearProgramDefs*(programData: var Table[string, ProgramFile], pkg: string): void =
+proc clearProgramDefs*(programData: var Table[string, ProgramEvaledData], pkg: string): void =
   for ns, f in programData:
     if ns.startsWith(pkg):
       # echo "clearing: ", ns
@@ -171,7 +171,7 @@ proc preprocessSymbolByPath*(ns: string, def: string): void =
   if ns == "":
     raiseEvalError("Expected non-empty ns at " & def, @[])
   if not programData.hasKey(ns):
-    var newFile = ProgramFile()
+    var newFile = ProgramEvaledData()
     programData[ns] = newFile
 
   if not programData[ns].defs.hasKey(def):
