@@ -596,7 +596,7 @@ proc writeFileIfChanged(filename: string, content: string): bool =
   writeFile filename, content
   return true
 
-proc emitJs*(programData: Table[string, ProgramFile], entryNs: string): void =
+proc emitJs*(programData: Table[string, ProgramEvaledData], entryNs: string): void =
   if dirExists(codeEmitPath).not:
     createDir(codeEmitPath)
 

@@ -192,7 +192,7 @@ proc nativeMacroexpandAll(args: seq[CirruData], interpret: FnInterpret, scope: C
 
   return preprocess(quoted, HashSet[string](), ns)
 
-proc loadCoreSyntax*(programData: var Table[string, ProgramFile]) =
+proc loadCoreSyntax*(programData: var Table[string, ProgramEvaledData]) =
   programData[coreNs].defs["quote-replace"] = CirruData(kind: crDataSyntax, syntaxVal: nativeQuoteReplace)
   programData[coreNs].defs["defmacro"] = CirruData(kind: crDataSyntax, syntaxVal: nativeDefMacro)
   programData[coreNs].defs[";"] = CirruData(kind: crDataSyntax, syntaxVal: nativeComment)

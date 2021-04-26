@@ -1418,7 +1418,7 @@ proc nativeCompareString(args: seq[CirruData]): CirruData =
   return CirruData(kind: crDataNumber, numberVal: cmp(left.stringVal, right.stringVal).float)
 
 # injecting functions to calcit.core directly
-proc loadCoreDefs*(programData: var Table[string, ProgramFile]): void =
+proc loadCoreDefs*(programData: var Table[string, ProgramEvaledData]): void =
   programData[coreNs].defs["&+"] = CirruData(kind: crDataFn, fnBuiltin: true, fnVal: nativeAdd)
   programData[coreNs].defs["&-"] = CirruData(kind: crDataFn, fnBuiltin: true, fnVal: nativeMinus)
   programData[coreNs].defs["&*"] = CirruData(kind: crDataFn, fnBuiltin: true, fnVal: nativeMultiply)
